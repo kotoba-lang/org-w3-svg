@@ -2150,21 +2150,10 @@ def _paint_server_value(
     current_color: str | None = None,
     css: list[CssRule] | None = None,
 ) -> tuple[str | None, float | None]:
-    if element is None:
-        return None, None
-    tag = _local_name(element.tag)
-    if tag not in {"linearGradient", "radialGradient"}:
-        return None, None
-    inherited_colors: list[tuple[str, float | None]] = []
-    href = _href(element)
-    if href and href.startswith("#"):
-        color, alpha = _paint_server_value(refs.get(href[1:]), refs, current_color, css or [])
-        if color:
-            inherited_colors.append((color, alpha))
-    colors = inherited_colors + _gradient_stops(element, current_color, css or [])
+    colors = _paint_server_colors(element, refs, current_color, css or [], set())
     if not colors:
         return None, None
-    if tag == "radialGradient":
+    if _local_name(element.tag) == "radialGradient":
         return colors[-1]
     rgba = []
     for color, alpha in colors:
@@ -2177,6 +2166,31 @@ def _paint_server_value(
     rgb_avg = tuple(round(sum(item[index] for item in rgba) / count) for index in range(3))
     alpha_avg = sum(item[3] for item in rgba) / count
     return _rgb_to_hex(rgb_avg), alpha_avg if alpha_avg < 1 else None
+
+
+def _paint_server_colors(
+    element: ET.Element | None,
+    refs: dict[str, ET.Element],
+    current_color: str | None,
+    css: list[CssRule],
+    seen: set[str],
+) -> list[tuple[str, float | None]]:
+    if element is None:
+        return []
+    tag = _local_name(element.tag)
+    if tag not in {"linearGradient", "radialGradient"}:
+        return []
+    element_id = element.get("id")
+    if element_id:
+        if element_id in seen:
+            return []
+        seen = seen | {element_id}
+    colors: list[tuple[str, float | None]] = []
+    href = _href(element)
+    if href and href.startswith("#"):
+        colors.extend(_paint_server_colors(refs.get(href[1:]), refs, current_color, css, seen))
+    colors.extend(_gradient_stops(element, current_color, css))
+    return colors
 
 
 def _gradient_stops(element: ET.Element, current_color: str | None = None, css: list[CssRule] | None = None) -> list[tuple[str, float | None]]:

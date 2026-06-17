@@ -733,6 +733,40 @@ def test_radial_gradient_fallback_uses_outer_stop_color() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_gradient_href_inherits_stop_list_before_fallback_average() -> None:
+    svg = """<svg>
+      <defs>
+        <linearGradient id="base">
+          <stop offset="0%" stop-color="#ff0000"/>
+          <stop offset="50%" stop-color="#00ff00"/>
+        </linearGradient>
+        <linearGradient id="derived" href="#base">
+          <stop offset="100%" stop-color="#0000ff"/>
+        </linearGradient>
+      </defs>
+      <rect width="10" height="8" fill="url(#derived)"/>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="555555"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_gradient_href_cycle_can_use_fallback_color() -> None:
+    svg = """<svg>
+      <defs>
+        <linearGradient id="cycle" href="#cycle"/>
+      </defs>
+      <rect width="10" height="8" fill="url(#cycle) #123456"/>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="123456"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_analyze_svg_reports_missing_paint_server() -> None:
     report = analyze_svg('<svg><rect width="10" height="8" fill="url(#missing)"/></svg>')
 
