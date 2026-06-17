@@ -1667,6 +1667,33 @@ def test_negative_dasharray_is_treated_as_invalid_and_solid() -> None:
     assert analyze_svg('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111" stroke-dasharray="-1 2"/></svg>').unsupported_attributes == {}
 
 
+def test_drawingml_preset_dash_patterns_round_trip_to_svg_dasharray() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="dashDot"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="0"/></a:xfrm>
+          <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+          <a:ln><a:solidFill><a:srgbClr val="111111"/></a:solidFill><a:prstDash val="dashDot"/></a:ln>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="lgDashDotDot"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="95250"/><a:ext cx="95250" cy="0"/></a:xfrm>
+          <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+          <a:ln><a:solidFill><a:srgbClr val="222222"/></a:solidFill><a:prstDash val="lgDashDotDot"/></a:ln>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'stroke-dasharray="4 3 1 3"' in svg
+    assert 'stroke-dasharray="8 3 1 3 1 3"' in svg
+
+
 def test_zero_stroke_width_is_converted_as_no_line() -> None:
     dml = svg_to_drawingml('<svg><rect width="10" height="8" fill="#ffffff" stroke="#111111" stroke-width="0"/></svg>')
 

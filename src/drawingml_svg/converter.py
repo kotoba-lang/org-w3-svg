@@ -1284,7 +1284,18 @@ def _dml_dasharray(ln: ET.Element) -> str | None:
     dash = ln.find(qn(NS_A, "prstDash"))
     if dash is None:
         return None
-    return {"dot": "1 3", "dash": "4 3", "lgDash": "8 3"}.get(dash.get("val", ""))
+    return {
+        "dash": "4 3",
+        "dashDot": "4 3 1 3",
+        "dot": "1 3",
+        "lgDash": "8 3",
+        "lgDashDot": "8 3 1 3",
+        "lgDashDotDot": "8 3 1 3 1 3",
+        "sysDash": "3 1",
+        "sysDashDot": "3 1 1 1",
+        "sysDashDotDot": "3 1 1 1 1 1",
+        "sysDot": "1 1",
+    }.get(dash.get("val", ""))
 
 
 def _dml_text(element: ET.Element) -> str | None:
