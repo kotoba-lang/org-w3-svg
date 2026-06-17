@@ -1276,19 +1276,23 @@ def _dml_text(element: ET.Element) -> str | None:
     tx_body = element.find(qn(NS_P, "txBody"))
     if tx_body is None:
         return None
-    parts = []
-    paragraph = tx_body.find(qn(NS_A, "p"))
-    if paragraph is None:
+    paragraphs = tx_body.findall(qn(NS_A, "p"))
+    if not paragraphs:
         return ""
+    text = "\n".join(_dml_paragraph_text(paragraph) for paragraph in paragraphs)
+    return text if text else ""
+
+
+def _dml_paragraph_text(paragraph: ET.Element) -> str:
+    parts = []
     for node in paragraph:
         if node.tag == qn(NS_A, "br"):
             parts.append("\n")
-        else:
-            text_node = node.find(qn(NS_A, "t"))
-            if text_node is not None:
-                parts.append(text_node.text or "")
-    text = "".join(parts)
-    return text if text else ""
+            continue
+        text_node = node.find(qn(NS_A, "t"))
+        if text_node is not None:
+            parts.append(text_node.text or "")
+    return "".join(parts)
 
 
 def _dml_font_weight(element: ET.Element) -> str | None:
