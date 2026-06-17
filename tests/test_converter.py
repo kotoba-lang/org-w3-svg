@@ -2377,6 +2377,24 @@ def test_absolute_length_units_are_converted_to_px() -> None:
     assert 'stroke-dasharray="7.5591 3.7795"' in svg
 
 
+def test_calc_lengths_are_resolved_for_geometry_strokes_and_text() -> None:
+    svg = """<svg width="100" height="50">
+      <rect x="calc(10px + 5px)" y="calc(2px + 3px)" width="calc(50% - 10px)" height="calc(100% - 20px)" fill="#dc2626"/>
+      <line x1="0" y1="40" x2="40" y2="40" stroke="#111111" stroke-width="calc(1px + 1px)"/>
+      <text x="0" y="20" font-size="calc(8px + 4px)" fill="#111111">Hi</text>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    offsets = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    extents = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    assert offsets[1].attrib == {"x": "142875", "y": "47625"}
+    assert extents[1].attrib == {"cx": "381000", "cy": "285750"}
+    assert '<a:ln w="19050" cap="flat">' in dml
+    assert 'sz="1200"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_line_markers_convert_to_drawingml_arrows_and_round_trip() -> None:
     svg = """<svg>
       <defs><marker id="arrow" viewBox="0 0 10 10"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>

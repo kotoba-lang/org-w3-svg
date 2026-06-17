@@ -3371,6 +3371,9 @@ def _num(value: str | None, default: float) -> float:
     if value is None:
         return float(default)
     stripped = value.strip()
+    if stripped.lower().startswith("calc(") and stripped.endswith(")"):
+        result = _calc_length(stripped[5:-1], "x", (0.0, 0.0), allow_percent=False)
+        return result if result is not None else float(default)
     scale = 1.0
     for suffix, unit_scale in (
         ("px", 1.0),
@@ -3402,6 +3405,9 @@ def _length(value: str | None, default: float, axis: str, viewport: tuple[float,
     if value is None:
         return float(default)
     stripped = value.strip()
+    if stripped.lower().startswith("calc(") and stripped.endswith(")"):
+        result = _calc_length(stripped[5:-1], axis, viewport, allow_percent=True)
+        return result if result is not None else float(default)
     if stripped.endswith("%"):
         try:
             number = float(stripped[:-1]) / 100 * _percentage_basis(axis, viewport)
@@ -3423,6 +3429,47 @@ def _percentage_basis(axis: str, viewport: tuple[float, float]) -> float:
     if axis == "y":
         return viewport[1]
     return math.hypot(viewport[0], viewport[1]) / math.sqrt(2)
+
+
+def _calc_length(body: str, axis: str, viewport: tuple[float, float], allow_percent: bool) -> float | None:
+    terms = _calc_terms(body)
+    if not terms:
+        return None
+    total = 0.0
+    for sign, value in terms:
+        value = value.strip()
+        if not value:
+            return None
+        if value.endswith("%"):
+            if not allow_percent:
+                return None
+            try:
+                number = _finite_float(value[:-1]) / 100 * _percentage_basis(axis, viewport)
+            except ValueError:
+                return None
+        else:
+            number = _num(value, math.nan)
+            if not math.isfinite(number):
+                return None
+        total += sign * number
+    return total if math.isfinite(total) else None
+
+
+def _calc_terms(body: str) -> list[tuple[float, str]]:
+    terms: list[tuple[float, str]] = []
+    current: list[str] = []
+    sign = 1.0
+    for index, char in enumerate(body):
+        if char in {"+", "-"} and (index == 0 or body[index - 1] not in {"e", "E"}):
+            if current:
+                terms.append((sign, "".join(current)))
+                current = []
+            sign = -1.0 if char == "-" else 1.0
+            continue
+        current.append(char)
+    if current:
+        terms.append((sign, "".join(current)))
+    return terms
 
 
 def _emu(px: float) -> int:
