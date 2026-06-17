@@ -694,10 +694,14 @@ def test_zero_alpha_paint_is_converted_as_no_fill_and_no_line() -> None:
 
 def test_css_color_functions_named_colors_and_gradient_fallback() -> None:
     svg = """<svg>
+      <style>
+        stop.start { stop-color: currentColor; stop-opacity: 0.5; }
+        stop.end { stop-color: rgb(0, 0, 255); stop-opacity: .25; }
+      </style>
       <defs>
         <linearGradient id="grad">
-          <stop offset="0%" stop-color="currentColor" stop-opacity="0.5"/>
-          <stop offset="100%" style="stop-color: rgb(0, 0, 255); stop-opacity: .25"/>
+          <stop class="start" offset="0%"/>
+          <stop class="end" offset="100%"/>
         </linearGradient>
       </defs>
       <rect x="0" y="0" width="10" height="8" color="red" fill="url(#grad)" stroke="hsl(0.333333turn 100% 25% / 75%)"/>

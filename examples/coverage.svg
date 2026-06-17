@@ -9,12 +9,14 @@
     rect[data-icon^="coverage"][data-icon$="probe"][data-tags~="signal"] { fill: #f0fdf4; stroke: #15803d; }
     rect[data-kind|="meter"] { stroke-width: 2; }
     rect.panel { stroke: #ef4444; }
+    stop.panel-start { stop-color: currentColor; stop-opacity: .95; }
+    stop.panel-end { stop-color: rgb(187, 247, 208); stop-opacity: .6; }
     .hidden-probe { display: none; }
   </style>
   <defs>
     <linearGradient id="panel">
-      <stop offset="0%" stop-color="currentColor" stop-opacity=".95"/>
-      <stop offset="100%" stop-color="rgb(187, 247, 208)" stop-opacity=".6"/>
+      <stop class="panel-start" offset="0%"/>
+      <stop class="panel-end" offset="100%"/>
     </linearGradient>
     <radialGradient id="halo">
       <stop offset="0%" stop-color="#fef3c7"/>
