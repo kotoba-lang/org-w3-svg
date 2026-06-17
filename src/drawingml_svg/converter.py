@@ -583,6 +583,8 @@ def _svg_paint(
     if stroke not in {None, "none"} and not stroke_linejoin:
         stroke_linejoin = "miter"
     stroke_miterlimit = _optional_num(style.get("stroke-miterlimit"))
+    if stroke_miterlimit is not None and stroke_miterlimit < 1:
+        stroke_miterlimit = None
     if stroke_linejoin == "miter" and stroke_miterlimit is None:
         stroke_miterlimit = 4.0
     return Paint(

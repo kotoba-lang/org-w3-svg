@@ -1063,6 +1063,20 @@ def test_zero_stroke_width_is_converted_as_no_line() -> None:
     assert 'stroke-width="0"' in svg
 
 
+def test_invalid_miterlimit_falls_back_to_svg_default() -> None:
+    dml = svg_to_drawingml(
+        '<svg><polyline points="0,0 10,0 10,8" fill="none" stroke="#111111" stroke-linejoin="miter" stroke-miterlimit="0"/></svg>'
+    )
+
+    assert '<a:miter lim="400000"/>' in dml
+
+    svg = drawingml_to_svg(dml)
+    assert 'stroke-miterlimit="4"' in svg
+    assert analyze_svg(
+        '<svg><polyline points="0,0 10,0 10,8" fill="none" stroke="#111111" stroke-linejoin="miter" stroke-miterlimit="0"/></svg>'
+    ).unsupported_attributes == {}
+
+
 def test_pt_units_are_converted_to_px() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" font-size="12pt" fill="#111111">Pt</text><line x1="0" y1="30" x2="40" y2="30" stroke="#222222" stroke-width="1.5pt" stroke-dasharray="6pt 3pt"/></svg>'

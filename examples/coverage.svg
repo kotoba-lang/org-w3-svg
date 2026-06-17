@@ -62,7 +62,7 @@
     <circle cx="316" cy="36" r="8" fill="url(#missingPaint) #dc2626"/>
     <circle cx="292" cy="18" r="7" fill="url(#halo)"/>
     <polygon points="40,54 66,42 92,54 82,86 50,86" fill="#f008" stroke="#991b1b" stroke-width="2"/>
-    <polyline points="1.10e2,86 1.38e2,56 1.66e2,86 1.94e2,56" fill="none" stroke="#4338ca" stroke-width="3"/>
+    <polyline points="1.10e2,86 1.38e2,56 1.66e2,86 1.94e2,56" fill="none" stroke="#4338ca" stroke-width="3" stroke-linejoin="miter" stroke-miterlimit="0"/>
     <g class="badges" transform="translate(232 42) rotate(12)">
       <ellipse class="badge" cx="0" cy="0" rx="34" ry="20"/>
       <line x1="-22" y1="0" x2="22" y2="0" stroke="#7c2d12" stroke-width="2"/>
