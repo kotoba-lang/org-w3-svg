@@ -376,6 +376,28 @@ def test_polygon_polyline_linear_path_and_text_convert() -> None:
     assert "Hello" in svg
 
 
+def test_invalid_polygon_and_polyline_points_are_reported_and_skipped() -> None:
+    svg = """<svg>
+      <polygon points="0,0 10,0 5" fill="#fee2e2"/>
+      <polyline points="0,0 1e999,0" fill="none" stroke="#111111"/>
+      <rect width="10" height="8" fill="#22c55e"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+    report = analyze_svg(svg)
+
+    assert dml.count("<p:sp>") == 1
+    assert report.unsupported_elements == {"polygon:invalid-points": 1, "polyline:invalid-points": 1}
+
+
+def test_non_finite_path_coordinates_are_reported_and_skipped() -> None:
+    svg = '<svg><path d="M0 0 L1e999 0" fill="none" stroke="#111111"/><rect width="10" height="8"/></svg>'
+    dml = svg_to_drawingml(svg)
+    report = analyze_svg(svg)
+
+    assert dml.count("<p:sp>") == 1
+    assert report.unsupported_elements == {"path:unsupported-command": 1}
+
+
 def test_cubic_path_is_approximated_as_custom_geometry() -> None:
     dml = svg_to_drawingml('<svg><path d="M0 0 C10 20, 30 20, 40 0 S70 -20, 80 0" fill="none" stroke="#0891b2"/></svg>')
 

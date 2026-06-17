@@ -1928,7 +1928,9 @@ def _freeform_shape(points: list[tuple[float, float]], paint: Paint, closed: boo
 
 def _parse_points(value: str) -> list[tuple[float, float]]:
     numbers = [float(match) for match in re.findall(NUMBER_RE, value)]
-    if len(numbers) < 4:
+    if len(numbers) < 4 or len(numbers) % 2:
+        return []
+    if not all(math.isfinite(number) for number in numbers):
         return []
     return list(zip(numbers[0::2], numbers[1::2], strict=False))
 
@@ -2071,6 +2073,8 @@ def _parse_linear_path(value: str) -> tuple[list[tuple[float, float]], bool] | N
         else:
             return None
     if len(points) < 2:
+        return None
+    if not all(math.isfinite(x) and math.isfinite(y) for x, y in points):
         return None
     if closed and points[-1] == points[0]:
         points = points[:-1]

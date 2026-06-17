@@ -20,6 +20,7 @@ from .converter import (
     _optional_length,
     _paint_server_value,
     _parse_linear_path,
+    _parse_points,
     _parse_transform,
     _root_viewbox_matrix,
     _supported_data_image,
@@ -165,6 +166,9 @@ def _walk(
     path_supported = True
     if tag == "path":
         path_supported = _path_is_supported(element.get("d", ""))
+    points_supported = True
+    if tag in {"polygon", "polyline"}:
+        points_supported = len(_parse_points(element.get("points", ""))) >= 2
 
     style = _computed_style(element, css, inherited_style, ancestors)
     specified_style = _computed_style(element, css, {}, ancestors)
@@ -181,7 +185,7 @@ def _walk(
 
     if tag in IGNORED_ELEMENTS or hidden or non_rendering_geometry or no_visible_paint:
         stats.ignored_elements += 1
-    elif tag in SUPPORTED_ELEMENTS and path_supported and use_supported and switch_supported:
+    elif tag in SUPPORTED_ELEMENTS and path_supported and points_supported and use_supported and switch_supported:
         stats.convertible_elements += 1
     elif tag in SUPPORTED_ELEMENTS:
         stats.add_unsupported_element(_supported_element_issue(tag))
@@ -613,6 +617,8 @@ def _use_href_is_supported(element: ET.Element, refs: dict[str, ET.Element]) -> 
 def _supported_element_issue(tag: str) -> str:
     if tag == "path":
         return "path:unsupported-command"
+    if tag in {"polygon", "polyline"}:
+        return f"{tag}:invalid-points"
     if tag == "switch":
         return "switch:unsupported-branch"
     return f"{tag}:unsupported-reference"
