@@ -525,13 +525,16 @@ def _svg_paint(style: dict[str, str], refs: dict[str, ET.Element] | None = None,
         fill = "none"
     if stroke_alpha is not None and stroke_alpha <= 0:
         stroke = "none"
+    stroke_linecap = style.get("stroke-linecap")
+    if stroke not in {None, "none"} and not stroke_linecap:
+        stroke_linecap = "butt"
     return Paint(
         fill=fill,
         stroke=stroke,
         stroke_width=parsed_stroke_width,
         fill_alpha=fill_alpha,
         stroke_alpha=stroke_alpha,
-        stroke_linecap=style.get("stroke-linecap"),
+        stroke_linecap=stroke_linecap,
         stroke_linejoin=style.get("stroke-linejoin"),
         stroke_dasharray=style.get("stroke-dasharray"),
         stroke_miterlimit=_optional_num(style.get("stroke-miterlimit")),

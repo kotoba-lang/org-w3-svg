@@ -37,7 +37,7 @@ def test_drawingml_to_svg_rect_round_trip() -> None:
 def test_svg_line_round_trip_keeps_direction_with_flips() -> None:
     svg = drawingml_to_svg(svg_to_drawingml('<svg><line x1="20" y1="30" x2="5" y2="10" stroke="#ff0000"/></svg>'))
 
-    assert '<line fill="none" stroke="#ff0000" x1="20" y1="30" x2="5" y2="10"/>' in svg
+    assert '<line fill="none" stroke="#ff0000" stroke-linecap="butt" x1="20" y1="30" x2="5" y2="10"/>' in svg
 
 
 def test_svg_default_paint_is_explicitly_converted() -> None:
@@ -49,6 +49,14 @@ def test_svg_default_paint_is_explicitly_converted() -> None:
     svg = drawingml_to_svg(dml)
     assert '<rect fill="#000000" stroke="none" x="0" y="0" width="10" height="8"/>' in svg
     assert '<line fill="none" stroke="none" x1="0" y1="12" x2="10" y2="12"/>' in svg
+
+
+def test_default_stroke_linecap_is_explicitly_flat() -> None:
+    dml = svg_to_drawingml('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111"/></svg>')
+
+    assert '<a:ln cap="flat">' in dml
+    svg = drawingml_to_svg(dml)
+    assert 'stroke-linecap="butt"' in svg
 
 
 def test_converted_shapes_can_be_embedded_in_slide_xml() -> None:
@@ -513,7 +521,7 @@ def test_pt_units_are_converted_to_px() -> None:
     )
 
     assert 'sz="1600"' in dml
-    assert '<a:ln w="19050">' in dml
+    assert '<a:ln w="19050" cap="flat">' in dml
     assert '<a:ds d="400000" sp="200000"/>' in dml
 
     svg = drawingml_to_svg(dml)
@@ -530,7 +538,7 @@ def test_absolute_length_units_are_converted_to_px() -> None:
 
     assert 'cx="914400"' in dml
     assert 'cy="914400"' in dml
-    assert '<a:ln w="36000">' in dml
+    assert '<a:ln w="36000" cap="flat">' in dml
     assert '<a:ds d="200000" sp="100000"/>' in dml
 
     svg = drawingml_to_svg(dml)
