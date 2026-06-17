@@ -920,20 +920,31 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
 
 def _dml_text_paint(element: ET.Element, sp_pr: ET.Element) -> Paint:
     r_pr = element.find(f".//{qn(NS_A, 'rPr')}")
-    solid_fill = r_pr.find(qn(NS_A, "solidFill")) if r_pr is not None else None
     ln = r_pr.find(qn(NS_A, "ln")) if r_pr is not None else None
     shape_paint = _dml_paint(sp_pr)
+    fill, fill_alpha = _dml_text_fill(r_pr, shape_paint)
     return Paint(
-        fill=_dml_color(solid_fill) if solid_fill is not None else shape_paint.fill,
+        fill=fill,
         stroke=_dml_line_color(ln) if ln is not None else shape_paint.stroke,
         stroke_width=_dml_line_width(ln) if ln is not None else shape_paint.stroke_width,
-        fill_alpha=_dml_alpha(solid_fill) if solid_fill is not None else shape_paint.fill_alpha,
+        fill_alpha=fill_alpha,
         stroke_alpha=_dml_line_alpha(ln) if ln is not None else shape_paint.stroke_alpha,
         stroke_linecap=_dml_linecap(ln.get("cap")) if ln is not None else shape_paint.stroke_linecap,
         stroke_linejoin=_dml_linejoin(ln) if ln is not None else shape_paint.stroke_linejoin,
         stroke_dasharray=_dml_dasharray(ln) if ln is not None else shape_paint.stroke_dasharray,
         stroke_miterlimit=_dml_miterlimit(ln) if ln is not None else shape_paint.stroke_miterlimit,
     )
+
+
+def _dml_text_fill(r_pr: ET.Element | None, shape_paint: Paint) -> tuple[str | None, float | None]:
+    if r_pr is None:
+        return shape_paint.fill, shape_paint.fill_alpha
+    if r_pr.find(qn(NS_A, "noFill")) is not None:
+        return "none", None
+    solid_fill = r_pr.find(qn(NS_A, "solidFill"))
+    if solid_fill is not None:
+        return _dml_color(solid_fill), _dml_alpha(solid_fill)
+    return shape_paint.fill, shape_paint.fill_alpha
 
 
 def _append_dml_paint(parent: ET.Element, paint: Paint) -> None:
