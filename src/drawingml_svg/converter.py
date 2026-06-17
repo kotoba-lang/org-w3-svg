@@ -2654,6 +2654,7 @@ def _computed_style(
         "letter-spacing",
         "lengthAdjust",
         "text-decoration",
+        "text-decoration-line",
         "text-anchor",
         "text-transform",
         "textLength",
@@ -2713,6 +2714,8 @@ def _computed_style(
         style[key] = _resolve_css_vars(value, style)
     if style.get("font-size") is not None:
         style["font-size"] = _resolve_font_size_value(style.get("font-size"), inherited.get("font-size"))
+    if style.get("text-decoration") is None and style.get("text-decoration-line") is not None:
+        style["text-decoration"] = style["text-decoration-line"]
     if style.get("fill", "").strip().lower() == "currentcolor":
         style["fill"] = style.get("color", "#000000")
     if style.get("stroke", "").strip().lower() == "currentcolor":

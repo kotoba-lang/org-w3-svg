@@ -1128,6 +1128,24 @@ def test_text_all_small_caps_maps_to_drawingml_caps() -> None:
     assert 'font-variant="all-small-caps"' in svg
 
 
+def test_text_decoration_line_maps_to_drawingml_decoration() -> None:
+    svg = """<svg>
+      <style>.decorated { text-decoration-line: underline line-through; }</style>
+      <text class="decorated" x="0" y="20" font-size="10" fill="#111111">CSS</text>
+      <text x="0" y="40" font-size="10" fill="#111111" text-decoration-line="underline">Attr</text>
+      <text x="0" y="60" font-size="10" fill="#111111" style="text-decoration-line: line-through">Style</text>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    run_prs = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}rPr")
+    assert run_prs[0].get("u") == "sng"
+    assert run_prs[0].get("strike") == "sngStrike"
+    assert run_prs[1].get("u") == "sng"
+    assert run_prs[2].get("strike") == "sngStrike"
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_xml_space_preserve_keeps_text_whitespace() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'
