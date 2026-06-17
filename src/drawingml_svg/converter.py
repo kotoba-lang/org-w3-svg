@@ -1331,8 +1331,12 @@ def _parse_style(style: str) -> dict[str, str]:
         if ":" not in item:
             continue
         key, value = item.split(":", 1)
-        result[key.strip()] = value.strip()
+        result[key.strip()] = _normalize_css_value(value)
     return result
+
+
+def _normalize_css_value(value: str) -> str:
+    return re.sub(r"\s*!important\s*$", "", value.strip(), flags=re.I).strip()
 
 
 def _collect_css(root: ET.Element) -> dict[str, dict[str, str]]:

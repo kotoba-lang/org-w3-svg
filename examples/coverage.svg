@@ -3,8 +3,8 @@
     #board .panel { color: #dcfce7; fill: url(#panel); stroke: hsl(143 65% 24%); stroke-width: 3; }
     #board > rect.panel.featured { stroke-linejoin: miter; stroke-miterlimit: 6; }
     g.badges .badge { fill: currentColor; color: #f97316; stroke: hsla(0.349066rad, 75%, 28%, .7); stroke-width: 2; }
-    text.title { fill: #111827; font-size: 15pt; font-weight: 700; font-style: italic; font-family: 'Aptos Display', Arial, sans-serif; text-decoration: underline; text-anchor: middle; dominant-baseline: middle; }
-    .route { fill: none; stroke: #0891b2; stroke-width: 1mm; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2mm, 1mm; }
+    text.title { fill: #111827; font-size: 15pt !important; font-weight: 700; font-style: italic; font-family: 'Aptos Display', Arial, sans-serif; text-decoration: underline; text-anchor: middle; dominant-baseline: middle; }
+    .route { fill: none; stroke: #0891b2; stroke-width: 1mm !important; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2mm, 1mm; }
     .hidden-probe { display: none; }
   </style>
   <defs>

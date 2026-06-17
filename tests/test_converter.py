@@ -109,8 +109,8 @@ def test_css_class_and_group_transform_are_applied() -> None:
     dml = svg_to_drawingml(
         """<svg>
           <style>
-            .box { fill: #e0e7ff; stroke: #4338ca; stroke-width: 3; }
-            text.label { fill: #0f172a; font-size: 20; }
+            .box { fill: #e0e7ff !important; stroke: #4338ca; stroke-width: 3 !important; }
+            text.label { fill: #0f172a; font-size: 20 !important; }
           </style>
           <g transform="translate(10 20) scale(2)">
             <rect class="box" x="5" y="6" width="7" height="8"/>
@@ -127,6 +127,16 @@ def test_css_class_and_group_transform_are_applied() -> None:
     root = ET.fromstring(dml)
     offsets = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")
     assert {"x": "190500", "y": "304800"} in [offset.attrib for offset in offsets]
+
+
+def test_inline_style_important_values_are_normalized() -> None:
+    dml = svg_to_drawingml(
+        '<svg><rect width="10" height="8" style="fill: #ff0000 !IMPORTANT; stroke: #000000; stroke-width: 2 !important"/></svg>'
+    )
+
+    assert 'val="FF0000"' in dml
+    assert 'val="000000"' in dml
+    assert 'w="19050"' in dml
 
 
 def test_css_descendant_selectors_are_applied_in_converter_and_analyzer() -> None:
