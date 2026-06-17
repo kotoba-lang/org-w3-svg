@@ -2849,7 +2849,10 @@ def _matrix_multiply(
 def _parse_transform(value: str) -> tuple[float, float, float, float, float, float]:
     matrix = _identity_matrix()
     for name, raw_args in re.findall(r"([a-zA-Z]+)\(([^)]*)\)", value):
-        args = [float(item) for item in re.findall(r"[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?", raw_args)]
+        try:
+            args = [_finite_float(item) for item in re.findall(r"[-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?", raw_args)]
+        except ValueError:
+            continue
         item = _identity_matrix()
         if name == "matrix" and len(args) >= 6:
             item = tuple(args[:6])  # type: ignore[assignment]

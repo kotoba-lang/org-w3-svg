@@ -1060,6 +1060,27 @@ def test_reflected_rect_stays_as_editable_rect() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_non_finite_svg_transform_values_do_not_crash() -> None:
+    svg = """<svg>
+      <rect width="10" height="8" fill="#111111" transform="scale(1e999)"/>
+      <rect x="12" width="10" height="8" fill="#222222" transform="rotate(1e999)"/>
+      <rect x="24" width="10" height="8" fill="#333333" transform="matrix(1 0 0 1 1e999 0) translate(4 0)"/>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    root = ET.fromstring(dml)
+    offsets = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+
+    assert dml.count("<p:sp>") == 3
+    assert 'val="111111"' in dml
+    assert 'val="222222"' in dml
+    assert 'val="333333"' in dml
+    assert offsets[1].attrib == {"x": "0", "y": "0"}
+    assert offsets[2].attrib == {"x": "114300", "y": "0"}
+    assert offsets[3].attrib == {"x": "266700", "y": "0"}
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_scaled_circle_and_ellipse_stay_as_editable_ellipses() -> None:
     dml = svg_to_drawingml(
         """<svg>
