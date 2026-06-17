@@ -302,6 +302,23 @@ def test_compound_child_selectors_hidden_shapes_and_scientific_numbers() -> None
     assert report["estimated_element_coverage"] == 1.0
 
 
+def test_analyze_svg_skips_hidden_unsupported_details() -> None:
+    svg = """<svg>
+      <path display="none" d="M0 0 R10 20" filter="url(#blur)"/>
+      <g visibility="hidden">
+        <foreignObject width="10" height="10"/>
+        <path d="M0 0 R10 20"/>
+      </g>
+    </svg>"""
+
+    report = analyze_svg(svg)
+
+    assert report.ignored_elements == 2
+    assert report.unsupported_elements == {}
+    assert report.unsupported_attributes == {}
+    assert report.unsupported_path_commands == {}
+
+
 def test_text_position_can_come_from_first_tspan() -> None:
     dml = svg_to_drawingml('<svg><text font-size="10" fill="#111"><tspan x="20" y="40" dx="5" dy="7">From tspan</tspan></text></svg>')
 

@@ -174,14 +174,15 @@ def _walk(
     else:
         stats.add_unsupported_element(tag)
 
+    if hidden:
+        return
+
     matrix = _matrix_multiply(inherited_matrix, _parse_transform(element.get("transform", "")))
     _inspect_attributes(element, style, specified_style, refs, css, matrix, stats, ancestors)
 
     if tag == "path":
         _inspect_path(element.get("d", ""), stats)
 
-    if hidden:
-        return
     if tag == "switch":
         selected = _switch_selected_child(element)
         if selected is not None:
