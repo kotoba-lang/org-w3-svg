@@ -50,7 +50,6 @@ jobs:
           assert complex_report.unsupported_path_commands == {}, complex_report
           assert complex_report.unsupported_attributes == {
               "mix-blend-mode": 1,
-              "preserveAspectRatio": 1,
               "rotate": 1,
           }, complex_report
           PY

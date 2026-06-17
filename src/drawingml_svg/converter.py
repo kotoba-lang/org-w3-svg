@@ -68,6 +68,7 @@ class Shape:
     rx: float | None = None
     ry: float | None = None
     image_href: str | None = None
+    image_src_rect: tuple[int, int, int, int] | None = None
     rotation: float | None = None
 
 
@@ -330,7 +331,15 @@ def _svg_shape_from_element(
             height = _geometry_length(element, style, "height", 0, "y", viewport)
             if width <= 0 or height <= 0:
                 return None
-            return _transformed_image_shape(x, y, width, height, matrix, href, _image_alpha(style))
+            x, y, width, height, src_rect = _image_preserve_aspect_ratio_rect(
+                x,
+                y,
+                width,
+                height,
+                href,
+                style.get("preserveAspectRatio"),
+            )
+            return _transformed_image_shape(x, y, width, height, matrix, href, _image_alpha(style), src_rect)
     return None
 
 
@@ -577,6 +586,11 @@ def _image_to_dml(shape: Shape, shape_id: int) -> ET.Element:
     blip = ET.SubElement(blip_fill, qn(NS_A, "blip"), {qn(NS_R, "embed"): shape.image_href or ""})
     if shape.paint.fill_alpha is not None and shape.paint.fill_alpha < 1:
         ET.SubElement(blip, qn(NS_A, "alphaModFix"), {"amt": str(round(max(0.0, min(shape.paint.fill_alpha, 1.0)) * 100000))})
+    if shape.image_src_rect is not None:
+        left, top, right, bottom = shape.image_src_rect
+        attrs = {key: str(value) for key, value in (("l", left), ("t", top), ("r", right), ("b", bottom)) if value}
+        if attrs:
+            ET.SubElement(blip_fill, qn(NS_A, "srcRect"), attrs)
     stretch = ET.SubElement(blip_fill, qn(NS_A, "stretch"))
     ET.SubElement(stretch, qn(NS_A, "fillRect"))
     sp_pr = ET.SubElement(pic, qn(NS_P, "spPr"))
@@ -604,7 +618,36 @@ def _dml_picture_shape(element: ET.Element) -> Shape | None:
     if not href:
         return None
     x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(sp_pr.find(qn(NS_A, "xfrm")))
-    return Shape("image", x, y, width, height, Paint(fill_alpha=_dml_blip_alpha(blip)), flip_h, flip_v, image_href=href, rotation=rotation)
+    src_rect = _dml_src_rect(element.find(f".//{qn(NS_A, 'srcRect')}"))
+    return Shape(
+        "image",
+        x,
+        y,
+        width,
+        height,
+        Paint(fill_alpha=_dml_blip_alpha(blip)),
+        flip_h,
+        flip_v,
+        image_href=href,
+        image_src_rect=src_rect,
+        rotation=rotation,
+    )
+
+
+def _dml_src_rect(element: ET.Element | None) -> tuple[int, int, int, int] | None:
+    if element is None:
+        return None
+    values = tuple(_optional_int(element.get(attr)) or 0 for attr in ("l", "t", "r", "b"))
+    return values if any(values) else None
+
+
+def _optional_int(value: str | None) -> int | None:
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 
 def _transformed_image_shape(
@@ -615,6 +658,7 @@ def _transformed_image_shape(
     matrix: tuple[float, float, float, float, float, float],
     href: str,
     alpha: float | None,
+    src_rect: tuple[int, int, int, int] | None = None,
 ) -> Shape:
     paint = Paint(fill_alpha=alpha)
     points = _transform_points(_rect_points(x, y, width, height), matrix)
@@ -641,6 +685,7 @@ def _transformed_image_shape(
             paint,
             flip_v=determinant < 0,
             image_href=href,
+            image_src_rect=src_rect,
             rotation=rotation or None,
         )
 
@@ -648,7 +693,7 @@ def _transformed_image_shape(
     min_y = min(py for _, py in points)
     max_x = max(px for px, _ in points)
     max_y = max(py for _, py in points)
-    return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, paint, image_href=href)
+    return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, paint, image_href=href, image_src_rect=src_rect)
 
 
 def _svg_shape_transform(shape: Shape) -> str | None:
@@ -2633,6 +2678,69 @@ def _preserve_aspect_ratio(value: str | None) -> tuple[str, str]:
     return align, meet_or_slice
 
 
+def _image_preserve_aspect_ratio_rect(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    href: str,
+    value: str | None,
+) -> tuple[float, float, float, float, tuple[int, int, int, int] | None]:
+    if value is None:
+        return x, y, width, height, None
+    align, meet_or_slice = _preserve_aspect_ratio(value)
+    if align == "none":
+        return x, y, width, height, None
+    intrinsic = _data_image_dimensions(href)
+    if intrinsic is None:
+        return x, y, width, height, None
+    image_width, image_height = intrinsic
+    if image_width <= 0 or image_height <= 0:
+        return x, y, width, height, None
+    if meet_or_slice == "slice":
+        return x, y, width, height, _image_slice_src_rect(image_width, image_height, width, height, align)
+
+    scale = min(width / image_width, height / image_height)
+    rendered_width = image_width * scale
+    rendered_height = image_height * scale
+    return (
+        x + _alignment_offset(align[1:4], width - rendered_width),
+        y + _alignment_offset(align[5:8], height - rendered_height),
+        rendered_width,
+        rendered_height,
+        None,
+    )
+
+
+def _image_slice_src_rect(
+    image_width: float,
+    image_height: float,
+    viewport_width: float,
+    viewport_height: float,
+    align: str,
+) -> tuple[int, int, int, int] | None:
+    image_aspect = image_width / image_height
+    viewport_aspect = viewport_width / viewport_height
+    if math.isclose(image_aspect, viewport_aspect, rel_tol=1e-9, abs_tol=1e-9):
+        return None
+    if image_aspect > viewport_aspect:
+        crop = 1.0 - viewport_aspect / image_aspect
+        before, after = _aligned_crop(crop, align[1:4])
+        return round(before * 100000), 0, round(after * 100000), 0
+    crop = 1.0 - image_aspect / viewport_aspect
+    before, after = _aligned_crop(crop, align[5:8])
+    return 0, round(before * 100000), 0, round(after * 100000)
+
+
+def _aligned_crop(total: float, alignment: str) -> tuple[float, float]:
+    if alignment == "Min":
+        return 0.0, total
+    if alignment == "Max":
+        return total, 0.0
+    half = total / 2
+    return half, half
+
+
 def _alignment_offset(axis: str, extra: float) -> float:
     if axis == "Mid":
         return extra / 2
@@ -2865,6 +2973,7 @@ def _apply_rect_clip(
         rx=min(shape.rx or 0, (x2 - x1) / 2) if shape.rx is not None else None,
         ry=min(shape.ry or 0, (y2 - y1) / 2) if shape.ry is not None else None,
         image_href=shape.image_href,
+        image_src_rect=shape.image_src_rect,
         rotation=shape.rotation,
     )
 
@@ -3369,13 +3478,59 @@ def _switch_child_is_supported(element: ET.Element) -> bool:
 
 
 def _supported_data_image(value: str) -> bool:
+    return _data_image_bytes(value) is not None
+
+
+def _data_image_dimensions(value: str) -> tuple[int, int] | None:
+    data = _data_image_bytes(value)
+    if data is None:
+        return None
+    if data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) >= 24:
+        return int.from_bytes(data[16:20], "big"), int.from_bytes(data[20:24], "big")
+    if data[:6] in {b"GIF87a", b"GIF89a"} and len(data) >= 10:
+        return int.from_bytes(data[6:8], "little"), int.from_bytes(data[8:10], "little")
+    if data.startswith(b"\xff\xd8"):
+        return _jpeg_dimensions(data)
+    return None
+
+
+def _data_image_bytes(value: str) -> bytes | None:
     match = re.match(r"^data:image/(?:png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+/=\s]+)$", value, flags=re.I)
     if not match:
-        return False
+        return None
     try:
-        return bool(base64.b64decode(re.sub(r"\s+", "", match.group(1)), validate=True))
+        data = base64.b64decode(re.sub(r"\s+", "", match.group(1)), validate=True)
     except binascii.Error:
-        return False
+        return None
+    return data or None
+
+
+def _jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
+    index = 2
+    while index + 9 <= len(data):
+        if data[index] != 0xFF:
+            index += 1
+            continue
+        marker = data[index + 1]
+        index += 2
+        while marker == 0xFF and index < len(data):
+            marker = data[index]
+            index += 1
+        if marker in {0xD8, 0xD9} or 0xD0 <= marker <= 0xD7:
+            continue
+        if index + 2 > len(data):
+            return None
+        segment_length = int.from_bytes(data[index : index + 2], "big")
+        if segment_length < 2 or index + segment_length > len(data):
+            return None
+        if marker in {0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}:
+            if segment_length < 7:
+                return None
+            height = int.from_bytes(data[index + 3 : index + 5], "big")
+            width = int.from_bytes(data[index + 5 : index + 7], "big")
+            return width, height
+        index += segment_length
+    return None
 
 
 def _alpha(style: dict[str, str], channel: str) -> float | None:

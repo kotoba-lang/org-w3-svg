@@ -10,6 +10,7 @@ from .converter import (
     _collect_css,
     _collect_refs,
     _computed_style,
+    _data_image_dimensions,
     _clip_path_is_supported,
     _dominant_baseline,
     _href,
@@ -754,7 +755,7 @@ def _preserve_aspect_ratio_is_supported_or_noop(element: ET.Element, style: dict
         return True
     if tag == "image":
         align, _ = _preserve_aspect_ratio(value)
-        return align == "none"
+        return align == "none" or _data_image_dimensions(_href(element) or "") is not None
     return False
 
 

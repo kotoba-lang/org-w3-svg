@@ -1880,7 +1880,7 @@ def test_analyze_svg_reports_gradient_attributes_without_color_fallback() -> Non
     }
 
 
-def test_analyze_svg_reports_image_preserve_aspect_ratio_when_not_stretched() -> None:
+def test_analyze_svg_accepts_data_image_preserve_aspect_ratio_when_dimensions_are_known() -> None:
     svg = f"""<svg viewBox="0 0 100 50" width="200" height="200" preserveAspectRatio="xMaxYMax slice">
       <svg x="0" y="0" width="20" height="20" viewBox="0 0 10 5" preserveAspectRatio="none">
         <rect width="10" height="5"/>
@@ -1893,7 +1893,13 @@ def test_analyze_svg_reports_image_preserve_aspect_ratio_when_not_stretched() ->
     report = analyze_svg(svg)
 
     assert report.unsupported_elements == {}
-    assert report.unsupported_attributes == {"preserveAspectRatio": 2}
+    assert report.unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_image_preserve_aspect_ratio_when_dimensions_are_unknown() -> None:
+    svg = '<svg><image href="data:image/webp;base64,AAAA" x="0" y="0" width="10" height="8" preserveAspectRatio="xMidYMid meet"/></svg>'
+
+    assert analyze_svg(svg).unsupported_attributes == {"preserveAspectRatio": 1}
 
 
 def test_analyze_svg_reports_unconverted_layout_length_attributes() -> None:
@@ -3086,6 +3092,43 @@ def test_data_uri_image_converts_to_picture_and_round_trips() -> None:
     round_trip = drawingml_to_svg(dml)
     assert "<image" in round_trip
     assert f'href="{PNG_DATA_URI}"' in round_trip
+
+
+def test_data_uri_image_preserve_aspect_ratio_meet_fits_visible_picture_bounds() -> None:
+    svg = f'<svg><image href="{PNG_DATA_URI}" x="10" y="20" width="20" height="10" preserveAspectRatio="xMidYMid meet"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/presentationml/2006/main}pic/{http://schemas.openxmlformats.org/presentationml/2006/main}spPr/{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm")
+    assert xfrm is not None
+    off = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    ext = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    src_rect = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}srcRect")
+    assert off is not None
+    assert ext is not None
+    assert off.attrib == {"x": "142875", "y": "190500"}
+    assert ext.attrib == {"cx": "95250", "cy": "95250"}
+    assert src_rect is None
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_data_uri_image_preserve_aspect_ratio_slice_crops_picture_source() -> None:
+    svg = f'<svg><image href="{PNG_DATA_URI}" x="10" y="20" width="20" height="10" preserveAspectRatio="xMidYMid slice"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/presentationml/2006/main}pic/{http://schemas.openxmlformats.org/presentationml/2006/main}spPr/{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm")
+    assert xfrm is not None
+    off = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    ext = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    src_rect = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}srcRect")
+    assert off is not None
+    assert ext is not None
+    assert src_rect is not None
+    assert off.attrib == {"x": "95250", "y": "190500"}
+    assert ext.attrib == {"cx": "190500", "cy": "95250"}
+    assert src_rect.attrib == {"t": "25000", "b": "25000"}
+    assert analyze_svg(svg).unsupported_attributes == {}
 
 
 def test_data_uri_image_opacity_maps_to_picture_alpha_and_round_trips() -> None:
