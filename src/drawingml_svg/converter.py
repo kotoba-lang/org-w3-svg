@@ -56,6 +56,7 @@ class Shape:
     text: str | None = None
     font_size: float | None = None
     font_weight: str | None = None
+    font_style: str | None = None
     text_anchor: str | None = None
     rx: float | None = None
     ry: float | None = None
@@ -223,6 +224,7 @@ def _svg_shape_from_element(
                 text=text,
                 font_size=font_size,
                 font_weight=style.get("font-weight"),
+                font_style=style.get("font-style"),
                 text_anchor=anchor,
             )
     if tag == "image":
@@ -260,7 +262,19 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
         if text is not None:
             xfrm = sp_pr.find(qn(NS_A, "xfrm"))
             x, y, width, height, flip_h, flip_v = _dml_xfrm(xfrm)
-            yield Shape("text", x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, text=text, font_weight=_dml_font_weight(element))
+            yield Shape(
+                "text",
+                x,
+                y,
+                width,
+                height,
+                _dml_paint(sp_pr),
+                flip_h,
+                flip_v,
+                text=text,
+                font_weight=_dml_font_weight(element),
+                font_style=_dml_font_style(element),
+            )
             continue
         cust = sp_pr.find(qn(NS_A, "custGeom"))
         if cust is not None:
@@ -371,6 +385,8 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
             attrs["font-size"] = _fmt(shape.font_size)
         if shape.font_weight:
             attrs["font-weight"] = shape.font_weight
+        if shape.font_style:
+            attrs["font-style"] = shape.font_style
         if shape.text_anchor:
             attrs["text-anchor"] = shape.text_anchor
         element = ET.Element(qn(NS_SVG, "text"), attrs)
@@ -608,6 +624,8 @@ def _append_text_body(parent: ET.Element, shape: Shape) -> None:
         r_pr_attrs["sz"] = str(round(shape.font_size * 100))
     if _is_bold(shape.font_weight):
         r_pr_attrs["b"] = "1"
+    if _is_italic(shape.font_style):
+        r_pr_attrs["i"] = "1"
     r_pr = ET.SubElement(run, qn(NS_A, "rPr"), r_pr_attrs)
     if shape.paint.fill and shape.paint.fill != "none":
         fill = ET.SubElement(r_pr, qn(NS_A, "solidFill"))
@@ -755,6 +773,13 @@ def _dml_font_weight(element: ET.Element) -> str | None:
     return None
 
 
+def _dml_font_style(element: ET.Element) -> str | None:
+    r_pr = element.find(f".//{qn(NS_A, 'rPr')}")
+    if r_pr is not None and r_pr.get("i") in {"1", "true"}:
+        return "italic"
+    return None
+
+
 def _svg_text_content(element: ET.Element) -> str:
     if not any(_local_name(child.tag) == "tspan" for child in element):
         return "".join(element.itertext()).strip()
@@ -796,6 +821,10 @@ def _is_bold(value: str | None) -> bool:
         return int(value) >= 600
     except ValueError:
         return False
+
+
+def _is_italic(value: str | None) -> bool:
+    return value is not None and value.lower() in {"italic", "oblique"}
 
 
 def _dml_custom_points(cust: ET.Element, x: float, y: float) -> tuple[list[tuple[float, float]], bool]:
@@ -1242,6 +1271,7 @@ def _computed_style(
         "font-size",
         "font-family",
         "font-weight",
+        "font-style",
         "text-anchor",
         "color",
         "display",

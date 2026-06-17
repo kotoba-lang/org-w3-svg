@@ -16,7 +16,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Clipping: rectangular `clipPath` on `rect` and `text` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
 - Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`
 - Reuse: local `defs`/`use` expansion for referenced shapes, groups, and basic `symbol viewBox` scaling
-- Text: basic font size, weight, anchor, first-`tspan` positioning fallback, and multi-line `tspan` extraction
+- Text: basic font size, weight, italic style, anchor, first-`tspan` positioning fallback, and multi-line `tspan` extraction
 
 The converter accepts fragments, not complete `.pptx` or `.docx` packages. It is intended as a reusable core that can later be wrapped by OOXML package readers/writers.
 
