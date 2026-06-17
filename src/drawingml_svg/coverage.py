@@ -81,6 +81,7 @@ UNSUPPORTED_ATTRIBUTES = {
     "stroke-dashoffset",
     "textLength",
     "text-rendering",
+    "text-transform",
     "vector-effect",
     "word-spacing",
 }
@@ -269,6 +270,8 @@ def _inspect_attributes(
             continue
         if attr == "stroke-dashoffset" and (_stroke_dashoffset_has_no_effect(style) or _svg_dashoffset_is_supported(style)):
             continue
+        if attr == "text-transform" and _text_transform_is_supported(element, specified_style):
+            continue
         if attr == "word-spacing" and _word_spacing_has_no_effect(element, specified_style):
             continue
         if attr == "word-spacing" and _word_spacing_is_supported(element, specified_style):
@@ -382,6 +385,13 @@ def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> boo
         return True
     text = _svg_text_content(element) if _local_name(element.tag) == "text" else "".join(element.itertext())
     return len(text) <= 1
+
+
+def _text_transform_is_supported(element: ET.Element, style: dict[str, str]) -> bool:
+    if _local_name(element.tag) == "tspan":
+        return False
+    value = style.get("text-transform")
+    return value is not None and value.strip().lower() in {"none", "uppercase", "lowercase", "capitalize"}
 
 
 def _letter_spacing_is_supported(style: dict[str, str]) -> bool:

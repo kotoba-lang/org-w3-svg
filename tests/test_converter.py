@@ -675,6 +675,43 @@ def test_text_length_spacing_and_glyphs_is_approximated_with_character_spacing()
     assert analyze_svg(source).unsupported_attributes == {}
 
 
+def test_text_transform_uppercase_maps_to_literal_text() -> None:
+    source = '<svg><text x="10" y="20" text-transform="uppercase" font-size="10" fill="#111">Mixed case</text></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert "<a:t>MIXED CASE</a:t>" in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+
+def test_inherited_text_transform_lowercase_maps_to_literal_text() -> None:
+    source = '<svg><g text-transform="lowercase"><text x="10" y="20" font-size="10" fill="#111">LOUD Label</text></g></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert "<a:t>loud label</a:t>" in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+
+def test_css_text_transform_capitalize_maps_to_literal_text() -> None:
+    source = """<svg>
+      <style>text.title { text-transform: capitalize; }</style>
+      <text class="title" x="10" y="20" font-size="10" fill="#111">hello-world label</text>
+    </svg>"""
+    dml = svg_to_drawingml(source)
+
+    assert "<a:t>Hello-World Label</a:t>" in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+
+def test_tspan_text_transform_is_reported_as_unsupported() -> None:
+    source = '<svg><text x="10" y="20" font-size="10" fill="#111">Keep <tspan text-transform="uppercase">small</tspan></text></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert "<a:t>Keep</a:t>" in dml
+    assert "<a:t>small</a:t>" in dml
+    assert "<a:t>SMALL</a:t>" not in dml
+    assert analyze_svg(source).unsupported_attributes == {"text-transform": 1}
+
+
 def test_word_spacing_without_spaces_is_not_reported_as_unsupported() -> None:
     source = '<svg><text x="10" y="20" word-spacing="4px" font-size="10" fill="#111">Compact<tspan>Label</tspan></text></svg>'
 

@@ -273,7 +273,7 @@ def _svg_shape_from_element(
             points, closed = path
             return _freeform_shape(_transform_points(points, matrix), plain_paint if closed else scaled_paint, closed=closed)
     if tag == "text":
-        text = _svg_text_content(element)
+        text = _apply_text_transform(_svg_text_content(element), style.get("text-transform"))
         if text:
             font_size = _num(style.get("font-size"), 16) * _matrix_scale(matrix)
             x, y = _apply_matrix(matrix, _svg_text_position(element, viewport))
@@ -1504,6 +1504,19 @@ def _svg_text_content(element: ET.Element) -> str:
     return "\n".join(lines)
 
 
+def _apply_text_transform(text: str, value: str | None) -> str:
+    if value is None:
+        return text
+    normalized = value.strip().lower()
+    if normalized == "uppercase":
+        return text.upper()
+    if normalized == "lowercase":
+        return text.lower()
+    if normalized == "capitalize":
+        return re.sub(r"(^|[\s\-_])(\S)", lambda match: match.group(1) + match.group(2).upper(), text)
+    return text
+
+
 def _xml_space_preserve(element: ET.Element) -> bool:
     return element.get("{http://www.w3.org/XML/1998/namespace}space") == "preserve" or element.get("xml:space") == "preserve"
 
@@ -2280,6 +2293,7 @@ def _computed_style(
         "lengthAdjust",
         "text-decoration",
         "text-anchor",
+        "text-transform",
         "textLength",
         "dominant-baseline",
         "color",
