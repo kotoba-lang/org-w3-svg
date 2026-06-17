@@ -10,6 +10,7 @@ from .converter import (
     _collect_refs,
     _computed_style,
     _clip_path_is_supported,
+    _href,
     _is_hidden,
     _local_name,
     _marker_is_supported,
@@ -129,12 +130,16 @@ def _walk(
     style = _computed_style(element, css, inherited_style, ancestors)
     hidden = _is_hidden(style)
 
+    use_supported = True
+    if tag == "use":
+        use_supported = _use_href_is_supported(element, refs)
+
     if tag in IGNORED_ELEMENTS or hidden:
         stats.ignored_elements += 1
-    elif tag in SUPPORTED_ELEMENTS and path_supported:
+    elif tag in SUPPORTED_ELEMENTS and path_supported and use_supported:
         stats.convertible_elements += 1
     elif tag in SUPPORTED_ELEMENTS:
-        stats.add_unsupported_element(f"{tag}:unsupported-command")
+        stats.add_unsupported_element(f"{tag}:unsupported-command" if tag == "path" else f"{tag}:unsupported-reference")
     else:
         stats.add_unsupported_element(tag)
 
@@ -165,9 +170,12 @@ def _inspect_attributes(
             continue
         if element.get(attr) is not None or style.get(attr) is not None:
             stats.add_unsupported_attribute(attr)
-    href = element.get("href") or element.get("{http://www.w3.org/1999/xlink}href")
+    href = _href(element)
     if _local_name(element.tag) == "image":
         if not href or not _supported_data_image(href):
+            stats.add_unsupported_attribute("href")
+    elif _local_name(element.tag) == "use":
+        if not _use_href_is_supported(element, refs):
             stats.add_unsupported_attribute("href")
     elif _local_name(element.tag) != "use" and href is not None:
         stats.add_unsupported_attribute("href")
@@ -196,3 +204,8 @@ def _inspect_path(path_data: str, stats: _CoverageStats) -> None:
 
 def _path_is_supported(path_data: str) -> bool:
     return not path_data or _parse_linear_path(path_data) is not None
+
+
+def _use_href_is_supported(element: ET.Element, refs: dict[str, ET.Element]) -> bool:
+    href = _href(element)
+    return bool(href and href.startswith("#") and href[1:] in refs)

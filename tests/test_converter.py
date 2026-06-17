@@ -495,6 +495,18 @@ def test_defs_use_are_expanded_without_rendering_defs_directly() -> None:
     assert analyze_svg(svg).to_dict()["estimated_element_coverage"] == 1.0
 
 
+def test_analyze_svg_reports_unsupported_use_references() -> None:
+    missing = analyze_svg('<svg><use href="#missing" x="20" y="30"/></svg>').to_dict()
+    external = analyze_svg('<svg><use href="icons.svg#glyph" x="20" y="30"/></svg>').to_dict()
+
+    assert missing["convertible_elements"] == 1
+    assert missing["unsupported_elements"] == {"use:unsupported-reference": 1}
+    assert missing["unsupported_attributes"] == {"href": 1}
+    assert missing["estimated_element_coverage"] == 0.5
+    assert external["unsupported_elements"] == {"use:unsupported-reference": 1}
+    assert external["unsupported_attributes"] == {"href": 1}
+
+
 def test_opacity_is_written_as_drawingml_alpha() -> None:
     dml = svg_to_drawingml(
         '<svg><rect x="0" y="0" width="10" height="8" fill="#f008" stroke="#0000ff" opacity="0.25"/></svg>'
