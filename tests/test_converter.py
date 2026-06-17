@@ -2911,6 +2911,19 @@ def test_tspan_text_anchor_and_bold_convert() -> None:
     assert 'y="40"' in svg
 
 
+def test_text_anchor_and_baseline_values_are_normalized() -> None:
+    source = '<svg><text x="100" y="40" text-anchor=" MIDDLE " dominant-baseline=" CENTRAL " font-size="20" fill="#111111">Center</text></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert 'anchor="ctr"' in dml
+    assert '<a:pPr algn="ctr"/>' in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'text-anchor="middle"' in svg
+    assert 'dominant-baseline="middle"' in svg
+
+
 def test_css_font_shorthand_expands_to_text_properties() -> None:
     svg = """<svg>
       <style>

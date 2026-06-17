@@ -287,7 +287,7 @@ def _svg_shape_from_element(
             text_length = _svg_text_length(style, text, viewport)
             natural_width = max(font_size * max(len(line) for line in text.split("\n")) * 0.9, font_size * 2)
             width = text_length or natural_width + _svg_word_spacing_extra(style, text, viewport)
-            anchor = style.get("text-anchor")
+            anchor = _text_anchor(style.get("text-anchor"))
             if anchor == "middle":
                 x -= width / 2
             elif anchor == "end":
@@ -1557,6 +1557,11 @@ def _text_anchor_to_dml(value: str | None) -> str | None:
     return {"middle": "ctr", "end": "r", "start": "l"}.get(value or "")
 
 
+def _text_anchor(value: str | None) -> str | None:
+    normalized = value.strip().lower() if value is not None else ""
+    return normalized if normalized in {"middle", "end", "start"} else None
+
+
 def _dml_text_baseline(element: ET.Element) -> str | None:
     body_pr = element.find(f".//{qn(NS_A, 'bodyPr')}")
     if body_pr is None:
@@ -1569,6 +1574,7 @@ def _text_baseline_to_dml(value: str | None) -> str | None:
 
 
 def _dominant_baseline(value: str | None) -> str | None:
+    value = value.strip().lower() if value is not None else None
     if value in {"middle", "central"}:
         return "middle"
     if value in {"text-after-edge", "ideographic"}:
