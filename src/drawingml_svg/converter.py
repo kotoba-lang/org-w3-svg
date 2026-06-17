@@ -1121,9 +1121,10 @@ def _apply_dml_luminance_modifiers(color: str, element: ET.Element) -> str:
 
 def _dml_percentage(value: str | None, default: int) -> float:
     try:
-        return int(value or default) / 100000
-    except ValueError:
+        result = int(value or default) / 100000
+    except (OverflowError, ValueError):
         return default / 100000
+    return result if math.isfinite(result) else default / 100000
 
 
 def _dml_int(value: str | None, default: int | None = None) -> int | None:
@@ -1139,9 +1140,10 @@ def _dml_float(value: str | None, default: float | None = None) -> float | None:
     if value is None:
         return default
     try:
-        return float(value)
+        number = float(value)
     except ValueError:
         return default
+    return number if math.isfinite(number) else default
 
 
 def _dml_alpha(parent: ET.Element) -> float | None:

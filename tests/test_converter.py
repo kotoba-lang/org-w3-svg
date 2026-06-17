@@ -1522,10 +1522,10 @@ def test_drawingml_invalid_numeric_paint_and_transform_values_do_not_crash() -> 
       <p:sp>
         <p:nvSpPr><p:cNvPr id="2" name="line"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
         <p:spPr>
-          <a:xfrm rot="bad"><a:off x="bad" y="95250"/><a:ext cx="bad" cy="0"/></a:xfrm>
+          <a:xfrm rot="inf"><a:off x="bad" y="95250"/><a:ext cx="bad" cy="0"/></a:xfrm>
           <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
           <a:ln w="bad">
-            <a:solidFill><a:srgbClr val="111111"><a:alpha val="bad"/></a:srgbClr></a:solidFill>
+            <a:solidFill><a:srgbClr val="111111"><a:alpha val="nan"/><a:lumMod val="inf"/></a:srgbClr></a:solidFill>
             <a:custDash><a:ds d="bad" sp="100000"/></a:custDash>
             <a:miter lim="bad"/>
           </a:ln>
