@@ -1,6 +1,8 @@
 from importlib import resources
 from xml.etree import ElementTree as ET
 
+import pytest
+
 import drawingml_svg
 from drawingml_svg import analyze_svg, drawingml_to_svg, svg_to_drawingml
 from drawingml_svg.cli import main as cli_main
@@ -47,6 +49,31 @@ def test_cli_alias_invocation_uses_executable_name(tmp_path, monkeypatch) -> Non
     assert cli_main() == 0
     assert output.is_file()
     assert "<p:sp>" in output.read_text(encoding="utf-8")
+
+
+def test_cli_reports_missing_input_without_traceback(tmp_path, capsys) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main(["svg2dml", str(tmp_path / "missing.svg")])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert "drawingml-svg: error:" in captured.err
+    assert "missing.svg" in captured.err
+    assert "Traceback" not in captured.err
+
+
+def test_cli_reports_invalid_xml_without_traceback(tmp_path, capsys) -> None:
+    source = tmp_path / "broken.svg"
+    source.write_text("<svg><rect></svg>", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main(["analyze", str(source)])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert "drawingml-svg: error:" in captured.err
+    assert "mismatched tag" in captured.err
+    assert "Traceback" not in captured.err
 
 
 def test_svg_rect_to_drawingml_preserves_geometry_and_paint() -> None:

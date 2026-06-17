@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from xml.etree import ElementTree as ET
 
 from .coverage import analyze_svg
 from .converter import drawingml_to_svg, svg_to_drawingml
@@ -22,17 +23,20 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("-o", "--output", help="Output file. Writes stdout when omitted.")
 
     args = parser.parse_args(argv)
-    source = _read_text(args.input)
-    if args.command == "svg2dml":
-        output = svg_to_drawingml(source)
-    elif args.command == "dml2svg":
-        output = drawingml_to_svg(source)
-    elif args.command == "analyze":
-        output = json.dumps(analyze_svg(source).to_dict(), indent=2, sort_keys=True) + "\n"
-    else:
-        parser.error(f"unknown command: {args.command}")
+    try:
+        source = _read_text(args.input)
+        if args.command == "svg2dml":
+            output = svg_to_drawingml(source)
+        elif args.command == "dml2svg":
+            output = drawingml_to_svg(source)
+        elif args.command == "analyze":
+            output = json.dumps(analyze_svg(source).to_dict(), indent=2, sort_keys=True) + "\n"
+        else:
+            parser.error(f"unknown command: {args.command}")
 
-    _write_text(getattr(args, "output", None), output)
+        _write_text(getattr(args, "output", None), output)
+    except (ET.ParseError, OSError, ValueError) as exc:
+        parser.exit(1, f"{parser.prog}: error: {exc}\n")
     return 0
 
 
