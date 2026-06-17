@@ -174,8 +174,12 @@ def _inspect_attributes(
     for attr in ("fill", "stroke"):
         value = style.get(attr)
         if value:
-            match = re.fullmatch(r"url\((?:['\"])?#([^'\")]+)(?:['\"])?\)", value.strip())
-            if match and _local_name(refs.get(match.group(1), ET.Element("")).tag) not in {"linearGradient", "radialGradient"}:
+            match = re.match(r"^url\((?:['\"])?#([^'\")]+)(?:['\"])?\)(.*)$", value.strip())
+            if (
+                match
+                and not match.group(2).strip()
+                and _local_name(refs.get(match.group(1), ET.Element("")).tag) not in {"linearGradient", "radialGradient"}
+            ):
                 stats.add_unsupported_attribute(f"{attr}:paint-server")
 
 

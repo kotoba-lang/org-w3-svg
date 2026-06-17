@@ -1924,9 +1924,15 @@ def _paint_value(value: str | None, refs: dict[str, ET.Element], current_color: 
     if value is None:
         return None, None
     stripped = value.strip()
-    match = re.fullmatch(r"url\((?:['\"])?#([^'\")]+)(?:['\"])?\)", stripped)
+    match = re.match(r"^url\((?:['\"])?#([^'\")]+)(?:['\"])?\)(.*)$", stripped)
     if match:
-        return _paint_server_value(refs.get(match.group(1)), refs, current_color)
+        color, alpha = _paint_server_value(refs.get(match.group(1)), refs, current_color)
+        if color:
+            return color, alpha
+        fallback = match.group(2).strip()
+        if fallback:
+            return _parse_color(fallback)
+        return None, None
     return _parse_color(stripped)
 
 

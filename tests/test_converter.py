@@ -509,6 +509,15 @@ def test_analyze_svg_reports_missing_paint_server() -> None:
     assert report.unsupported_attributes == {"fill:paint-server": 1}
 
 
+def test_paint_server_fallback_color_is_used_when_server_is_missing() -> None:
+    svg = '<svg><rect width="10" height="8" fill="url(#missing) #dc2626" stroke="url(#also-missing) rgb(22 163 74)"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="DC2626"' in dml
+    assert 'val="16A34A"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_round_rect_and_stroke_style_convert() -> None:
     dml = svg_to_drawingml(
         '<svg><rect x="1" y="2" width="30" height="20" rx="5" fill="white" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="miter" stroke-miterlimit="6" stroke-dasharray="8px, 4px"/></svg>'
