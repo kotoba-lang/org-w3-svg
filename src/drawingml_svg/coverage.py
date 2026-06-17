@@ -225,7 +225,7 @@ def _inspect_attributes(
             continue
         if attr == "rotate" and _text_rotate_is_supported(element, specified_style):
             continue
-        if attr == "stroke-dashoffset" and _stroke_dashoffset_has_no_effect(specified_style):
+        if attr == "stroke-dashoffset" and _stroke_dashoffset_has_no_effect(style):
             continue
         if attr == "word-spacing" and _word_spacing_has_no_effect(element, specified_style):
             continue
@@ -350,7 +350,30 @@ def _stroke_dashoffset_has_no_effect(style: dict[str, str]) -> bool:
     if value is None:
         return False
     parsed = _optional_length(value, "x", (0.0, 0.0))
-    return parsed == 0
+    if parsed == 0:
+        return True
+    dasharray = style.get("stroke-dasharray")
+    if dasharray is None or dasharray.strip().lower() in {"", "none"}:
+        return True
+    stroke = style.get("stroke")
+    if stroke is None or stroke.strip().lower() in {"", "none", "transparent"}:
+        return True
+    stroke_width = _optional_length(style.get("stroke-width"), "x", (0.0, 0.0))
+    if stroke_width == 0:
+        return True
+    return _alpha_is_zero(style.get("opacity")) or _alpha_is_zero(style.get("stroke-opacity"))
+
+
+def _alpha_is_zero(value: str | None) -> bool:
+    if value is None:
+        return False
+    value = value.strip()
+    try:
+        if value.endswith("%"):
+            return float(value[:-1]) <= 0
+        return float(value) <= 0
+    except ValueError:
+        return False
 
 
 def _font_variant_is_supported(style: dict[str, str]) -> bool:

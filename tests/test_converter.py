@@ -610,6 +610,9 @@ def test_analyze_svg_ignores_noop_blend_and_dash_offset() -> None:
     svg = """<svg>
       <rect width="10" height="8" mix-blend-mode="normal"/>
       <path d="M0 0 L10 0" stroke="#111111" stroke-dasharray="4 2" stroke-dashoffset="0"/>
+      <path d="M0 4 L10 4" stroke="#111111" stroke-dashoffset="2"/>
+      <path d="M0 8 L10 8" stroke="none" stroke-dasharray="4 2" stroke-dashoffset="2"/>
+      <path d="M0 12 L10 12" stroke="#111111" stroke-opacity="0" stroke-dasharray="4 2" stroke-dashoffset="2"/>
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {}
@@ -633,7 +636,7 @@ def test_analyze_svg_reports_gradient_attributes_without_color_fallback() -> Non
 
 def test_analyze_svg_reports_unconverted_layout_length_attributes() -> None:
     svg = """<svg>
-      <path d="M0 0 L10 0" pathLength="100" stroke="#111111" stroke-dashoffset="2"/>
+      <path d="M0 0 L10 0" pathLength="100" stroke="#111111" stroke-dasharray="4 2" stroke-dashoffset="2"/>
       <text x="0" y="10" textLength="80" lengthAdjust="spacingAndGlyphs" font-variant="all-small-caps" word-spacing="4">
         <tspan rotate="15 0">Fit word</tspan>
       </text>
