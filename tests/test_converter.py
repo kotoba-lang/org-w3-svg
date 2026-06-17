@@ -1160,6 +1160,27 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
     }
 
 
+def test_unconverted_text_layout_attributes_are_reported() -> None:
+    svg = """<svg>
+      <style>
+        .stretch { font-stretch: condensed; }
+        .orient { text-orientation: upright; }
+      </style>
+      <text class="stretch" x="0" y="20">Stretch</text>
+      <text x="0" y="40" font-size-adjust=".5">Adjust</text>
+      <text class="orient" x="0" y="60">Orient</text>
+      <text x="0" y="80" style="baseline-shift: super">Shift</text>
+      <text x="0" y="100" font-stretch="normal" font-size-adjust="none" text-orientation="mixed" baseline-shift="0">Noop</text>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "baseline-shift": 1,
+        "font-size-adjust": 1,
+        "font-stretch": 1,
+        "text-orientation": 1,
+    }
+
+
 def test_xml_space_preserve_keeps_text_whitespace() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'

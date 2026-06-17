@@ -68,6 +68,8 @@ UNSUPPORTED_ATTRIBUTES = {
     "color-rendering",
     "fill-rule",
     "filter",
+    "font-size-adjust",
+    "font-stretch",
     "font-variant",
     "gradientTransform",
     "gradientUnits",
@@ -90,11 +92,13 @@ UNSUPPORTED_ATTRIBUTES = {
     "textLength",
     "text-decoration-color",
     "text-decoration-style",
+    "text-orientation",
     "text-rendering",
     "text-transform",
     "transform-origin",
     "vector-effect",
     "word-spacing",
+    "baseline-shift",
 }
 
 
@@ -277,6 +281,10 @@ def _inspect_attributes(
             continue
         if attr == "font-variant" and _font_variant_is_supported(specified_style):
             continue
+        if attr == "font-size-adjust" and _font_size_adjust_has_no_effect(specified_style):
+            continue
+        if attr == "font-stretch" and _font_stretch_has_no_effect(specified_style):
+            continue
         if attr in {"gradientTransform", "gradientUnits", "spreadMethod"} and _gradient_fallback_is_supported(
             element, refs, css
         ):
@@ -307,9 +315,13 @@ def _inspect_attributes(
             continue
         if attr == "text-decoration-style" and _text_decoration_style_is_supported_or_noop(specified_style):
             continue
+        if attr == "text-orientation" and _text_orientation_has_no_effect(specified_style):
+            continue
         if attr == "text-transform" and _text_transform_is_supported(element, specified_style):
             continue
         if attr == "transform-origin" and _transform_origin_is_supported(specified_style, viewport):
+            continue
+        if attr == "baseline-shift" and _baseline_shift_has_no_effect(specified_style):
             continue
         if attr == "word-spacing" and _word_spacing_has_no_effect(element, specified_style):
             continue
@@ -447,6 +459,28 @@ def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> boo
 def _text_transform_is_supported(element: ET.Element, style: dict[str, str]) -> bool:
     value = style.get("text-transform")
     return value is not None and value.strip().lower() in {"normal", "none", "uppercase", "lowercase", "capitalize"}
+
+
+def _font_size_adjust_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("font-size-adjust")
+    return value is not None and value.strip().lower() in {"", "none"}
+
+
+def _font_stretch_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("font-stretch")
+    return value is not None and value.strip().lower() in {"", "normal", "100%"}
+
+
+def _text_orientation_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("text-orientation")
+    return value is not None and value.strip().lower() in {"", "mixed"}
+
+
+def _baseline_shift_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("baseline-shift")
+    if value is None:
+        return False
+    return value.strip().lower() in {"", "baseline", "0", "0px", "0pt", "0pc", "0in", "0cm", "0mm", "0q"}
 
 
 def _text_decoration_color_has_no_effect(style: dict[str, str]) -> bool:
