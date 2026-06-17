@@ -1698,6 +1698,58 @@ def test_drawingml_picture_rotation_and_flip_round_trip_to_svg_transform() -> No
     assert 'transform="rotate(30 20 20) translate(20 20) scale(-1 1) translate(-20 -20)"' in svg
 
 
+def test_drawingml_line_rotation_round_trip_to_svg_transform() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="line"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm rot="2700000"><a:off x="95250" y="190500"/><a:ext cx="381000" cy="0"/></a:xfrm>
+          <a:prstGeom prst="line"><a:avLst/></a:prstGeom>
+          <a:ln><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:ln>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+    svg = drawingml_to_svg(dml)
+
+    assert "<line" in svg
+    assert 'stroke="#111111"' in svg
+    assert 'x1="10"' in svg
+    assert 'y1="20"' in svg
+    assert 'x2="50"' in svg
+    assert 'y2="20"' in svg
+    assert 'fill="none"' in svg
+    assert 'transform="rotate(45 30 20)"' in svg
+    assert 'viewBox="0 0 44.1421 34.1421"' in svg
+
+
+def test_drawingml_freeform_rotation_and_flip_round_trip_to_svg_transform() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="shape"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm rot="1800000" flipH="1"><a:off x="95250" y="190500"/><a:ext cx="381000" cy="285750"/></a:xfrm>
+          <a:custGeom>
+            <a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="l" t="t" r="r" b="b"/>
+            <a:pathLst>
+              <a:path w="381000" h="285750">
+                <a:moveTo><a:pt x="0" y="0"/></a:moveTo>
+                <a:lnTo><a:pt x="381000" y="0"/></a:lnTo>
+                <a:lnTo><a:pt x="190500" y="285750"/></a:lnTo>
+                <a:close/>
+              </a:path>
+            </a:pathLst>
+          </a:custGeom>
+          <a:solidFill><a:srgbClr val="FEE2E2"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+    svg = drawingml_to_svg(dml)
+
+    assert '<polygon fill="#fee2e2" points="10,20 50,20 30,50" transform="rotate(30 30 35) translate(30 35) scale(-1 1) translate(-30 -35)"/>' in svg
+
+
 def test_xlink_data_uri_image_converts_to_picture_media() -> None:
     svg = f'<svg xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="{PNG_DATA_URI}" x="10" y="12" width="20" height="16"/></svg>'
     fragment = ET.fromstring(svg_to_drawingml(svg))

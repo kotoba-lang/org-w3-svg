@@ -6,7 +6,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 
 - SVG: `rect`, `circle`, `ellipse`, `line`, `polygon`, `polyline`, linear/quadratic/cubic/arc `path`, `text`, simple `tspan`, link/group containers, and basic `switch` fallback selection
 - DrawingML: preset geometry shapes, custom geometry paths, and text boxes under `p:sp`
-- Geometry: position, size, CSS geometry properties, percent geometry lengths, rounded rectangles, transformed line endpoints, horizontal/vertical flips for lines
+- Geometry: position, size, CSS geometry properties, percent geometry lengths, rounded rectangles, transformed line endpoints, horizontal/vertical flips for lines, and DrawingML line/custom-geometry transform round-trips
 - Images: embedded SVG `image` elements with valid base64 PNG/JPEG/GIF/WebP data URI sources, opacity, and legacy `xlink:href`
 - Paint: SVG default fill/stroke/stroke-width/line-cap/line-join/miterlimit values, transform-scaled shape and text-outline strokes, `vector-effect="non-scaling-stroke"`, solid fill, stroke color, stroke width including zero-width no-line strokes, line cap/join/miter/custom dash, dash-offset approximation for offsets that start inside a dash segment, fill/stroke alpha including fully transparent no-fill/no-line paint, short/long alpha hex colors, CSS rgb/hsl color functions, named colors, `currentColor`, paint-server fallback colors, CSS-colored linear/radial gradient fallback, and representative pattern fallback colors
 - Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, attribute selectors (`=`, `~=`, `|=`, `^=`, `$=`, `*=`), child, and descendant selectors, CSS specificity, and `!important` cascade priority
@@ -15,7 +15,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis
 - Clipping: rectangular `clipPath` on `rect`, `text`, and embedded `image` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
 - Analysis: unsupported visual/layout attributes such as filters, masks, blend/isolation, fill/clip rules, paint order, unsupported vector effects, word spacing conflicts, dash offsets that cannot be approximated, multi-value text rotation, unsupported text/path length adjustments, unsupported markers, and unresolved paint servers are reported, while default no-op values and rendering quality hints are ignored
-- Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`
+- Transforms: inherited SVG `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`, plus DrawingML rotation/flip output as SVG transforms for supported shapes
 - Reuse: local `defs`/`use` expansion for referenced shapes, groups, and basic `symbol viewBox` scaling, including legacy `xlink:href`, with unsupported missing/external use references reported by the analyzer
 - Text: basic font size, weight, italic style, font family, `small-caps` and `all-small-caps` font variants, solid text outline, underline/strike decoration, horizontal/vertical anchor, `xml:space="preserve"`, single-value `rotate`, `letter-spacing`, simple `word-spacing`, `textLength` spacing adjustment, approximate `spacingAndGlyphs`, `dx`/`dy` positioning, first-`tspan` positioning fallback, and multi-line `tspan` extraction
 

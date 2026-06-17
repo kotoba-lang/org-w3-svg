@@ -98,12 +98,19 @@ def svg_to_drawingml(svg_text: str) -> str:
 def drawingml_to_svg(drawingml_text: str) -> str:
     root = ET.fromstring(drawingml_text)
     shapes = list(_dml_shapes(root))
-    width = max((shape.x + shape.width for shape in shapes), default=0.0)
-    height = max((shape.y + shape.height for shape in shapes), default=0.0)
+    bounds = [_shape_bounds(shape) for shape in shapes]
+    min_x = min((left for left, _, _, _ in bounds), default=0.0)
+    min_y = min((top for _, top, _, _ in bounds), default=0.0)
+    max_x = max((right for _, _, right, _ in bounds), default=0.0)
+    max_y = max((bottom for _, _, _, bottom in bounds), default=0.0)
+    view_x = min(0.0, min_x)
+    view_y = min(0.0, min_y)
+    width = max_x - view_x
+    height = max_y - view_y
     svg = ET.Element(
         qn(NS_SVG, "svg"),
         {
-            "viewBox": f"0 0 {_fmt(width)} {_fmt(height)}",
+            "viewBox": f"{_fmt(view_x)} {_fmt(view_y)} {_fmt(width)} {_fmt(height)}",
             "width": _fmt(width),
             "height": _fmt(height),
         },
@@ -479,9 +486,15 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
     if shape.kind == "line":
         attrs.update(_line_points(shape))
         attrs.setdefault("fill", "none")
+        transform = _svg_line_transform(shape)
+        if transform:
+            attrs["transform"] = transform
         return ET.Element(qn(NS_SVG, "line"), attrs)
     if shape.kind == "freeform":
         attrs["points"] = " ".join(f"{_fmt(x)},{_fmt(y)}" for x, y in shape.points)
+        transform = _svg_shape_transform(shape)
+        if transform:
+            attrs["transform"] = transform
         tag = "polygon" if shape.closed else "polyline"
         return ET.Element(qn(NS_SVG, tag), attrs)
     if shape.kind == "text":
@@ -619,6 +632,61 @@ def _svg_shape_transform(shape: Shape) -> str | None:
 
 def _svg_image_transform(shape: Shape) -> str | None:
     return _svg_shape_transform(shape)
+
+
+def _svg_line_transform(shape: Shape) -> str | None:
+    if shape.rotation is None:
+        return None
+    center_x = shape.x + shape.width / 2
+    center_y = shape.y + shape.height / 2
+    return f"rotate({_fmt(shape.rotation)} {_fmt(center_x)} {_fmt(center_y)})"
+
+
+def _shape_bounds(shape: Shape) -> tuple[float, float, float, float]:
+    if shape.kind == "line":
+        line = _line_points(shape)
+        points = [(float(line["x1"]), float(line["y1"])), (float(line["x2"]), float(line["y2"]))]
+        if shape.rotation is not None:
+            points = [_rotate_point(point, shape.rotation, shape.x + shape.width / 2, shape.y + shape.height / 2) for point in points]
+    elif shape.kind == "freeform":
+        points = list(shape.points)
+        points = _apply_shape_transform(points, shape)
+    else:
+        points = _rect_points(shape.x, shape.y, shape.width, shape.height)
+        if shape.rotation is not None or shape.flip_h or shape.flip_v:
+            points = _apply_shape_transform(points, shape)
+    min_x = min((x for x, _ in points), default=0.0)
+    min_y = min((y for _, y in points), default=0.0)
+    max_x = max((x for x, _ in points), default=0.0)
+    max_y = max((y for _, y in points), default=0.0)
+    return min_x, min_y, max_x, max_y
+
+
+def _apply_shape_transform(points: list[tuple[float, float]], shape: Shape) -> list[tuple[float, float]]:
+    center_x = shape.x + shape.width / 2
+    center_y = shape.y + shape.height / 2
+    transformed = points
+    if shape.rotation is not None:
+        transformed = [_rotate_point(point, shape.rotation, center_x, center_y) for point in transformed]
+    if shape.flip_h or shape.flip_v:
+        transformed = [
+            (
+                center_x - (x - center_x) if shape.flip_h else x,
+                center_y - (y - center_y) if shape.flip_v else y,
+            )
+            for x, y in transformed
+        ]
+    return transformed
+
+
+def _rotate_point(point: tuple[float, float], degrees: float, center_x: float, center_y: float) -> tuple[float, float]:
+    angle = math.radians(degrees)
+    cos_a = math.cos(angle)
+    sin_a = math.sin(angle)
+    x, y = point
+    dx = x - center_x
+    dy = y - center_y
+    return center_x + dx * cos_a - dy * sin_a, center_y + dx * sin_a + dy * cos_a
 
 
 def _append_svg_marker_defs(svg: ET.Element, shapes: list[Shape]) -> None:
