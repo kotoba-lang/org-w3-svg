@@ -178,7 +178,7 @@ def _walk(
     specified_style = _computed_style(element, css, {}, ancestors, previous_siblings)
     hidden = _is_hidden(style)
     non_rendering_geometry = _has_non_rendering_geometry(element, style, viewport)
-    no_visible_paint = _has_no_visible_paint(element, style, refs, css)
+    no_visible_paint = _has_no_visible_paint(element, style, refs, css, viewport)
 
     use_supported = True
     if tag == "use":
@@ -207,7 +207,7 @@ def _walk(
             _optional_length(element.get("width"), "x", viewport),
             _optional_length(element.get("height"), "y", viewport),
         )
-    _inspect_attributes(element, style, specified_style, refs, css, matrix, stats, ancestors)
+    _inspect_attributes(element, style, specified_style, refs, css, matrix, stats, ancestors, viewport)
 
     if tag == "path":
         _inspect_path(element.get("d", ""), stats)
@@ -239,6 +239,7 @@ def _inspect_attributes(
     matrix: tuple[float, float, float, float, float, float],
     stats: _CoverageStats,
     ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
 ) -> None:
     no_effect_attrs = {
         "clip-path",
@@ -272,7 +273,7 @@ def _inspect_attributes(
             element, refs, css
         ):
             continue
-        if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css):
+        if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css, viewport):
             continue
         if attr == "isolation" and _isolation_is_redundant_with_blend(element, css, style, ancestors):
             continue
@@ -282,9 +283,9 @@ def _inspect_attributes(
             element, specified_style
         ):
             continue
-        if attr == "mix-blend-mode" and _mix_blend_mode_has_no_effect(element, specified_style, style, refs, css):
+        if attr == "mix-blend-mode" and _mix_blend_mode_has_no_effect(element, specified_style, style, refs, css, viewport):
             continue
-        if attr == "paint-order" and _paint_order_has_no_effect(element, style, refs, css):
+        if attr == "paint-order" and _paint_order_has_no_effect(element, style, refs, css, viewport):
             continue
         if attr == "pathLength" and _path_length_has_no_effect(specified_style):
             continue
@@ -361,6 +362,7 @@ def _has_no_visible_paint(
     style: dict[str, str],
     refs: dict[str, ET.Element],
     css: list[CssRule],
+    viewport: tuple[float, float],
 ) -> bool:
     tag = _local_name(element.tag)
     if tag == "image":
@@ -369,7 +371,7 @@ def _has_no_visible_paint(
         return False
     if tag in {"text", "tspan"} and not _svg_text_content(element):
         return True
-    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css)
+    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css, viewport=viewport)
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
     return not (has_fill or has_stroke)
@@ -514,6 +516,7 @@ def _mix_blend_mode_has_no_effect(
     style: dict[str, str],
     refs: dict[str, ET.Element],
     css: list[CssRule],
+    viewport: tuple[float, float],
 ) -> bool:
     value = specified_style.get("mix-blend-mode")
     if value is None:
@@ -525,7 +528,7 @@ def _mix_blend_mode_has_no_effect(
         return _alpha_is_zero(style.get("opacity"))
     if tag not in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}:
         return False
-    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css)
+    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css, viewport=viewport)
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
     return not (has_fill or has_stroke)
@@ -536,11 +539,12 @@ def _paint_order_has_no_effect(
     style: dict[str, str],
     refs: dict[str, ET.Element],
     css: list[CssRule],
+    viewport: tuple[float, float],
 ) -> bool:
     value = style.get("paint-order")
     if value is None:
         return False
-    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css)
+    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css, viewport=viewport)
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
     return not (has_fill and has_stroke)
@@ -551,11 +555,12 @@ def _fill_rule_has_no_effect(
     style: dict[str, str],
     refs: dict[str, ET.Element],
     css: list[CssRule],
+    viewport: tuple[float, float],
 ) -> bool:
     value = style.get("fill-rule")
     if value is None:
         return False
-    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css)
+    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css, viewport=viewport)
     return paint.fill in {None, "none"}
 
 

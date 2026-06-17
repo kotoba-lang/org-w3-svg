@@ -2505,6 +2505,20 @@ def test_absolute_length_units_are_converted_to_px() -> None:
     assert 'stroke-dasharray="7.5591 3.7795"' in svg
 
 
+def test_percentage_stroke_width_resolves_against_viewport_diagonal() -> None:
+    svg = """<svg width="100" height="100">
+      <line x1="0" y1="10" x2="40" y2="10" stroke="#111111" stroke-width="5%"/>
+      <text x="0" y="30" fill="#111111" stroke="#ffffff" stroke-width="5%">Wide</text>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert dml.count('<a:ln w="47625"') == 2
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+    round_trip = drawingml_to_svg(dml)
+    assert round_trip.count('stroke-width="5"') == 2
+
+
 def test_calc_lengths_are_resolved_for_geometry_strokes_and_text() -> None:
     svg = """<svg width="100" height="50">
       <rect x="calc(10px + 5px)" y="calc(2px + 3px)" width="calc(50% - 10px)" height="calc(100% - 20px)" fill="#dc2626"/>

@@ -208,7 +208,7 @@ def _svg_shape_from_element(
 ) -> Shape | None:
     refs = refs or {}
     css = css or []
-    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css)
+    paint = _svg_paint(style, refs, default_fill=tag != "line", css=css, viewport=viewport)
     scaled_paint = _scale_paint(paint, _stroke_transform_scale(style, matrix))
     plain_paint = _paint_without_markers(scaled_paint)
     if tag == "rect":
@@ -306,7 +306,7 @@ def _svg_shape_from_element(
                 y,
                 width,
                 height,
-                _text_paint(style, refs, css, _stroke_transform_scale(style, matrix)),
+                _text_paint(style, refs, css, _stroke_transform_scale(style, matrix), viewport),
                 text=text,
                 font_size=font_size,
                 font_weight=style.get("font-weight"),
@@ -754,6 +754,7 @@ def _svg_paint(
     refs: dict[str, ET.Element] | None = None,
     default_fill: bool = True,
     css: list[CssRule] | None = None,
+    viewport: tuple[float, float] = (0.0, 0.0),
 ) -> Paint:
     refs = refs or {}
     css = css or []
@@ -764,7 +765,7 @@ def _svg_paint(
     if stroke is None:
         stroke = "none"
     stroke_width = style.get("stroke-width")
-    parsed_stroke_width = _num(stroke_width, 1) if stroke_width not in {None, "", "none"} else None
+    parsed_stroke_width = _length(stroke_width, 1, "diag", viewport) if stroke_width not in {None, "", "none"} else None
     if parsed_stroke_width is not None and parsed_stroke_width <= 0:
         stroke = "none"
     fill_alpha = _combined_alpha(_alpha(style, "fill"), fill_color_alpha)
@@ -870,10 +871,11 @@ def _text_paint(
     refs: dict[str, ET.Element],
     css: list[CssRule] | None = None,
     stroke_scale: float = 1.0,
+    viewport: tuple[float, float] = (0.0, 0.0),
 ) -> Paint:
     fill, color_alpha = _paint_value(style.get("fill"), refs, style.get("color"), css or [])
     stroke, stroke_color_alpha = _paint_value(style.get("stroke"), refs, style.get("color"), css or [])
-    stroke_width = _optional_length(style.get("stroke-width"), "x", (0.0, 0.0))
+    stroke_width = _optional_length(style.get("stroke-width"), "diag", viewport)
     return Paint(
         fill=fill or "#000000",
         stroke=stroke,
