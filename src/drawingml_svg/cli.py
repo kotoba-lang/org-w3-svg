@@ -57,7 +57,9 @@ def _write_text(path: str | None, text: str) -> None:
     if path is None or path == "-":
         sys.stdout.write(text)
         return
-    Path(path).write_text(text, encoding="utf-8")
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(text, encoding="utf-8")
 
 
 if __name__ == "__main__":

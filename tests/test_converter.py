@@ -3,6 +3,7 @@ from xml.etree import ElementTree as ET
 
 import drawingml_svg
 from drawingml_svg import analyze_svg, drawingml_to_svg, svg_to_drawingml
+from drawingml_svg.cli import main as cli_main
 from examples.make_pptx import build_slide_xml, prepare_slide_media
 
 PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="
@@ -10,6 +11,42 @@ PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFc
 
 def test_package_declares_inline_types() -> None:
     assert resources.files(drawingml_svg).joinpath("py.typed").is_file()
+
+
+def test_cli_analyze_writes_json_to_stdout(tmp_path, capsys) -> None:
+    source = tmp_path / "input.svg"
+    source.write_text('<svg><rect width="10" height="8"/></svg>', encoding="utf-8")
+
+    assert cli_main(["analyze", str(source)]) == 0
+    captured = capsys.readouterr()
+
+    assert '"estimated_element_coverage": 1.0' in captured.out
+    assert '"unsupported_attributes": {}' in captured.out
+
+
+def test_cli_converts_between_files_and_creates_output_parent(tmp_path) -> None:
+    source = tmp_path / "input.svg"
+    dml_output = tmp_path / "nested" / "shape.xml"
+    svg_output = tmp_path / "roundtrip.svg"
+    source.write_text('<svg><rect x="1" y="2" width="3" height="4" fill="#123456"/></svg>', encoding="utf-8")
+
+    assert cli_main(["svg2dml", str(source), "-o", str(dml_output)]) == 0
+    assert dml_output.is_file()
+    assert 'val="123456"' in dml_output.read_text(encoding="utf-8")
+
+    assert cli_main(["dml2svg", str(dml_output), "-o", str(svg_output)]) == 0
+    assert 'fill="#123456"' in svg_output.read_text(encoding="utf-8")
+
+
+def test_cli_alias_invocation_uses_executable_name(tmp_path, monkeypatch) -> None:
+    source = tmp_path / "input.svg"
+    output = tmp_path / "shape.xml"
+    source.write_text('<svg><rect width="10" height="8"/></svg>', encoding="utf-8")
+    monkeypatch.setattr("sys.argv", ["svg2dml", str(source), "-o", str(output)])
+
+    assert cli_main() == 0
+    assert output.is_file()
+    assert "<p:sp>" in output.read_text(encoding="utf-8")
 
 
 def test_svg_rect_to_drawingml_preserves_geometry_and_paint() -> None:
