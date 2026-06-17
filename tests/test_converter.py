@@ -1325,6 +1325,22 @@ def test_transform_angle_and_length_units_are_resolved() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_transform_function_names_are_normalized() -> None:
+    svg = """<svg>
+      <rect x="0" y="0" width="10" height="8" fill="#111111" transform="TRANSLATE(10 20)"/>
+      <rect x="20" y="0" width="10" height="8" fill="#222222" transform="Scale(2)"/>
+      <rect x="0" y="20" width="10" height="8" fill="#333333" transform="SKEWX(45)"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    offsets = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    assert {"x": "95250", "y": "190500"} in [offset.attrib for offset in offsets]
+    assert {"x": "381000", "y": "0"} in [offset.attrib for offset in offsets]
+    assert dml.count("<a:custGeom>") == 1
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_reflected_rect_stays_as_editable_rect() -> None:
     svg = '<svg><rect x="10" y="12" width="20" height="16" fill="#f97316" transform="scale(-1 1)"/></svg>'
     dml = svg_to_drawingml(svg)

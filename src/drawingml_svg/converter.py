@@ -3388,7 +3388,8 @@ def _matrix_multiply(
 
 def _parse_transform(value: str) -> tuple[float, float, float, float, float, float]:
     matrix = _identity_matrix()
-    for name, raw_args in re.findall(r"([a-zA-Z]+)\(([^)]*)\)", value):
+    for raw_name, raw_args in re.findall(r"([a-zA-Z]+)\(([^)]*)\)", value):
+        name = raw_name.lower()
         raw_values = _transform_arguments(raw_args)
         item = _identity_matrix()
         if name == "matrix" and len(raw_values) >= 6:
@@ -3429,12 +3430,12 @@ def _parse_transform(value: str) -> tuple[float, float, float, float, float, flo
                 )
             else:
                 item = rotation
-        elif name == "skewX" and raw_values:
+        elif name == "skewx" and raw_values:
             angle_degrees = _transform_angle_arg(raw_values[0])
             if angle_degrees is None:
                 continue
             item = (1.0, 0.0, math.tan(math.radians(angle_degrees)), 1.0, 0.0, 0.0)
-        elif name == "skewY" and raw_values:
+        elif name == "skewy" and raw_values:
             angle_degrees = _transform_angle_arg(raw_values[0])
             if angle_degrees is None:
                 continue
