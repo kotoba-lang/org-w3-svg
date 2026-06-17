@@ -313,12 +313,7 @@ def _svg_shape_from_element(
             height = _geometry_length(element, style, "height", 0, "y", viewport)
             if width <= 0 or height <= 0:
                 return None
-            points = _transform_points(_rect_points(x, y, width, height), matrix)
-            min_x = min(px for px, _ in points)
-            min_y = min(py for _, py in points)
-            max_x = max(px for px, _ in points)
-            max_y = max(py for _, py in points)
-            return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, Paint(fill_alpha=_image_alpha(style)), image_href=href)
+            return _transformed_image_shape(x, y, width, height, matrix, href, _image_alpha(style))
     return None
 
 
@@ -445,6 +440,9 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
         }
         if shape.paint.fill_alpha is not None and shape.paint.fill_alpha < 1:
             attrs["opacity"] = _fmt(shape.paint.fill_alpha)
+        transform = _svg_image_transform(shape)
+        if transform:
+            attrs["transform"] = transform
         return ET.Element(qn(NS_SVG, "image"), attrs)
     if shape.kind in {"rect", "roundRect"}:
         attrs.update(
@@ -528,7 +526,14 @@ def _image_to_dml(shape: Shape, shape_id: int) -> ET.Element:
     stretch = ET.SubElement(blip_fill, qn(NS_A, "stretch"))
     ET.SubElement(stretch, qn(NS_A, "fillRect"))
     sp_pr = ET.SubElement(pic, qn(NS_P, "spPr"))
-    xfrm = ET.SubElement(sp_pr, qn(NS_A, "xfrm"))
+    xfrm_attrs = {}
+    if shape.flip_h:
+        xfrm_attrs["flipH"] = "1"
+    if shape.flip_v:
+        xfrm_attrs["flipV"] = "1"
+    if shape.rotation is not None:
+        xfrm_attrs["rot"] = str(round(shape.rotation * 60000))
+    xfrm = ET.SubElement(sp_pr, qn(NS_A, "xfrm"), xfrm_attrs)
     ET.SubElement(xfrm, qn(NS_A, "off"), {"x": str(_emu(shape.x)), "y": str(_emu(shape.y))})
     ET.SubElement(xfrm, qn(NS_A, "ext"), {"cx": str(_emu(shape.width)), "cy": str(_emu(shape.height))})
     prst = ET.SubElement(sp_pr, qn(NS_A, "prstGeom"), {"prst": "rect"})
@@ -546,6 +551,62 @@ def _dml_picture_shape(element: ET.Element) -> Shape | None:
         return None
     x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(sp_pr.find(qn(NS_A, "xfrm")))
     return Shape("image", x, y, width, height, Paint(fill_alpha=_dml_blip_alpha(blip)), flip_h, flip_v, image_href=href, rotation=rotation)
+
+
+def _transformed_image_shape(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    matrix: tuple[float, float, float, float, float, float],
+    href: str,
+    alpha: float | None,
+) -> Shape:
+    paint = Paint(fill_alpha=alpha)
+    points = _transform_points(_rect_points(x, y, width, height), matrix)
+    p0, p1, p2, p3 = points
+    ux = (p1[0] - p0[0], p1[1] - p0[1])
+    vy = (p3[0] - p0[0], p3[1] - p0[1])
+    transformed_width = math.hypot(*ux)
+    transformed_height = math.hypot(*vy)
+    dot = ux[0] * vy[0] + ux[1] * vy[1]
+    determinant = ux[0] * vy[1] - ux[1] * vy[0]
+    tolerance = max(transformed_width * transformed_height, 1.0) * 1e-9
+    if transformed_width > 0 and transformed_height > 0 and abs(dot) <= tolerance and determinant > 0:
+        center_x = sum(px for px, _ in points) / 4
+        center_y = sum(py for _, py in points) / 4
+        rotation = math.degrees(math.atan2(ux[1], ux[0])) % 360
+        if abs(rotation) < 1e-9 or abs(rotation - 360) < 1e-9:
+            rotation = 0.0
+        return Shape(
+            "image",
+            center_x - transformed_width / 2,
+            center_y - transformed_height / 2,
+            transformed_width,
+            transformed_height,
+            paint,
+            image_href=href,
+            rotation=rotation or None,
+        )
+
+    min_x = min(px for px, _ in points)
+    min_y = min(py for _, py in points)
+    max_x = max(px for px, _ in points)
+    max_y = max(py for _, py in points)
+    return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, paint, image_href=href)
+
+
+def _svg_image_transform(shape: Shape) -> str | None:
+    transforms = []
+    center_x = shape.x + shape.width / 2
+    center_y = shape.y + shape.height / 2
+    if shape.rotation is not None:
+        transforms.append(f"rotate({_fmt(shape.rotation)} {_fmt(center_x)} {_fmt(center_y)})")
+    if shape.flip_h or shape.flip_v:
+        sx = -1 if shape.flip_h else 1
+        sy = -1 if shape.flip_v else 1
+        transforms.append(f"translate({_fmt(center_x)} {_fmt(center_y)}) scale({sx} {sy}) translate({_fmt(-center_x)} {_fmt(-center_y)})")
+    return " ".join(transforms) or None
 
 
 def _append_svg_marker_defs(svg: ET.Element, shapes: list[Shape]) -> None:

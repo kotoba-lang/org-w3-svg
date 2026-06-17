@@ -1488,6 +1488,42 @@ def test_data_uri_image_opacity_maps_to_picture_alpha_and_round_trips() -> None:
     assert 'opacity="0.35"' in round_trip
 
 
+def test_transformed_data_uri_image_preserves_rotation() -> None:
+    svg = f'<svg><image href="{PNG_DATA_URI}" x="10" y="12" width="20" height="16" transform="rotate(90 20 20)"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm[@rot]")
+    assert xfrm is not None
+    assert xfrm.get("rot") == "5400000"
+    off = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    ext = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    assert off is not None
+    assert ext is not None
+    assert off.attrib == {"x": "95250", "y": "114300"}
+    assert ext.attrib == {"cx": "190500", "cy": "152400"}
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+    round_trip = drawingml_to_svg(dml)
+    assert 'transform="rotate(90 20 20)"' in round_trip
+
+
+def test_drawingml_picture_rotation_and_flip_round_trip_to_svg_transform() -> None:
+    dml = f"""<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+      xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+      <p:pic>
+        <p:nvPicPr><p:cNvPr id="2" name="image"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
+        <p:blipFill><a:blip r:embed="{PNG_DATA_URI}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>
+        <p:spPr><a:xfrm rot="1800000" flipH="1"><a:off x="95250" y="114300"/><a:ext cx="190500" cy="152400"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+      </p:pic>
+    </p:spTree>"""
+    svg = drawingml_to_svg(dml)
+
+    assert "<image" in svg
+    assert 'transform="rotate(30 20 20) translate(20 20) scale(-1 1) translate(-20 -20)"' in svg
+
+
 def test_xlink_data_uri_image_converts_to_picture_media() -> None:
     svg = f'<svg xmlns:xlink="http://www.w3.org/1999/xlink"><image xlink:href="{PNG_DATA_URI}" x="10" y="12" width="20" height="16"/></svg>'
     fragment = ET.fromstring(svg_to_drawingml(svg))
