@@ -2550,7 +2550,7 @@ def _marker_is_supported(element: ET.Element, style: dict[str, str], refs: dict[
 
 
 def _selector_matches(selector: str, element: ET.Element, ancestors: tuple[ET.Element, ...]) -> bool:
-    parts = re.findall(r">|[^ >]+", selector.strip())
+    parts = _selector_parts(selector)
     if not parts or parts[-1] == ">":
         return False
     if not _simple_selector_matches(parts[-1], element):
@@ -2587,7 +2587,7 @@ def _selector_specificity(selector: str) -> tuple[int, int, int]:
     id_count = len(re.findall(r"#[A-Za-z_][\w:-]*", selector))
     class_count = len(re.findall(r"\.[A-Za-z_][\w:-]*", selector)) + len(re.findall(r"\[[^\]]+\]", selector))
     element_count = 0
-    for part in re.findall(r"[^ >]+", selector.strip()):
+    for part in (part for part in _selector_parts(selector) if part != ">"):
         if part == "*":
             continue
         first_modifier = min([index for index in (part.find("."), part.find("#"), part.find("[")) if index >= 0], default=-1)
@@ -2595,6 +2595,28 @@ def _selector_specificity(selector: str) -> tuple[int, int, int]:
         if tag and re.fullmatch(r"[A-Za-z_][\w:-]*", tag):
             element_count += 1
     return id_count, class_count, element_count
+
+
+def _selector_parts(selector: str) -> list[str]:
+    parts: list[str] = []
+    current: list[str] = []
+    attribute_depth = 0
+    for char in selector.strip():
+        if char == "[":
+            attribute_depth += 1
+        elif char == "]" and attribute_depth:
+            attribute_depth -= 1
+        if attribute_depth == 0 and char in {" ", ">"}:
+            if current:
+                parts.append("".join(current))
+                current = []
+            if char == ">":
+                parts.append(char)
+            continue
+        current.append(char)
+    if current:
+        parts.append("".join(current))
+    return parts
 
 
 def _simple_selector_matches(selector: str, element: ET.Element) -> bool:
@@ -2632,19 +2654,23 @@ def _selector_without_attribute_selectors(selector: str) -> str:
 
 def _attribute_selector_matches(selector: str, element: ET.Element) -> bool:
     match = re.fullmatch(
-        r"\s*([A-Za-z_][\w:-]*)(?:\s*([~|^$*]?=)\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s\"']+)))?\s*",
+        r"\s*([A-Za-z_][\w:-]*)(?:\s*([~|^$*]?=)\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s\"']+))(?:\s+([iIsS]))?)?\s*",
         selector,
     )
     if not match:
         return False
     name = match.group(1)
     operator = match.group(2)
-    expected = next((group for group in match.groups()[2:] if group is not None), None)
+    expected = next((group for group in match.groups()[2:5] if group is not None), None)
+    modifier = match.group(6)
     actual = _attribute_value(element, name)
     if actual is None:
         return False
     if expected is None:
         return operator is None
+    if modifier is not None and modifier.lower() == "i":
+        actual = actual.lower()
+        expected = expected.lower()
     if operator == "=":
         return actual == expected
     if operator == "~=":
