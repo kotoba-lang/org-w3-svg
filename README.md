@@ -6,7 +6,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 
 - SVG: `rect`, `circle`, `ellipse`, `line`, `polygon`, `polyline`, linear/quadratic/cubic/arc `path`, `text`, simple `tspan`, link/group containers, and basic `switch` fallback selection
 - DrawingML: preset geometry shapes, custom geometry paths, and text boxes under `p:sp`
-- Geometry: position, size, percent geometry lengths, rounded rectangles, transformed line endpoints, horizontal/vertical flips for lines
+- Geometry: position, size, CSS geometry properties, percent geometry lengths, rounded rectangles, transformed line endpoints, horizontal/vertical flips for lines
 - Images: embedded SVG `image` elements with base64 data URI sources
 - Paint: SVG default fill/stroke/stroke-width/line-cap/line-join/miterlimit values, solid fill, stroke color, stroke width including zero-width no-line strokes, line cap/join/miter/custom dash, fill/stroke alpha including fully transparent no-fill/no-line paint, short/long alpha hex colors, CSS rgb/hsl color functions, named colors, `currentColor`, paint-server fallback colors, CSS-colored linear/radial gradient fallback, and representative pattern fallback colors
 - Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, attribute selectors (`=`, `~=`, `|=`, `^=`, `$=`, `*=`), child, and descendant selectors, CSS specificity, and `!important` cascade priority
@@ -14,7 +14,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Coordinate systems: root, nested SVG, and symbol `viewBox` normalization with `preserveAspectRatio` support
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis
 - Clipping: rectangular `clipPath` on `rect` and `text` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
-- Analysis: unsupported visual/layout attributes such as filters, masks, blend/isolation, fill/clip rules, paint order, shape/text/raster/color rendering hints, vector effects, word spacing, dash offsets, multi-value text rotation, text/path length adjustments, unsupported markers, and unresolved paint servers are reported, while default no-op values are ignored
+- Analysis: unsupported visual/layout attributes such as filters, masks, blend/isolation, fill/clip rules, paint order, shape/text/raster/color rendering hints, vector effects, word spacing conflicts, dash offsets, multi-value text rotation, unsupported text/path length adjustments, unsupported markers, and unresolved paint servers are reported, while default no-op values are ignored
 - Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`
 - Reuse: local `defs`/`use` expansion for referenced shapes, groups, and basic `symbol viewBox` scaling, with unsupported missing/external use references reported by the analyzer
 - Text: basic font size, weight, italic style, font family, `small-caps` and `all-small-caps` font variants, solid text outline, underline/strike decoration, horizontal/vertical anchor, `xml:space="preserve"`, single-value `rotate`, `letter-spacing`, simple `word-spacing`, `textLength` spacing adjustment, approximate `spacingAndGlyphs`, `dx`/`dy` positioning, first-`tspan` positioning fallback, and multi-line `tspan` extraction
