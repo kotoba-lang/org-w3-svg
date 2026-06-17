@@ -6,7 +6,7 @@
     text.label { fill: #0f172a; font-size: 18; font-variant: all-small-caps; letter-spacing: 1.5px; word-spacing: 3px; text-rendering: geometricPrecision; }
   </style>
   <defs>
-    <linearGradient id="panel-gradient" spreadMethod="reflect">
+    <linearGradient id="panel-gradient" spreadMethod="reflect" gradientUnits="userSpaceOnUse" gradientTransform="rotate(12)">
       <stop offset="0%" stop-color="rgb(224,242,254)" stop-opacity=".9"/>
       <stop offset="100%" stop-color="rgba(186,230,253,.55)"/>
     </linearGradient>

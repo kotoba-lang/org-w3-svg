@@ -54,6 +54,8 @@ UNSUPPORTED_ATTRIBUTES = {
     "fill-rule",
     "filter",
     "font-variant",
+    "gradientTransform",
+    "gradientUnits",
     "image-rendering",
     "isolation",
     "letter-spacing",

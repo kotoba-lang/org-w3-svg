@@ -14,7 +14,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Coordinate systems: root, nested SVG, and symbol `viewBox` normalization with `preserveAspectRatio` support
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis
 - Clipping: rectangular `clipPath` on `rect` and `text` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
-- Analysis: unsupported visual/layout attributes such as filters, masks, blend/isolation, fill/clip rules, gradient spread methods, paint order, rendering hints, vector effects, unsupported font variants, word spacing, dash offsets, multi-value text rotation, text/path length adjustments, unsupported markers, and unresolved paint servers are reported
+- Analysis: unsupported visual/layout attributes such as filters, masks, blend/isolation, fill/clip rules, gradient units/transforms/spread methods, paint order, rendering hints, vector effects, unsupported font variants, word spacing, dash offsets, multi-value text rotation, text/path length adjustments, unsupported markers, and unresolved paint servers are reported
 - Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`
 - Reuse: local `defs`/`use` expansion for referenced shapes, groups, and basic `symbol viewBox` scaling, with unsupported missing/external use references reported by the analyzer
 - Text: basic font size, weight, italic style, font family, `small-caps` font variant, underline/strike decoration, horizontal/vertical anchor, `xml:space="preserve"`, single-value `rotate`, `letter-spacing`, `dx`/`dy` positioning, first-`tspan` positioning fallback, and multi-line `tspan` extraction

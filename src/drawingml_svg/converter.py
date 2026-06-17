@@ -1644,6 +1644,8 @@ def _computed_style(
         "font-weight",
         "font-style",
         "font-variant",
+        "gradientTransform",
+        "gradientUnits",
         "letter-spacing",
         "lengthAdjust",
         "text-decoration",
