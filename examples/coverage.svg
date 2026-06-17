@@ -47,6 +47,7 @@
       <tspan x="160" dy="24" text-transform="uppercase">fixture</tspan>
     </text>
     <text x="96" y="66" dx="4" dy="2" rotate="3" letter-spacing="2px" font-variant="small-caps" xml:space="preserve" font-size="9" fill="#334155">  spaced  </text>
+    <text x="30" y="72" rotate=".25turn" font-size="6" fill="#0f172a">turn</text>
     <text x="24" y="154" font-variant="all-small-caps" font-size="8" fill="#0f172a" text-rendering="auto">caps mode</text>
     <text x="112" y="154" textLength="58" lengthAdjust="spacingAndGlyphs" font-size="8" fill="#0f172a">wide text</text>
     <text x="222" y="154" word-spacing="5" text-transform="uppercase" font-size="8" fill="#0f172a">word gap</text>

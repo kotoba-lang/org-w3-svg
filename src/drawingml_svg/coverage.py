@@ -6,7 +6,6 @@ from xml.etree import ElementTree as ET
 
 from .converter import (
     CssRule,
-    NUMBER_RE,
     _alpha_value,
     _collect_css,
     _collect_refs,
@@ -32,6 +31,7 @@ from .converter import (
     _svg_word_spacing_is_supported,
     _svg_dasharray_numbers,
     _svg_dashoffset_is_supported,
+    _svg_rotation_values,
     _switch_selected_child,
     _url_ref,
     _viewport_size,
@@ -423,7 +423,7 @@ def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> boo
     value = style.get("rotate")
     if value is None:
         return False
-    numbers = [float(number) for number in re.findall(NUMBER_RE, value)]
+    numbers = _svg_rotation_values(value)
     if not numbers:
         return False
     if all(number == numbers[0] for number in numbers):

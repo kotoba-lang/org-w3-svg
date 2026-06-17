@@ -1678,12 +1678,25 @@ def _svg_text_rotation(element: ET.Element, style: dict[str, str]) -> float | No
 def _single_svg_rotation(value: str | None, text: str | None = None) -> float | None:
     if value is None:
         return None
-    numbers = [float(number) for number in re.findall(NUMBER_RE, value)]
+    numbers = _svg_rotation_values(value)
     if not numbers:
         return None
     if any(number != numbers[0] for number in numbers) and (text is None or len(text) > 1):
         return None
     return numbers[0]
+
+
+def _svg_rotation_values(value: str) -> list[float] | None:
+    parts = [part for part in re.split(r"[\s,]+", value.strip()) if part]
+    if not parts:
+        return None
+    numbers = []
+    for part in parts:
+        angle = _transform_angle_arg(part)
+        if angle is None:
+            return None
+        numbers.append(angle)
+    return numbers
 
 
 def _svg_letter_spacing(style: dict[str, str], viewport: tuple[float, float]) -> float | None:
