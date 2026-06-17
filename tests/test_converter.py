@@ -572,6 +572,40 @@ def test_css_not_pseudo_class_selectors_are_applied() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_css_media_rules_apply_only_screen_compatible_queries() -> None:
+    svg = """<svg>
+      <style>
+        @media print { rect { fill: #dc2626; stroke: #dc2626; } }
+        @media not screen { rect { fill: #f97316; } }
+        @media screen { rect { fill: #2563eb; } }
+        @media all and (min-width: 1px) { rect { stroke: #16a34a; stroke-width: 2; } }
+      </style>
+      <rect width="10" height="8"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="2563EB"' in dml
+    assert 'val="16A34A"' in dml
+    assert 'val="DC2626"' not in dml
+    assert 'val="F97316"' not in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_css_ignores_non_style_at_rules_without_losing_later_rules() -> None:
+    svg = """<svg>
+      <style>
+        @font-face { font-family: Demo; src: url(demo.woff2); }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+        rect { fill: #dc2626; }
+      </style>
+      <rect width="10" height="8"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="DC2626"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_css_specificity_wins_over_later_lower_specificity_rules() -> None:
     svg = """<svg>
       <style>

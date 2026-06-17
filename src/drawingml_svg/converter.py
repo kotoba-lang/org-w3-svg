@@ -2245,14 +2245,65 @@ def _collect_css(root: ET.Element) -> list[CssRule]:
             continue
         text = "".join(element.itertext())
         text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
-        for selector, body in re.findall(r"([^{}]+)\{([^{}]+)\}", text):
-            declarations = _parse_style_declarations(body)
-            for item in _selector_list(selector):
-                key = item.strip()
-                if key:
-                    css.append((key, declarations, _selector_specificity(key), order))
-                    order += 1
+        order = _collect_css_rules(text, css, order)
     return css
+
+
+def _collect_css_rules(text: str, css: list[CssRule], order: int) -> int:
+    for selector, body in _css_rule_blocks(text):
+        selector = selector.strip()
+        if selector.lower().startswith("@media"):
+            if _media_query_applies(selector[6:].strip()):
+                order = _collect_css_rules(body, css, order)
+            continue
+        if selector.startswith("@"):
+            continue
+        declarations = _parse_style_declarations(body)
+        for item in _selector_list(selector):
+            key = item.strip()
+            if key:
+                css.append((key, declarations, _selector_specificity(key), order))
+                order += 1
+    return order
+
+
+def _css_rule_blocks(text: str) -> list[tuple[str, str]]:
+    blocks: list[tuple[str, str]] = []
+    index = 0
+    while index < len(text):
+        start = text.find("{", index)
+        if start < 0:
+            break
+        selector = text[index:start].strip()
+        depth = 1
+        quote: str | None = None
+        end = start + 1
+        while end < len(text):
+            char = text[end]
+            if quote is not None:
+                if char == quote:
+                    quote = None
+            elif char in {"'", '"'}:
+                quote = char
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            end += 1
+        if depth == 0 and selector:
+            blocks.append((selector, text[start + 1 : end]))
+        index = end + 1
+    return blocks
+
+
+def _media_query_applies(query: str) -> bool:
+    normalized = " ".join(query.strip().lower().split())
+    if not normalized:
+        return True
+    queries = [item.strip() for item in normalized.split(",")]
+    return any(query in {"all", "screen"} or query.startswith("all and ") or query.startswith("screen and ") for query in queries)
 
 
 def _collect_refs(root: ET.Element) -> dict[str, ET.Element]:
