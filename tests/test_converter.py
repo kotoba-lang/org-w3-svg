@@ -349,6 +349,18 @@ def test_equal_multi_value_text_rotate_maps_to_shape_rotation() -> None:
     assert 'rotate="12"' in svg
 
 
+def test_single_character_multi_value_text_rotate_uses_first_value() -> None:
+    dml = svg_to_drawingml('<svg><text x="10" y="20" rotate="12 24" font-size="10" fill="#111">A</text></svg>')
+
+    root = ET.fromstring(dml)
+    shape_xfrm = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm")[1]
+    assert shape_xfrm.get("rot") == "720000"
+    assert analyze_svg('<svg><text x="10" y="20" rotate="12 24">A</text></svg>').unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'rotate="12"' in svg
+
+
 def test_text_letter_spacing_maps_to_character_spacing() -> None:
     source = '<svg><text x="10" y="20" letter-spacing="2px" font-size="10" fill="#111">Spaced</text></svg>'
     dml = svg_to_drawingml(source)

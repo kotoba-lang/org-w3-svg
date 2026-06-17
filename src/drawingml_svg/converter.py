@@ -1148,22 +1148,24 @@ def _first_optional_length(value: str | None, axis: str, viewport: tuple[float, 
 
 
 def _svg_text_rotation(element: ET.Element, style: dict[str, str]) -> float | None:
-    rotation = _single_svg_rotation(style.get("rotate"))
+    rotation = _single_svg_rotation(style.get("rotate"), _svg_text_content(element))
     if rotation is not None:
         return rotation
     for child in element:
         if _local_name(child.tag) == "tspan":
-            rotation = _single_svg_rotation(child.get("rotate"))
+            rotation = _single_svg_rotation(child.get("rotate"), "".join(child.itertext()))
             if rotation is not None:
                 return rotation
     return None
 
 
-def _single_svg_rotation(value: str | None) -> float | None:
+def _single_svg_rotation(value: str | None, text: str | None = None) -> float | None:
     if value is None:
         return None
     numbers = [float(number) for number in re.findall(NUMBER_RE, value)]
-    if not numbers or any(number != numbers[0] for number in numbers):
+    if not numbers:
+        return None
+    if any(number != numbers[0] for number in numbers) and (text is None or len(text) > 1):
         return None
     return numbers[0]
 

@@ -313,7 +313,12 @@ def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> boo
     if value is None:
         return False
     numbers = [float(number) for number in re.findall(NUMBER_RE, value)]
-    return bool(numbers) and all(number == numbers[0] for number in numbers)
+    if not numbers:
+        return False
+    if all(number == numbers[0] for number in numbers):
+        return True
+    text = _svg_text_content(element) if _local_name(element.tag) == "text" else "".join(element.itertext())
+    return len(text) <= 1
 
 
 def _letter_spacing_is_supported(style: dict[str, str]) -> bool:
