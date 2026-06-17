@@ -767,9 +767,8 @@ def _svg_paint(
         fill = "#000000" if default_fill else "none"
     if stroke is None:
         stroke = "none"
-    stroke_width = style.get("stroke-width")
-    parsed_stroke_width = _length(stroke_width, 1, "diag", viewport) if stroke_width not in {None, "", "none"} else None
-    if parsed_stroke_width is not None and parsed_stroke_width <= 0:
+    parsed_stroke_width = _svg_stroke_width(style, viewport)
+    if parsed_stroke_width == 0:
         stroke = "none"
     fill_alpha = _combined_alpha(_alpha(style, "fill"), fill_color_alpha)
     stroke_alpha = _combined_alpha(_alpha(style, "stroke"), stroke_color_alpha)
@@ -878,7 +877,11 @@ def _text_paint(
 ) -> Paint:
     fill, color_alpha = _paint_value(style.get("fill"), refs, style.get("color"), css or [])
     stroke, stroke_color_alpha = _paint_value(style.get("stroke"), refs, style.get("color"), css or [])
-    stroke_width = _optional_length(style.get("stroke-width"), "diag", viewport)
+    stroke_width = _svg_stroke_width(style, viewport)
+    if stroke_width == 0:
+        stroke = "none"
+    if stroke not in {None, "none"} and stroke_width is None:
+        stroke_width = 1.0
     return Paint(
         fill=fill or "#000000",
         stroke=stroke,
@@ -886,6 +889,16 @@ def _text_paint(
         fill_alpha=_combined_alpha(_alpha(style, "fill"), color_alpha),
         stroke_alpha=_combined_alpha(_alpha(style, "stroke"), stroke_color_alpha),
     )
+
+
+def _svg_stroke_width(style: dict[str, str], viewport: tuple[float, float] = (0.0, 0.0)) -> float | None:
+    value = style.get("stroke-width")
+    if value in {None, "", "none"}:
+        return None
+    parsed = _length(value, 1, "diag", viewport)
+    if parsed < 0:
+        return None
+    return parsed
 
 
 def _font_family(value: str | None) -> str | None:

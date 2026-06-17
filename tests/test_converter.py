@@ -2860,6 +2860,22 @@ def test_zero_stroke_width_is_converted_as_no_line() -> None:
     assert 'stroke-width="0"' in svg
 
 
+def test_negative_stroke_width_falls_back_to_svg_default() -> None:
+    svg = """<svg>
+      <line x1="0" y1="0" x2="10" y2="0" stroke="#111111" stroke-width="-2"/>
+      <text x="0" y="20" fill="#111111" stroke="#222222" stroke-width="-3">Outlined</text>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="111111"' in dml
+    assert dml.count('w="9525"') >= 2
+    assert 'val="222222"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+    round_trip = drawingml_to_svg(dml)
+    assert 'stroke-width="1"' in round_trip
+
+
 def test_invalid_miterlimit_falls_back_to_svg_default() -> None:
     dml = svg_to_drawingml(
         '<svg><polyline points="0,0 10,0 10,8" fill="none" stroke="#111111" stroke-linejoin="miter" stroke-miterlimit="0"/></svg>'
