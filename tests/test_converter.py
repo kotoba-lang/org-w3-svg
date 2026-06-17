@@ -1222,6 +1222,27 @@ def test_root_viewbox_preserve_aspect_ratio_none_stretches_content() -> None:
     assert shape_ext.attrib == {"cx": "1905000", "cy": "1905000"}
 
 
+def test_preserve_aspect_ratio_values_are_normalized() -> None:
+    none_dml = svg_to_drawingml(
+        '<svg viewBox="0 0 100 50" width="200" height="200" preserveAspectRatio=" NONE "><rect x="0" y="0" width="100" height="50"/></svg>'
+    )
+    slice_dml = svg_to_drawingml(
+        '<svg viewBox="0 0 100 50" width="200" height="200" preserveAspectRatio=" XMAXYMAX SLICE "><rect x="0" y="0" width="100" height="50"/></svg>'
+    )
+
+    none_root = ET.fromstring(none_dml)
+    none_shape_off = none_root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")[1]
+    none_shape_ext = none_root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}ext")[1]
+    assert none_shape_off.attrib == {"x": "0", "y": "0"}
+    assert none_shape_ext.attrib == {"cx": "1905000", "cy": "1905000"}
+
+    slice_root = ET.fromstring(slice_dml)
+    slice_shape_off = slice_root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")[1]
+    slice_shape_ext = slice_root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}ext")[1]
+    assert slice_shape_off.attrib == {"x": "-1905000", "y": "0"}
+    assert slice_shape_ext.attrib == {"cx": "3810000", "cy": "1905000"}
+
+
 def test_root_viewbox_preserve_aspect_ratio_slice_aligns_max_edges() -> None:
     dml = svg_to_drawingml(
         '<svg viewBox="0 0 100 50" width="200" height="200" preserveAspectRatio="xMaxYMax slice"><rect x="0" y="0" width="100" height="50"/></svg>'

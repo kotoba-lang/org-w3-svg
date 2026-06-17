@@ -2581,14 +2581,14 @@ def _viewbox_matrix(
 
 def _preserve_aspect_ratio(value: str | None) -> tuple[str, str]:
     parts = (value or "xMidYMid meet").split()
-    if parts and parts[0] == "defer":
+    if parts and parts[0].lower() == "defer":
         parts = parts[1:]
-    align = parts[0] if parts else "xMidYMid"
-    if align == "none":
+    align_token = parts[0] if parts else "xMidYMid"
+    if align_token.lower() == "none":
         return "none", "meet"
-    if not re.fullmatch(r"x(?:Min|Mid|Max)Y(?:Min|Mid|Max)", align):
-        align = "xMidYMid"
-    meet_or_slice = parts[1] if len(parts) > 1 and parts[1] in {"meet", "slice"} else "meet"
+    alignments = {value.lower(): value for value in (f"x{x}Y{y}" for x in ("Min", "Mid", "Max") for y in ("Min", "Mid", "Max"))}
+    align = alignments.get(align_token.lower(), "xMidYMid")
+    meet_or_slice = parts[1].lower() if len(parts) > 1 and parts[1].lower() in {"meet", "slice"} else "meet"
     return align, meet_or_slice
 
 
