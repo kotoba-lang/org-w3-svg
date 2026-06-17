@@ -112,7 +112,7 @@ def drawingml_to_svg(drawingml_text: str) -> str:
 def _svg_shapes(root: ET.Element) -> Iterable[Shape]:
     css = _collect_css(root)
     refs = _collect_refs(root)
-    yield from _svg_shapes_walk(root, css, refs, {}, _root_viewbox_matrix(root), set(), ())
+    yield from _svg_shapes_walk(root, css, refs, {}, _root_viewbox_matrix(root), set(), (), _viewport_size(root))
 
 
 def _svg_shapes_walk(
@@ -123,6 +123,7 @@ def _svg_shapes_walk(
     inherited_matrix: tuple[float, float, float, float, float, float],
     ref_stack: set[str],
     ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
 ) -> Iterable[Shape]:
     tag = _local_name(element.tag)
     if tag in {"defs", "style"}:
@@ -136,23 +137,30 @@ def _svg_shapes_walk(
         href = _href(element)
         if href and href.startswith("#") and href[1:] in refs and href[1:] not in ref_stack:
             ref = refs[href[1:]]
-            use_matrix = _matrix_multiply(matrix, _parse_transform(f"translate({_num(element.get('x'), 0)} {_num(element.get('y'), 0)})"))
+            use_matrix = _matrix_multiply(
+                matrix,
+                _parse_transform(f"translate({_length(element.get('x'), 0, 'x', viewport)} {_length(element.get('y'), 0, 'y', viewport)})"),
+            )
+            ref_viewport = viewport
             if _local_name(ref.tag) in {"svg", "symbol"}:
+                use_width = _optional_length(element.get("width"), "x", viewport)
+                use_height = _optional_length(element.get("height"), "y", viewport)
                 use_matrix = _matrix_multiply(
                     use_matrix,
-                    _viewbox_matrix(ref, _optional_num(element.get("width")), _optional_num(element.get("height"))),
+                    _viewbox_matrix(ref, use_width, use_height),
                 )
-            yield from _svg_shapes_walk(ref, css, refs, style, use_matrix, ref_stack | {href[1:]}, ancestors + (element,))
+                ref_viewport = _viewport_size(ref, use_width, use_height)
+            yield from _svg_shapes_walk(ref, css, refs, style, use_matrix, ref_stack | {href[1:]}, ancestors + (element,), ref_viewport)
         return
 
-    shape = _svg_shape_from_element(element, tag, style, matrix, refs)
+    shape = _svg_shape_from_element(element, tag, style, matrix, refs, viewport)
     if shape is not None:
         shape = _apply_rect_clip(shape, style, refs, matrix)
     if shape is not None:
         yield shape
 
     for child in element:
-        yield from _svg_shapes_walk(child, css, refs, style, matrix, ref_stack, ancestors + (element,))
+        yield from _svg_shapes_walk(child, css, refs, style, matrix, ref_stack, ancestors + (element,), viewport)
 
 
 def _svg_shape_from_element(
@@ -161,35 +169,36 @@ def _svg_shape_from_element(
     style: dict[str, str],
     matrix: tuple[float, float, float, float, float, float],
     refs: dict[str, ET.Element] | None = None,
+    viewport: tuple[float, float] = (0.0, 0.0),
 ) -> Shape | None:
     refs = refs or {}
     paint = _svg_paint(style, refs, default_fill=tag != "line")
     plain_paint = _paint_without_markers(paint)
     if tag == "rect":
-        x = _num(element.get("x"), 0)
-        y = _num(element.get("y"), 0)
-        width = _num(element.get("width"), 0)
-        height = _num(element.get("height"), 0)
-        rx = _num(element.get("rx"), _num(element.get("ry"), 0))
-        ry = _num(element.get("ry"), rx)
+        x = _length(element.get("x"), 0, "x", viewport)
+        y = _length(element.get("y"), 0, "y", viewport)
+        width = _length(element.get("width"), 0, "x", viewport)
+        height = _length(element.get("height"), 0, "y", viewport)
+        rx = _length(element.get("rx"), _length(element.get("ry"), 0, "y", viewport), "x", viewport)
+        ry = _length(element.get("ry"), rx, "y", viewport)
         if _is_identity_matrix(matrix):
             return Shape("roundRect" if rx or ry else "rect", x, y, width, height, plain_paint, rx=rx or None, ry=ry or None)
         points = _transform_points(_rect_points(x, y, width, height), matrix)
         return _freeform_shape(points, plain_paint, closed=True)
     if tag == "circle":
-        cx = _num(element.get("cx"), 0)
-        cy = _num(element.get("cy"), 0)
-        r = _num(element.get("r"), 0)
+        cx = _length(element.get("cx"), 0, "x", viewport)
+        cy = _length(element.get("cy"), 0, "y", viewport)
+        r = _length(element.get("r"), 0, "diag", viewport)
         return _ellipse_shape(cx, cy, r, r, plain_paint, matrix)
     if tag == "ellipse":
-        cx = _num(element.get("cx"), 0)
-        cy = _num(element.get("cy"), 0)
-        rx = _num(element.get("rx"), 0)
-        ry = _num(element.get("ry"), 0)
+        cx = _length(element.get("cx"), 0, "x", viewport)
+        cy = _length(element.get("cy"), 0, "y", viewport)
+        rx = _length(element.get("rx"), 0, "x", viewport)
+        ry = _length(element.get("ry"), 0, "y", viewport)
         return _ellipse_shape(cx, cy, rx, ry, plain_paint, matrix)
     if tag == "line":
-        p1 = _apply_matrix(matrix, (_num(element.get("x1"), 0), _num(element.get("y1"), 0)))
-        p2 = _apply_matrix(matrix, (_num(element.get("x2"), 0), _num(element.get("y2"), 0)))
+        p1 = _apply_matrix(matrix, (_length(element.get("x1"), 0, "x", viewport), _length(element.get("y1"), 0, "y", viewport)))
+        p2 = _apply_matrix(matrix, (_length(element.get("x2"), 0, "x", viewport), _length(element.get("y2"), 0, "y", viewport)))
         if _is_identity_matrix(matrix):
             return Shape(
                 "line",
@@ -214,7 +223,7 @@ def _svg_shape_from_element(
         text = _svg_text_content(element)
         if text:
             font_size = _num(style.get("font-size"), 16) * _matrix_scale(matrix)
-            x, y = _apply_matrix(matrix, _svg_text_position(element))
+            x, y = _apply_matrix(matrix, _svg_text_position(element, viewport))
             width = max(font_size * max(len(line) for line in text.split("\n")) * 0.9, font_size * 2)
             anchor = style.get("text-anchor")
             if anchor == "middle":
@@ -248,10 +257,10 @@ def _svg_shape_from_element(
     if tag == "image":
         href = _href(element)
         if href and _supported_data_image(href):
-            x = _num(element.get("x"), 0)
-            y = _num(element.get("y"), 0)
-            width = _num(element.get("width"), 0)
-            height = _num(element.get("height"), 0)
+            x = _length(element.get("x"), 0, "x", viewport)
+            y = _length(element.get("y"), 0, "y", viewport)
+            width = _length(element.get("width"), 0, "x", viewport)
+            height = _length(element.get("height"), 0, "y", viewport)
             points = _transform_points(_rect_points(x, y, width, height), matrix)
             min_x = min(px for px, _ in points)
             min_y = min(py for _, py in points)
@@ -990,18 +999,18 @@ def _svg_text_content(element: ET.Element) -> str:
     return "\n".join(lines)
 
 
-def _svg_text_position(element: ET.Element) -> tuple[float, float]:
-    x = _optional_num(element.get("x"))
-    y = _optional_num(element.get("y"))
+def _svg_text_position(element: ET.Element, viewport: tuple[float, float] = (0.0, 0.0)) -> tuple[float, float]:
+    x = _optional_length(element.get("x"), "x", viewport)
+    y = _optional_length(element.get("y"), "y", viewport)
     if x is not None and y is not None:
         return x, y
     for child in element:
         if _local_name(child.tag) != "tspan":
             continue
         if x is None:
-            x = _optional_num(child.get("x"))
+            x = _optional_length(child.get("x"), "x", viewport)
         if y is None:
-            y = _optional_num(child.get("y"))
+            y = _optional_length(child.get("y"), "y", viewport)
         if x is not None and y is not None:
             break
     return x or 0.0, y or 0.0
@@ -1414,6 +1423,21 @@ def _collect_refs(root: ET.Element) -> dict[str, ET.Element]:
 
 def _root_viewbox_matrix(root: ET.Element) -> tuple[float, float, float, float, float, float]:
     return _viewbox_matrix(root)
+
+
+def _viewport_size(
+    element: ET.Element,
+    width_override: float | None = None,
+    height_override: float | None = None,
+) -> tuple[float, float]:
+    view_box = element.get("viewBox")
+    if view_box:
+        numbers = [float(match) for match in re.findall(NUMBER_RE, view_box)]
+        if len(numbers) == 4 and numbers[2] > 0 and numbers[3] > 0:
+            return width_override if width_override is not None else numbers[2], height_override if height_override is not None else numbers[3]
+    width = width_override if width_override is not None else _num(element.get("width"), 0)
+    height = height_override if height_override is not None else _num(element.get("height"), 0)
+    return width, height
 
 
 def _viewbox_matrix(
@@ -2080,6 +2104,32 @@ def _optional_num(value: str | None) -> float | None:
     if value is None:
         return None
     return _num(value, 0)
+
+
+def _length(value: str | None, default: float, axis: str, viewport: tuple[float, float]) -> float:
+    if value is None:
+        return float(default)
+    stripped = value.strip()
+    if stripped.endswith("%"):
+        try:
+            return float(stripped[:-1]) / 100 * _percentage_basis(axis, viewport)
+        except ValueError:
+            return float(default)
+    return _num(value, default)
+
+
+def _optional_length(value: str | None, axis: str, viewport: tuple[float, float]) -> float | None:
+    if value is None:
+        return None
+    return _length(value, 0, axis, viewport)
+
+
+def _percentage_basis(axis: str, viewport: tuple[float, float]) -> float:
+    if axis == "x":
+        return viewport[0]
+    if axis == "y":
+        return viewport[1]
+    return math.hypot(viewport[0], viewport[1]) / math.sqrt(2)
 
 
 def _emu(px: float) -> int:

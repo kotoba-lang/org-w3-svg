@@ -6,7 +6,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 
 - SVG: `rect`, `circle`, `ellipse`, `line`, `polygon`, `polyline`, linear/quadratic/cubic/arc `path`, `text`, simple `tspan`
 - DrawingML: preset geometry shapes, custom geometry paths, and text boxes under `p:sp`
-- Geometry: position, size, rounded rectangles, line endpoints, horizontal/vertical flips for lines
+- Geometry: position, size, percent geometry lengths, rounded rectangles, line endpoints, horizontal/vertical flips for lines
 - Images: embedded SVG `image` elements with base64 data URI sources
 - Paint: SVG default fill/stroke/stroke-width/line-cap/line-join/miterlimit values, solid fill, stroke color, stroke width including zero-width no-line strokes, line cap/join/miter/custom dash, fill/stroke alpha including fully transparent no-fill/no-line paint, short/long alpha hex colors, CSS rgb/hsl color functions, named colors, `currentColor`, gradient fallback
 - Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, child, and descendant selectors, CSS specificity, and `!important` cascade priority

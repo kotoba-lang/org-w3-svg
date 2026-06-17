@@ -353,6 +353,20 @@ def test_root_viewbox_preserve_aspect_ratio_none_stretches_content() -> None:
     assert shape_ext.attrib == {"cx": "1905000", "cy": "1905000"}
 
 
+def test_percent_lengths_resolve_against_root_viewport() -> None:
+    dml = svg_to_drawingml(
+        '<svg viewBox="0 0 200 100" width="400" height="200"><rect x="10%" y="20%" width="25%" height="40%"/><line x1="0%" y1="100%" x2="50%" y2="0%" stroke="#111111"/></svg>'
+    )
+
+    root = ET.fromstring(dml)
+    offsets = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    extents = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    assert offsets[1].attrib == {"x": "381000", "y": "381000"}
+    assert extents[1].attrib == {"cx": "952500", "cy": "762000"}
+    assert offsets[2].attrib == {"x": "0", "y": "0"}
+    assert extents[2].attrib == {"cx": "1905000", "cy": "1905000"}
+
+
 def test_symbol_use_viewbox_width_height_scales_referenced_shapes_with_none() -> None:
     dml = svg_to_drawingml(
         """<svg>
