@@ -293,7 +293,9 @@ def _svg_shape_from_element(
                 x -= width / 2
             elif anchor == "end":
                 x -= width
-            baseline = _dominant_baseline(style.get("dominant-baseline"))
+            baseline = _dominant_baseline(style.get("dominant-baseline")) or _dominant_baseline(
+                style.get("alignment-baseline")
+            )
             height = font_size * 1.4 * len(text.split("\n"))
             if baseline == "middle":
                 y -= height / 2

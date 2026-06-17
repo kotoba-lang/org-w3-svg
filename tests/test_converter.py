@@ -3254,6 +3254,17 @@ def test_text_anchor_and_baseline_values_are_normalized() -> None:
     assert 'dominant-baseline="middle"' in svg
 
 
+def test_alignment_baseline_maps_to_text_anchor_when_dominant_baseline_is_absent() -> None:
+    source = '<svg><text x="100" y="40" alignment-baseline=" hanging " font-size="20" fill="#111111">Top</text></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert 'anchor="t"' in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'dominant-baseline="text-before-edge"' in svg
+
+
 def test_font_weight_and_style_values_are_normalized() -> None:
     source = '<svg><text x="0" y="20" font-size="10" font-weight=" BOLD " font-style=" oblique 10deg " fill="#111111">Bold Italic</text></svg>'
     dml = svg_to_drawingml(source)
