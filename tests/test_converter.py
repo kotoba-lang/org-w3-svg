@@ -1720,6 +1720,23 @@ def test_inherit_paint_values_use_parent_computed_style() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_initial_style_values_reset_inherited_presentation_attributes() -> None:
+    svg = """<svg>
+      <g fill="#123456" stroke="#abcdef" stroke-width="3" color="#f97316" font-size="24" text-anchor="middle">
+        <rect x="0" y="0" width="10" height="8" fill="initial" stroke="initial" stroke-width="initial"/>
+        <text x="0" y="20" font-size="initial" text-anchor="initial" fill="currentColor" stroke="initial">Reset</text>
+      </g>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="123456"' not in dml
+    assert 'val="ABCDEF"' not in dml
+    assert 'val="F97316"' in dml
+    assert '<a:rPr sz="1600">' in dml
+    assert 'algn="ctr"' not in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_gradient_stop_color_inherit_uses_gradient_style() -> None:
     svg = """<svg>
       <defs>

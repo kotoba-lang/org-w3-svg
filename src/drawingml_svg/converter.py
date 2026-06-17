@@ -2369,11 +2369,14 @@ def _computed_style(
     for key, (value, important) in _parse_style_declarations(element.get("style", "")).items():
         apply_declaration(key, value, important, (1, 0, 0, 0), 1_000_000)
     for key, value in tuple(style.items()):
-        if value.strip().lower() == "inherit":
+        normalized = value.strip().lower()
+        if normalized == "inherit":
             if key in inherited:
                 style[key] = inherited[key]
             else:
                 style.pop(key)
+        elif normalized == "initial":
+            style.pop(key)
     if style.get("fill", "").strip().lower() == "currentcolor":
         style["fill"] = style.get("color", "#000000")
     if style.get("stroke", "").strip().lower() == "currentcolor":
