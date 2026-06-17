@@ -2519,7 +2519,15 @@ def _media_query_applies(query: str) -> bool:
     if not normalized:
         return True
     queries = [item.strip() for item in normalized.split(",")]
-    return any(query in {"all", "screen"} or query.startswith("all and ") or query.startswith("screen and ") for query in queries)
+    return any(_single_media_query_applies(query) for query in queries)
+
+
+def _single_media_query_applies(query: str) -> bool:
+    if query.startswith("only "):
+        query = query[5:].strip()
+    if query.startswith("not "):
+        return not _single_media_query_applies(query[4:].strip())
+    return query in {"all", "screen"} or query.startswith("all and ") or query.startswith("screen and ")
 
 
 def _collect_refs(root: ET.Element) -> dict[str, ET.Element]:

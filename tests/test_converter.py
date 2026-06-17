@@ -684,6 +684,8 @@ def test_css_media_rules_apply_only_screen_compatible_queries() -> None:
         @media not screen { rect { fill: #f97316; } }
         @media screen { rect { fill: #2563eb; } }
         @media all and (min-width: 1px) { rect { stroke: #16a34a; stroke-width: 2; } }
+        @media only screen { rect { stroke-linejoin: bevel; } }
+        @media not print { rect { stroke-linecap: round; } }
       </style>
       <rect width="10" height="8"/>
     </svg>"""
@@ -691,6 +693,8 @@ def test_css_media_rules_apply_only_screen_compatible_queries() -> None:
 
     assert 'val="2563EB"' in dml
     assert 'val="16A34A"' in dml
+    assert '<a:bevel' in dml
+    assert 'cap="rnd"' in dml
     assert 'val="DC2626"' not in dml
     assert 'val="F97316"' not in dml
     assert analyze_svg(svg).unsupported_attributes == {}

@@ -12,6 +12,8 @@
     stop.panel-start { stop-color: currentcolor; stop-opacity: .95; }
     stop.panel-end { stop-color: rgb(187, 247, 208); stop-opacity: .6; }
     .hidden-probe { display: none; }
+    @media only screen { rect[data-tone="cool"] { stroke-linecap: round; } }
+    @media not print { rect[data-tone="cool"] { stroke-linejoin: bevel; } }
   </style>
   <defs>
     <linearGradient id="panel">
