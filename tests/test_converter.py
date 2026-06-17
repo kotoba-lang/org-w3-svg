@@ -1135,7 +1135,6 @@ def test_analyze_svg_reports_unconverted_visual_attributes() -> None:
 
     assert report.unsupported_elements == {}
     assert report.unsupported_attributes == {
-        "clip-rule": 1,
         "fill-rule": 1,
         "filter": 1,
         "isolation": 1,
@@ -1174,6 +1173,20 @@ def test_analyze_svg_ignores_default_visual_attribute_values() -> None:
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_ignores_clip_rule_outside_clip_path() -> None:
+    svg = '<svg><path d="M0 0 H10 V10 Z" clip-rule="evenodd" fill="#111111"/></svg>'
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_clip_rule_inside_inline_clip_path() -> None:
+    svg = """<svg>
+      <clipPath id="crop"><path d="M0 0 H10 V10 Z" clip-rule="evenodd"/></clipPath>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {"clip-rule": 1}
 
 
 def test_analyze_svg_ignores_paint_order_when_only_one_paint_channel_is_visible() -> None:

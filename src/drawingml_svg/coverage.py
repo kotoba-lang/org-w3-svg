@@ -249,6 +249,8 @@ def _inspect_attributes(
             continue
         if attr == "clip-path" and _clip_path_is_supported(element, style, refs, matrix):
             continue
+        if attr == "clip-rule" and _clip_rule_has_no_effect(ancestors):
+            continue
         if attr in {"marker", "marker-start", "marker-end"} and _marker_is_supported(element, style, refs):
             continue
         if attr == "font-variant" and _font_variant_is_supported(specified_style):
@@ -439,6 +441,10 @@ def _attribute_has_no_effect(attr: str, style: dict[str, str]) -> bool:
     if attr == "vector-effect":
         return normalized in {"none", "non-scaling-stroke"}
     return False
+
+
+def _clip_rule_has_no_effect(ancestors: tuple[ET.Element, ...]) -> bool:
+    return not any(_local_name(ancestor.tag) == "clipPath" for ancestor in ancestors)
 
 
 def _path_length_has_no_effect(style: dict[str, str]) -> bool:
