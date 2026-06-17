@@ -212,7 +212,20 @@ def _inspect_attributes(
     stats: _CoverageStats,
     ancestors: tuple[ET.Element, ...],
 ) -> None:
-    no_effect_attrs = {"clip-rule", "fill-rule", "paint-order", "shape-rendering", "text-rendering", "vector-effect"}
+    no_effect_attrs = {
+        "clip-path",
+        "clip-rule",
+        "fill-rule",
+        "filter",
+        "marker-end",
+        "marker-mid",
+        "marker-start",
+        "mask",
+        "paint-order",
+        "shape-rendering",
+        "text-rendering",
+        "vector-effect",
+    }
     for attr in UNSUPPORTED_ATTRIBUTES:
         if attr in no_effect_attrs and _attribute_has_no_effect(attr, specified_style):
             continue
@@ -235,6 +248,8 @@ def _inspect_attributes(
         ):
             continue
         if attr == "mix-blend-mode" and _mix_blend_mode_has_no_effect(specified_style):
+            continue
+        if attr == "pathLength" and _path_length_has_no_effect(specified_style):
             continue
         if attr == "rotate" and _text_rotate_is_supported(element, specified_style):
             continue
@@ -356,6 +371,8 @@ def _attribute_has_no_effect(attr: str, style: dict[str, str]) -> bool:
     if value is None:
         return False
     normalized = " ".join(value.strip().lower().split())
+    if attr in {"clip-path", "filter", "marker-end", "marker-mid", "marker-start", "mask"}:
+        return normalized == "none"
     if attr in {"clip-rule", "fill-rule"}:
         return normalized == "nonzero"
     if attr == "paint-order":
@@ -365,6 +382,14 @@ def _attribute_has_no_effect(attr: str, style: dict[str, str]) -> bool:
     if attr == "vector-effect":
         return normalized == "none"
     return False
+
+
+def _path_length_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("pathLength")
+    if value is None:
+        return False
+    dasharray = style.get("stroke-dasharray")
+    return dasharray is None or dasharray.strip().lower() in {"", "none"}
 
 
 def _word_spacing_has_no_effect(element: ET.Element, style: dict[str, str]) -> bool:

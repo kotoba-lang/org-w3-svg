@@ -672,9 +672,16 @@ def test_analyze_svg_ignores_default_visual_attribute_values() -> None:
     svg = """<svg>
       <path
         d="M0 0 H10 V10 Z"
+        clip-path="none"
         clip-rule="nonzero"
         fill-rule="nonzero"
+        filter="none"
+        marker-start="none"
+        marker-mid="none"
+        marker-end="none"
+        mask="none"
         paint-order="fill stroke markers"
+        pathLength="100"
         shape-rendering="auto"
         vector-effect="none"
       />

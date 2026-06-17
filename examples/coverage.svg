@@ -47,12 +47,13 @@
     <text x="24" y="154" font-variant="all-small-caps" font-size="8" fill="#0f172a" text-rendering="auto">caps mode</text>
     <text x="112" y="154" textLength="58" lengthAdjust="spacing" font-size="8" fill="#0f172a">wide text</text>
     <text x="222" y="154" word-spacing="5" font-size="8" fill="#0f172a">word gap</text>
-    <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132" marker-end="url(#arrow)" stroke-dashoffset="3mm" fill-rule="nonzero" clip-rule="nonzero" paint-order="fill stroke markers" shape-rendering="auto" vector-effect="none"/>
+    <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132" marker-start="none" marker-mid="none" marker-end="url(#arrow)" stroke-dashoffset="3mm" fill-rule="nonzero" clip-rule="nonzero" clip-path="none" filter="none" mask="none" paint-order="fill stroke markers" shape-rendering="auto" vector-effect="none"/>
     <rect x="18" y="18" width="28" height="18" fill="#bbf7d0" stroke="#111827" stroke-width="0"/>
     <rect x="52" y="18" width="28" height="18" fill="#111827" fill-opacity="0" stroke="#111827" stroke-opacity="0" stroke-width="2"/>
     <rect x="86" y="18" width="12" height="18"/>
     <line x1="104" y1="18" x2="132" y2="36"/>
     <line x1="104" y1="42" x2="132" y2="42" stroke="#111827"/>
+    <path d="M140 42 L166 42" pathLength="100" fill="none" stroke="#111827"/>
     <rect data-tone="cool" x="140" y="18" width="26" height="18"/>
     <rect data-icon="coverage-probe" data-tags="warm signal" data-kind="meter-high" x="172" y="18" width="24" height="18"/>
     <rect x="78%" y="8%" width="8%" height="12%" fill="#e0f2fe" stroke="#0369a1"/>
