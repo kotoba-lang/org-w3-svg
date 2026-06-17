@@ -601,6 +601,32 @@ def test_css_not_pseudo_class_selectors_are_applied() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_css_is_and_where_pseudo_class_selectors_are_applied() -> None:
+    svg = """<svg>
+      <style>
+        .accent { fill: #f97316; }
+        :is(#target, circle[data-tone]) { fill: #dc2626; }
+        rect { stroke: #2563eb; stroke-width: 2; }
+        :where(.outlined) { stroke: #16a34a; stroke-width: 3; }
+        g :is(text.label, tspan.emphasis) { text-transform: uppercase; fill: #111111; }
+      </style>
+      <g>
+        <rect id="target" class="accent outlined" width="10" height="8"/>
+        <circle data-tone="warm" cx="18" cy="4" r="4"/>
+        <text class="label" x="0" y="24">mixed</text>
+      </g>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert dml.count('val="DC2626"') == 2
+    assert 'val="F97316"' not in dml
+    assert 'val="2563EB"' in dml
+    assert 'val="16A34A"' not in dml
+    assert 'w="19050"' in dml
+    assert '<a:t>MIXED</a:t>' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_css_custom_properties_resolve_var_colors() -> None:
     svg = """<svg>
       <style>

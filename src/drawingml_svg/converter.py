@@ -2717,20 +2717,28 @@ def _selector_matches(
 
 
 def _selector_specificity(selector: str) -> tuple[int, int, int]:
-    selector_without_attrs = _selector_without_attribute_selectors(_selector_without_supported_pseudo_classes(selector))
+    selector_without_pseudos = _selector_without_supported_pseudo_classes(selector)
+    selector_without_attrs = _selector_without_attribute_selectors(selector_without_pseudos)
     selector_without_attrs = selector_without_attrs.replace(":root", "")
     if ":" in selector_without_attrs:
         return (0, 0, 0)
-    id_count = len(re.findall(r"#[A-Za-z_][\w:-]*", selector))
-    class_count = len(re.findall(r"\.[A-Za-z_][\w:-]*", selector)) + len(re.findall(r"\[[^\]]+\]", selector))
+    id_count = len(re.findall(r"#[A-Za-z_][\w:-]*", selector_without_pseudos))
+    class_count = len(re.findall(r"\.[A-Za-z_][\w:-]*", selector_without_pseudos)) + len(
+        re.findall(r"\[[^\]]+\]", selector_without_pseudos)
+    )
     element_count = 0
-    for part in (part for part in _selector_parts(selector) if part != ">"):
+    for part in (part for part in _selector_parts(selector_without_pseudos) if part not in {">", "+", "~"}):
         if part == "*":
             continue
         first_modifier = min([index for index in (part.find("."), part.find("#"), part.find("[")) if index >= 0], default=-1)
         tag = part[:first_modifier] if first_modifier > 0 else ("" if first_modifier == 0 else part)
         if tag and re.fullmatch(r"[A-Za-z_][\w:-]*", tag):
             element_count += 1
+    is_specificity = _selector_pseudo_specificity(selector, "is")
+    not_specificity = _selector_pseudo_specificity(selector, "not")
+    id_count += is_specificity[0] + not_specificity[0]
+    class_count += is_specificity[1] + not_specificity[1]
+    element_count += is_specificity[2] + not_specificity[2]
     return id_count, class_count, element_count
 
 
@@ -2794,10 +2802,18 @@ def _selector_list(selector: str) -> list[str]:
 
 def _simple_selector_matches(selector: str, element: ET.Element) -> bool:
     selector = selector.strip()
-    not_selectors = _selector_not_arguments(selector)
+    not_selectors = _selector_pseudo_arguments(selector, "not")
     if any(_simple_selector_matches(not_selector, element) for not_selector in not_selectors):
         return False
+    is_selectors = _selector_pseudo_arguments(selector, "is")
+    if is_selectors and not any(_simple_selector_matches(is_selector, element) for is_selector in is_selectors):
+        return False
+    where_selectors = _selector_pseudo_arguments(selector, "where")
+    if where_selectors and not any(_simple_selector_matches(where_selector, element) for where_selector in where_selectors):
+        return False
     selector = _selector_without_supported_pseudo_classes(selector)
+    if not selector.strip():
+        return True
     selector_without_attrs = _selector_without_attribute_selectors(selector)
     if not selector or any(mark in selector_without_attrs for mark in ("+", "~", ":")):
         return False
@@ -2829,12 +2845,75 @@ def _selector_without_attribute_selectors(selector: str) -> str:
     return re.sub(r"\[[^\]]+\]", "", selector)
 
 
-def _selector_not_arguments(selector: str) -> list[str]:
-    return [match.group(1).strip() for match in re.finditer(r":not\(([^()]*)\)", selector) if match.group(1).strip()]
-
-
 def _selector_without_supported_pseudo_classes(selector: str) -> str:
-    return re.sub(r":not\([^()]*\)", "", selector)
+    for name in ("not", "is", "where"):
+        selector = _strip_selector_pseudo(selector, name)
+    return selector
+
+
+def _selector_pseudo_arguments(selector: str, name: str) -> list[str]:
+    args: list[str] = []
+    for body in _selector_pseudo_bodies(selector, name):
+        args.extend(item.strip() for item in _selector_list(body) if item.strip())
+    return args
+
+
+def _selector_pseudo_specificity(selector: str, name: str) -> tuple[int, int, int]:
+    max_specificity = (0, 0, 0)
+    for argument in _selector_pseudo_arguments(selector, name):
+        max_specificity = max(max_specificity, _selector_specificity(argument))
+    return max_specificity
+
+
+def _strip_selector_pseudo(selector: str, name: str) -> str:
+    token = f":{name}("
+    result: list[str] = []
+    index = 0
+    while index < len(selector):
+        if selector[index : index + len(token)].lower() == token:
+            end = _selector_function_end(selector, index + len(token) - 1)
+            if end is not None:
+                index = end + 1
+                continue
+        result.append(selector[index])
+        index += 1
+    return "".join(result)
+
+
+def _selector_pseudo_bodies(selector: str, name: str) -> list[str]:
+    token = f":{name}("
+    bodies: list[str] = []
+    index = 0
+    while index < len(selector):
+        if selector[index : index + len(token)].lower() == token:
+            body_start = index + len(token)
+            end = _selector_function_end(selector, body_start - 1)
+            if end is not None:
+                bodies.append(selector[body_start:end])
+                index = end + 1
+                continue
+        index += 1
+    return bodies
+
+
+def _selector_function_end(selector: str, open_paren_index: int) -> int | None:
+    depth = 0
+    quote: str | None = None
+    for index in range(open_paren_index, len(selector)):
+        char = selector[index]
+        if quote is not None:
+            if char == quote:
+                quote = None
+            continue
+        if char in {"'", '"'}:
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+    return None
 
 
 def _resolve_css_vars(value: str, style: dict[str, str]) -> str:
