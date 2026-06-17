@@ -54,6 +54,7 @@
     <line x1="104" y1="18" x2="132" y2="36"/>
     <line x1="104" y1="42" x2="132" y2="42" stroke="#111827"/>
     <line x1="104" y1="48" x2="132" y2="48" stroke="#111827" stroke-dasharray="0 0"/>
+    <line x1="104" y1="54" x2="132" y2="54" stroke="#111827" stroke-dasharray="-1 2"/>
     <path d="M140 42 L166 42" pathLength="100" fill="none" stroke="#111827"/>
     <rect data-tone="cool" x="140" y="18" width="26" height="18"/>
     <rect data-icon="coverage-probe" data-tags="warm signal" data-kind="meter-high" x="172" y="18" width="24" height="18"/>

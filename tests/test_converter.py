@@ -1029,6 +1029,17 @@ def test_zero_dasharray_is_treated_as_no_dash() -> None:
     assert analyze_svg('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111" stroke-dasharray="0 0"/></svg>').unsupported_attributes == {}
 
 
+def test_negative_dasharray_is_treated_as_invalid_and_solid() -> None:
+    dml = svg_to_drawingml('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111" stroke-dasharray="-1 2"/></svg>')
+
+    assert "<a:custDash>" not in dml
+    assert "<a:prstDash" not in dml
+
+    svg = drawingml_to_svg(dml)
+    assert "stroke-dasharray" not in svg
+    assert analyze_svg('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111" stroke-dasharray="-1 2"/></svg>').unsupported_attributes == {}
+
+
 def test_zero_stroke_width_is_converted_as_no_line() -> None:
     dml = svg_to_drawingml('<svg><rect width="10" height="8" fill="#ffffff" stroke="#111111" stroke-width="0"/></svg>')
 

@@ -947,7 +947,7 @@ def _svg_dasharray_numbers(value: str) -> list[float] | None:
     nums = []
     for part in parts:
         number = _num(part, math.nan)
-        if math.isnan(number):
+        if math.isnan(number) or number < 0:
             return None
         nums.append(number)
     return nums
