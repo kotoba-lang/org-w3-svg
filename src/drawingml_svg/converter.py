@@ -1724,15 +1724,15 @@ def _selector_matches(selector: str, element: ET.Element, ancestors: tuple[ET.El
 
 
 def _selector_specificity(selector: str) -> tuple[int, int, int]:
-    if any(mark in selector for mark in ("+", "~", ":", "[")):
+    if any(mark in selector for mark in ("+", "~", ":")):
         return (0, 0, 0)
     id_count = len(re.findall(r"#[A-Za-z_][\w:-]*", selector))
-    class_count = len(re.findall(r"\.[A-Za-z_][\w:-]*", selector))
+    class_count = len(re.findall(r"\.[A-Za-z_][\w:-]*", selector)) + len(re.findall(r"\[[^\]]+\]", selector))
     element_count = 0
     for part in re.findall(r"[^ >]+", selector.strip()):
         if part == "*":
             continue
-        first_modifier = min([index for index in (part.find("."), part.find("#")) if index >= 0], default=-1)
+        first_modifier = min([index for index in (part.find("."), part.find("#"), part.find("[")) if index >= 0], default=-1)
         tag = part[:first_modifier] if first_modifier > 0 else ("" if first_modifier == 0 else part)
         if tag and re.fullmatch(r"[A-Za-z_][\w:-]*", tag):
             element_count += 1
@@ -1741,25 +1741,53 @@ def _selector_specificity(selector: str) -> tuple[int, int, int]:
 
 def _simple_selector_matches(selector: str, element: ET.Element) -> bool:
     selector = selector.strip()
-    if not selector or any(mark in selector for mark in ("+", "~", ":", "[")):
+    if not selector or any(mark in selector for mark in ("+", "~", ":")):
         return False
     tag = _local_name(element.tag)
     element_id = element.get("id")
     element_classes = set(element.get("class", "").split())
     if selector == "*":
         return True
-    first_modifier = min([index for index in (selector.find("."), selector.find("#")) if index >= 0], default=-1)
-    selector_tag = selector[:first_modifier] if first_modifier > 0 else ("" if first_modifier == 0 else selector)
-    remainder = selector[first_modifier:] if first_modifier >= 0 else ""
+    attributes = re.findall(r"\[([^\]]+)\]", selector)
+    selector_without_attrs = re.sub(r"\[[^\]]+\]", "", selector)
+    if "[" in selector_without_attrs or "]" in selector_without_attrs:
+        return False
+    first_modifier = min([index for index in (selector_without_attrs.find("."), selector_without_attrs.find("#")) if index >= 0], default=-1)
+    selector_tag = selector_without_attrs[:first_modifier] if first_modifier > 0 else ("" if first_modifier == 0 else selector_without_attrs)
+    remainder = selector_without_attrs[first_modifier:] if first_modifier >= 0 else ""
     selector_ids = re.findall(r"#([A-Za-z_][\w:-]*)", remainder)
     selector_classes = re.findall(r"\.([A-Za-z_][\w:-]*)", remainder)
     if len(selector_ids) > 1:
         return False
-    if selector_tag and selector_tag != tag:
+    if selector_tag and selector_tag != "*" and selector_tag != tag:
         return False
     if selector_ids and selector_ids[0] != element_id:
         return False
-    return all(selector_class in element_classes for selector_class in selector_classes)
+    return all(selector_class in element_classes for selector_class in selector_classes) and all(
+        _attribute_selector_matches(attribute, element) for attribute in attributes
+    )
+
+
+def _attribute_selector_matches(selector: str, element: ET.Element) -> bool:
+    match = re.fullmatch(r"\s*([A-Za-z_][\w:-]*)(?:\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|([^\s\"']+)))?\s*", selector)
+    if not match:
+        return False
+    name = match.group(1)
+    expected = next((group for group in match.groups()[1:] if group is not None), None)
+    actual = _attribute_value(element, name)
+    if actual is None:
+        return False
+    return expected is None or actual == expected
+
+
+def _attribute_value(element: ET.Element, name: str) -> str | None:
+    value = element.get(name)
+    if value is not None:
+        return value
+    for attr, attr_value in element.attrib.items():
+        if _local_name(attr) == name:
+            return attr_value
+    return None
 
 
 def _href(element: ET.Element) -> str | None:

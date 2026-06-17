@@ -184,6 +184,23 @@ def test_css_descendant_selectors_are_applied_in_converter_and_analyzer() -> Non
     assert analyze_svg(svg).estimated_element_coverage == 1.0
 
 
+def test_css_attribute_selectors_are_applied() -> None:
+    svg = """<svg>
+      <style>
+        rect[data-tone] { fill: #fef3c7; }
+        [data-state="active"] { stroke: #0f766e; stroke-width: 2; }
+        *[data-wide] { stroke-width: 3; }
+      </style>
+      <rect data-tone="warm" data-state="active" data-wide="1" x="1" y="2" width="3" height="4"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="FEF3C7"' in dml
+    assert 'val="0F766E"' in dml
+    assert 'w="28575"' in dml
+    assert analyze_svg(svg).estimated_element_coverage == 1.0
+
+
 def test_css_specificity_wins_over_later_lower_specificity_rules() -> None:
     svg = """<svg>
       <style>

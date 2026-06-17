@@ -5,6 +5,7 @@
     g.badges .badge { fill: currentColor; color: #f97316; stroke: hsla(0.349066rad, 75%, 28%, .7); stroke-width: 2; }
     text.title { fill: #111827; font-size: 15pt !important; font-weight: 700; font-style: italic; font-family: 'Aptos Display', Arial, sans-serif; text-decoration: underline; text-anchor: middle; dominant-baseline: middle; }
     .route { fill: none; stroke: #0891b2; stroke-width: 1mm !important; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2mm, 1mm; }
+    rect[data-tone="cool"] { fill: #dbeafe; stroke: #1d4ed8; stroke-width: 2; }
     rect.panel { stroke: #ef4444; }
     .hidden-probe { display: none; }
   </style>
@@ -40,6 +41,7 @@
     <rect x="86" y="18" width="12" height="18"/>
     <line x1="104" y1="18" x2="132" y2="36"/>
     <line x1="104" y1="42" x2="132" y2="42" stroke="#111827"/>
+    <rect data-tone="cool" x="140" y="18" width="26" height="18"/>
     <rect x="78%" y="8%" width="8%" height="12%" fill="#e0f2fe" stroke="#0369a1"/>
     <circle cx="316" cy="36" r="8" fill="url(#missingPaint) #dc2626"/>
     <polygon points="40,54 66,42 92,54 82,86 50,86" fill="#f008" stroke="#991b1b" stroke-width="2"/>
