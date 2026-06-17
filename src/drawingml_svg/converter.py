@@ -57,6 +57,7 @@ class Shape:
     font_size: float | None = None
     font_weight: str | None = None
     font_style: str | None = None
+    font_family: str | None = None
     text_anchor: str | None = None
     rx: float | None = None
     ry: float | None = None
@@ -225,6 +226,7 @@ def _svg_shape_from_element(
                 font_size=font_size,
                 font_weight=style.get("font-weight"),
                 font_style=style.get("font-style"),
+                font_family=_font_family(style.get("font-family")),
                 text_anchor=anchor,
             )
     if tag == "image":
@@ -274,6 +276,7 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
                 text=text,
                 font_weight=_dml_font_weight(element),
                 font_style=_dml_font_style(element),
+                font_family=_dml_font_family(element),
             )
             continue
         cust = sp_pr.find(qn(NS_A, "custGeom"))
@@ -387,6 +390,8 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
             attrs["font-weight"] = shape.font_weight
         if shape.font_style:
             attrs["font-style"] = shape.font_style
+        if shape.font_family:
+            attrs["font-family"] = shape.font_family
         if shape.text_anchor:
             attrs["text-anchor"] = shape.text_anchor
         element = ET.Element(qn(NS_SVG, "text"), attrs)
@@ -514,6 +519,13 @@ def _text_paint(style: dict[str, str], refs: dict[str, ET.Element]) -> Paint:
     return Paint(fill=fill or "#000000", fill_alpha=_combined_alpha(_alpha(style, "fill"), color_alpha))
 
 
+def _font_family(value: str | None) -> str | None:
+    if not value:
+        return None
+    first = value.split(",", 1)[0].strip()
+    return first.strip("\"'") or None
+
+
 def _dml_paint(sp_pr: ET.Element) -> Paint:
     fill = None
     solid_fill = sp_pr.find(qn(NS_A, "solidFill"))
@@ -627,22 +639,25 @@ def _append_text_body(parent: ET.Element, shape: Shape) -> None:
     if _is_italic(shape.font_style):
         r_pr_attrs["i"] = "1"
     r_pr = ET.SubElement(run, qn(NS_A, "rPr"), r_pr_attrs)
-    if shape.paint.fill and shape.paint.fill != "none":
-        fill = ET.SubElement(r_pr, qn(NS_A, "solidFill"))
-        color = ET.SubElement(fill, qn(NS_A, "srgbClr"), {"val": shape.paint.fill.removeprefix("#").upper()})
-        _append_alpha(color, shape.paint.fill_alpha)
+    _append_text_run_properties(r_pr, shape)
     lines = (shape.text or "").split("\n")
     ET.SubElement(run, qn(NS_A, "t")).text = lines[0] if lines else ""
     for line in lines[1:]:
         ET.SubElement(paragraph, qn(NS_A, "br"))
         br_run = ET.SubElement(paragraph, qn(NS_A, "r"))
         br_r_pr = ET.SubElement(br_run, qn(NS_A, "rPr"), r_pr_attrs)
-        if shape.paint.fill and shape.paint.fill != "none":
-            fill = ET.SubElement(br_r_pr, qn(NS_A, "solidFill"))
-            color = ET.SubElement(fill, qn(NS_A, "srgbClr"), {"val": shape.paint.fill.removeprefix("#").upper()})
-            _append_alpha(color, shape.paint.fill_alpha)
+        _append_text_run_properties(br_r_pr, shape)
         ET.SubElement(br_run, qn(NS_A, "t")).text = line
     ET.SubElement(paragraph, qn(NS_A, "endParaRPr"))
+
+
+def _append_text_run_properties(r_pr: ET.Element, shape: Shape) -> None:
+    if shape.paint.fill and shape.paint.fill != "none":
+        fill = ET.SubElement(r_pr, qn(NS_A, "solidFill"))
+        color = ET.SubElement(fill, qn(NS_A, "srgbClr"), {"val": shape.paint.fill.removeprefix("#").upper()})
+        _append_alpha(color, shape.paint.fill_alpha)
+    if shape.font_family:
+        ET.SubElement(r_pr, qn(NS_A, "latin"), {"typeface": shape.font_family})
 
 
 def _dml_color(parent: ET.Element) -> str | None:
@@ -777,6 +792,13 @@ def _dml_font_style(element: ET.Element) -> str | None:
     r_pr = element.find(f".//{qn(NS_A, 'rPr')}")
     if r_pr is not None and r_pr.get("i") in {"1", "true"}:
         return "italic"
+    return None
+
+
+def _dml_font_family(element: ET.Element) -> str | None:
+    latin = element.find(f".//{qn(NS_A, 'rPr')}/{qn(NS_A, 'latin')}")
+    if latin is not None:
+        return latin.get("typeface")
     return None
 
 
@@ -1314,22 +1336,24 @@ def _apply_rect_clip(
     if x2 <= x1 or y2 <= y1:
         return None
     return Shape(
-        shape.kind,
-        x1,
-        y1,
-        x2 - x1,
-        y2 - y1,
-        shape.paint,
-        shape.flip_h,
-        shape.flip_v,
-        shape.points,
-        shape.closed,
-        shape.text,
-        shape.font_size,
-        shape.font_weight,
-        shape.text_anchor,
-        min(shape.rx or 0, (x2 - x1) / 2) if shape.rx is not None else None,
-        min(shape.ry or 0, (y2 - y1) / 2) if shape.ry is not None else None,
+        kind=shape.kind,
+        x=x1,
+        y=y1,
+        width=x2 - x1,
+        height=y2 - y1,
+        paint=shape.paint,
+        flip_h=shape.flip_h,
+        flip_v=shape.flip_v,
+        points=shape.points,
+        closed=shape.closed,
+        text=shape.text,
+        font_size=shape.font_size,
+        font_weight=shape.font_weight,
+        font_style=shape.font_style,
+        font_family=shape.font_family,
+        text_anchor=shape.text_anchor,
+        rx=min(shape.rx or 0, (x2 - x1) / 2) if shape.rx is not None else None,
+        ry=min(shape.ry or 0, (y2 - y1) / 2) if shape.ry is not None else None,
     )
 
 

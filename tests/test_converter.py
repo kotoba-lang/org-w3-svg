@@ -441,12 +441,13 @@ def test_unsupported_marker_usage_is_reported() -> None:
 
 def test_tspan_text_anchor_and_bold_convert() -> None:
     dml = svg_to_drawingml(
-        '<svg><text x="100" y="40" text-anchor="middle" font-size="20" font-weight="700" font-style="italic" fill="#111111"><tspan>Hello</tspan><tspan x="100" dy="22">World</tspan></text></svg>'
+        '<svg><text x="100" y="40" text-anchor="middle" font-size="20" font-weight="700" font-style="italic" font-family="\'Aptos Display\', Arial, sans-serif" fill="#111111"><tspan>Hello</tspan><tspan x="100" dy="22">World</tspan></text></svg>'
     )
 
     assert '<a:br/>' in dml
     assert 'b="1"' in dml
     assert 'i="1"' in dml
+    assert 'typeface="Aptos Display"' in dml
     assert '<a:t>Hello</a:t>' in dml
     assert '<a:t>World</a:t>' in dml
 
@@ -456,3 +457,4 @@ def test_tspan_text_anchor_and_bold_convert() -> None:
     assert "<tspan" in svg
     assert 'font-weight="bold"' in svg
     assert 'font-style="italic"' in svg
+    assert 'font-family="Aptos Display"' in svg
