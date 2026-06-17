@@ -212,7 +212,7 @@ def _svg_shape_from_element(
             viewport,
         )
         ry = _geometry_length(element, style, "ry", rx, "y", viewport)
-        shape = _transformed_axis_aligned_rect_shape(x, y, width, height, rx, ry, matrix, plain_paint)
+        shape = _transformed_rect_shape(x, y, width, height, rx, ry, matrix, plain_paint)
         if shape is not None:
             return shape
         return _freeform_shape(_transform_points(_rect_points(x, y, width, height), matrix), plain_paint, closed=True)
@@ -458,6 +458,9 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
                 attrs["rx"] = _fmt(shape.rx)
             if shape.ry is not None:
                 attrs["ry"] = _fmt(shape.ry)
+        transform = _svg_shape_transform(shape)
+        if transform:
+            attrs["transform"] = transform
         return ET.Element(qn(NS_SVG, "rect"), attrs)
     if shape.kind == "ellipse":
         attrs.update(
@@ -468,6 +471,9 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
                 "ry": _fmt(shape.height / 2),
             }
         )
+        transform = _svg_shape_transform(shape)
+        if transform:
+            attrs["transform"] = transform
         return ET.Element(qn(NS_SVG, "ellipse"), attrs)
     if shape.kind == "line":
         attrs.update(_line_points(shape))
@@ -596,7 +602,7 @@ def _transformed_image_shape(
     return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, paint, image_href=href)
 
 
-def _svg_image_transform(shape: Shape) -> str | None:
+def _svg_shape_transform(shape: Shape) -> str | None:
     transforms = []
     center_x = shape.x + shape.width / 2
     center_y = shape.y + shape.height / 2
@@ -607,6 +613,10 @@ def _svg_image_transform(shape: Shape) -> str | None:
         sy = -1 if shape.flip_v else 1
         transforms.append(f"translate({_fmt(center_x)} {_fmt(center_y)}) scale({sx} {sy}) translate({_fmt(-center_x)} {_fmt(-center_y)})")
     return " ".join(transforms) or None
+
+
+def _svg_image_transform(shape: Shape) -> str | None:
+    return _svg_shape_transform(shape)
 
 
 def _append_svg_marker_defs(svg: ET.Element, shapes: list[Shape]) -> None:
@@ -1492,7 +1502,7 @@ def _dml_custom_points(cust: ET.Element, x: float, y: float) -> tuple[list[tuple
     return points, closed
 
 
-def _transformed_axis_aligned_rect_shape(
+def _transformed_rect_shape(
     x: float,
     y: float,
     width: float,
@@ -1503,31 +1513,35 @@ def _transformed_axis_aligned_rect_shape(
     paint: Paint,
 ) -> Shape | None:
     points = _transform_points(_rect_points(x, y, width, height), matrix)
-    xs = {round(px, 9) for px, _ in points}
-    ys = {round(py, 9) for _, py in points}
-    if len(xs) != 2 or len(ys) != 2:
-        return None
-    min_x = min(px for px, _ in points)
-    min_y = min(py for _, py in points)
-    max_x = max(px for px, _ in points)
-    max_y = max(py for _, py in points)
-    transformed_width = max_x - min_x
-    transformed_height = max_y - min_y
-    if transformed_width <= 0 or transformed_height <= 0:
+    p0, p1, _, p3 = points
+    ux = (p1[0] - p0[0], p1[1] - p0[1])
+    vy = (p3[0] - p0[0], p3[1] - p0[1])
+    transformed_width = math.hypot(*ux)
+    transformed_height = math.hypot(*vy)
+    dot = ux[0] * vy[0] + ux[1] * vy[1]
+    determinant = ux[0] * vy[1] - ux[1] * vy[0]
+    tolerance = max(transformed_width * transformed_height, 1.0) * 1e-9
+    if transformed_width <= 0 or transformed_height <= 0 or abs(dot) > tolerance or determinant <= 0:
         return None
     sx = transformed_width / width
     sy = transformed_height / height
     transformed_rx = min(rx * sx, transformed_width / 2) if rx else None
     transformed_ry = min(ry * sy, transformed_height / 2) if ry else None
+    center_x = sum(px for px, _ in points) / 4
+    center_y = sum(py for _, py in points) / 4
+    rotation = math.degrees(math.atan2(ux[1], ux[0])) % 360
+    if abs(rotation) < 1e-9 or abs(rotation - 360) < 1e-9:
+        rotation = 0.0
     return Shape(
         "roundRect" if transformed_rx or transformed_ry else "rect",
-        min_x,
-        min_y,
+        center_x - transformed_width / 2,
+        center_y - transformed_height / 2,
         transformed_width,
         transformed_height,
         paint,
         rx=transformed_rx,
         ry=transformed_ry,
+        rotation=rotation or None,
     )
 
 

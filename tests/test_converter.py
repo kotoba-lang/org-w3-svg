@@ -868,6 +868,22 @@ def test_scaled_rounded_rect_stays_as_editable_round_rect() -> None:
     assert analyze_svg('<svg><g transform="scale(2)"><rect width="10" height="8"/></g></svg>').estimated_element_coverage == 1.0
 
 
+def test_rotated_rect_stays_as_editable_rect_with_rotation() -> None:
+    svg = '<svg><rect x="10" y="12" width="20" height="16" fill="#f97316" transform="rotate(90 20 20)"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm[@rot]")
+    assert xfrm is not None
+    assert xfrm.get("rot") == "5400000"
+    assert 'prst="rect"' in dml
+    assert "<a:custGeom>" not in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+    round_trip = drawingml_to_svg(dml)
+    assert 'transform="rotate(90 20 20)"' in round_trip
+
+
 def test_scaled_circle_and_ellipse_stay_as_editable_ellipses() -> None:
     dml = svg_to_drawingml(
         """<svg>
