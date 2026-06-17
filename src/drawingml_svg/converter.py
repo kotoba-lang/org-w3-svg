@@ -2741,7 +2741,9 @@ def _resolve_font_size_value(value: str | None, inherited_value: str | None) -> 
 
 
 def _is_hidden(style: dict[str, str]) -> bool:
-    return style.get("display") == "none" or style.get("visibility") in {"hidden", "collapse"}
+    display = " ".join(style.get("display", "").strip().lower().split())
+    visibility = " ".join(style.get("visibility", "").strip().lower().split())
+    return display == "none" or visibility in {"hidden", "collapse"}
 
 
 def _apply_rect_clip(

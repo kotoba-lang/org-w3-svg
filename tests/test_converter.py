@@ -794,6 +794,26 @@ def test_analyze_svg_skips_hidden_unsupported_details() -> None:
     assert report.unsupported_path_commands == {}
 
 
+def test_hidden_display_and_visibility_values_are_normalized() -> None:
+    svg = """<svg>
+      <path display=" NONE " d="M0 0 R10 20" filter="url(#blur)"/>
+      <g visibility=" COLLAPSE ">
+        <foreignObject width="10" height="10"/>
+        <path d="M0 0 R10 20"/>
+      </g>
+      <rect x="20" width="10" height="8" fill="#222222"/>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    report = analyze_svg(svg)
+
+    assert dml.count("<p:sp>") == 1
+    assert report.ignored_elements == 2
+    assert report.unsupported_elements == {}
+    assert report.unsupported_attributes == {}
+    assert report.unsupported_path_commands == {}
+
+
 def test_text_position_can_come_from_first_tspan() -> None:
     dml = svg_to_drawingml('<svg><text font-size="10" fill="#111"><tspan x="20" y="40" dx="5" dy="7">From tspan</tspan></text></svg>')
 

@@ -42,6 +42,7 @@
   <g id="board">
     <rect class="panel featured" x="-20" y="-10" width="360" height="180" rx="12"/>
     <rect class="hidden-probe" x="-40" y="-30" width="400" height="240"/>
+    <path display=" NONE " d="M0 0 R10 20" filter="url(#hidden-filter)"/>
     <text class="title" x="160" y="46">
       <tspan>Coverage</tspan>
       <tspan x="160" dy="24" text-transform="uppercase">fixture</tspan>
