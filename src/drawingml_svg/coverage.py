@@ -11,6 +11,7 @@ from .converter import (
     _collect_refs,
     _computed_style,
     _clip_path_is_supported,
+    _dominant_baseline,
     _href,
     _is_display_none,
     _is_visibility_hidden,
@@ -65,18 +66,26 @@ IGNORED_ELEMENTS = {"defs", "desc", "linearGradient", "metadata", "pattern", "ra
 GRADIENT_ELEMENTS = {"linearGradient", "radialGradient", "stop"}
 
 UNSUPPORTED_ATTRIBUTES = {
+    "alignment-baseline",
+    "direction",
     "clip-path",
     "clip-rule",
     "color-rendering",
     "fill-rule",
     "filter",
+    "font-feature-settings",
+    "font-kerning",
     "font-size-adjust",
     "font-stretch",
     "font-variant",
+    "font-variation-settings",
+    "glyph-orientation-horizontal",
+    "glyph-orientation-vertical",
     "gradientTransform",
     "gradientUnits",
     "image-rendering",
     "isolation",
+    "kerning",
     "letter-spacing",
     "lengthAdjust",
     "marker",
@@ -100,9 +109,12 @@ UNSUPPORTED_ATTRIBUTES = {
     "text-rendering",
     "text-transform",
     "transform-origin",
+    "unicode-bidi",
     "vector-effect",
     "word-spacing",
+    "writing-mode",
     "baseline-shift",
+    "dominant-baseline",
 }
 
 
@@ -286,9 +298,21 @@ def _inspect_attributes(
             continue
         if attr == "font-variant" and _font_variant_is_supported(specified_style):
             continue
+        if attr == "font-feature-settings" and _css_none_or_normal_has_no_effect(specified_style, attr):
+            continue
+        if attr == "font-kerning" and _css_auto_or_normal_has_no_effect(specified_style, attr):
+            continue
         if attr == "font-size-adjust" and _font_size_adjust_has_no_effect(specified_style):
             continue
         if attr == "font-stretch" and _font_stretch_has_no_effect(specified_style):
+            continue
+        if attr == "font-variation-settings" and _css_none_or_normal_has_no_effect(specified_style, attr):
+            continue
+        if attr in {"glyph-orientation-horizontal", "glyph-orientation-vertical"} and _glyph_orientation_has_no_effect(
+            specified_style, attr
+        ):
+            continue
+        if attr == "kerning" and _css_auto_or_normal_has_no_effect(specified_style, attr):
             continue
         if attr in {"gradientTransform", "gradientUnits", "spreadMethod"} and _gradient_fallback_is_supported(
             element, refs, css
@@ -331,6 +355,16 @@ def _inspect_attributes(
         if attr == "transform-origin" and _transform_origin_is_supported(specified_style, viewport):
             continue
         if attr == "baseline-shift" and _baseline_shift_has_no_effect(specified_style):
+            continue
+        if attr == "alignment-baseline" and _alignment_baseline_is_supported_or_noop(specified_style):
+            continue
+        if attr == "direction" and _direction_has_no_effect(specified_style):
+            continue
+        if attr == "unicode-bidi" and _unicode_bidi_has_no_effect(specified_style):
+            continue
+        if attr == "writing-mode" and _writing_mode_has_no_effect(specified_style):
+            continue
+        if attr == "dominant-baseline" and _dominant_baseline_is_supported_or_noop(specified_style):
             continue
         if attr == "word-spacing" and _word_spacing_has_no_effect(element, specified_style):
             continue
@@ -484,6 +518,16 @@ def _text_transform_is_supported(element: ET.Element, style: dict[str, str]) -> 
     return value is not None and value.strip().lower() in {"normal", "none", "uppercase", "lowercase", "capitalize"}
 
 
+def _css_none_or_normal_has_no_effect(style: dict[str, str], attr: str) -> bool:
+    value = style.get(attr)
+    return value is not None and value.strip().lower() in {"", "normal", "none"}
+
+
+def _css_auto_or_normal_has_no_effect(style: dict[str, str], attr: str) -> bool:
+    value = style.get(attr)
+    return value is not None and value.strip().lower() in {"", "auto", "normal"}
+
+
 def _font_size_adjust_has_no_effect(style: dict[str, str]) -> bool:
     value = style.get("font-size-adjust")
     return value is not None and value.strip().lower() in {"", "none"}
@@ -499,11 +543,54 @@ def _text_orientation_has_no_effect(style: dict[str, str]) -> bool:
     return value is not None and value.strip().lower() in {"", "mixed"}
 
 
+def _glyph_orientation_has_no_effect(style: dict[str, str], attr: str) -> bool:
+    value = style.get(attr)
+    if value is None:
+        return False
+    normalized = value.strip().lower()
+    return normalized in {"", "auto", "0", "0deg", "0grad", "0rad", "0turn"}
+
+
 def _baseline_shift_has_no_effect(style: dict[str, str]) -> bool:
     value = style.get("baseline-shift")
     if value is None:
         return False
     return value.strip().lower() in {"", "baseline", "0", "0px", "0pt", "0pc", "0in", "0cm", "0mm", "0q"}
+
+
+def _alignment_baseline_is_supported_or_noop(style: dict[str, str]) -> bool:
+    value = style.get("alignment-baseline")
+    if value is None:
+        return False
+    normalized = value.strip().lower()
+    if normalized in {"", "auto", "baseline", "alphabetic"}:
+        return True
+    return _dominant_baseline(value) is not None
+
+
+def _dominant_baseline_is_supported_or_noop(style: dict[str, str]) -> bool:
+    value = style.get("dominant-baseline")
+    if value is None:
+        return False
+    normalized = value.strip().lower()
+    if normalized in {"", "auto", "baseline", "alphabetic"}:
+        return True
+    return _dominant_baseline(value) is not None
+
+
+def _direction_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("direction")
+    return value is not None and value.strip().lower() in {"", "ltr"}
+
+
+def _unicode_bidi_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("unicode-bidi")
+    return value is not None and value.strip().lower() in {"", "normal"}
+
+
+def _writing_mode_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("writing-mode")
+    return value is not None and value.strip().lower() in {"", "horizontal-tb", "lr", "lr-tb", "rl", "rl-tb"}
 
 
 def _text_decoration_color_has_no_effect(style: dict[str, str]) -> bool:

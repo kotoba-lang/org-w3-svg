@@ -1181,6 +1181,38 @@ def test_unconverted_text_layout_attributes_are_reported() -> None:
     }
 
 
+def test_unconverted_text_direction_and_typography_attributes_are_reported() -> None:
+    svg = """<svg>
+      <style>
+        .vertical { writing-mode: vertical-rl; }
+        .features { font-feature-settings: &quot;liga&quot; 0; font-variation-settings: &quot;wght&quot; 650; }
+      </style>
+      <text class="vertical" x="0" y="20">Vertical</text>
+      <text x="0" y="40" direction="rtl" unicode-bidi="bidi-override">Bidi</text>
+      <text x="0" y="60" alignment-baseline="mathematical" dominant-baseline="mathematical">Baseline</text>
+      <text x="0" y="80" glyph-orientation-vertical="90deg" glyph-orientation-horizontal="90deg">Glyphs</text>
+      <text class="features" x="0" y="100" kerning="4" font-kerning="none">Features</text>
+      <text x="0" y="120" writing-mode="horizontal-tb" direction="ltr" unicode-bidi="normal"
+        alignment-baseline="hanging" dominant-baseline="middle" glyph-orientation-vertical="0deg"
+        glyph-orientation-horizontal="0" kerning="auto" font-kerning="normal"
+        font-feature-settings="normal" font-variation-settings="normal">Noop</text>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "alignment-baseline": 1,
+        "direction": 1,
+        "dominant-baseline": 1,
+        "font-feature-settings": 1,
+        "font-kerning": 1,
+        "font-variation-settings": 1,
+        "glyph-orientation-horizontal": 1,
+        "glyph-orientation-vertical": 1,
+        "kerning": 1,
+        "unicode-bidi": 1,
+        "writing-mode": 1,
+    }
+
+
 def test_xml_space_preserve_keeps_text_whitespace() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'
