@@ -426,6 +426,21 @@ def test_opacity_is_written_as_drawingml_alpha() -> None:
     assert 'stroke-opacity="0.25"' in svg
 
 
+def test_zero_alpha_paint_is_converted_as_no_fill_and_no_line() -> None:
+    dml = svg_to_drawingml(
+        '<svg><rect width="10" height="8" fill="#111111" fill-opacity="0" stroke="#222222" stroke-opacity="0" stroke-width="2"/></svg>'
+    )
+
+    assert 'val="111111"' not in dml
+    assert 'val="222222"' not in dml
+    assert dml.count("<a:noFill/>") == 2
+
+    svg = drawingml_to_svg(dml)
+    assert 'fill="none"' in svg
+    assert 'stroke="none"' in svg
+    assert 'stroke-width="2"' in svg
+
+
 def test_css_color_functions_named_colors_and_gradient_fallback() -> None:
     svg = """<svg>
       <defs>

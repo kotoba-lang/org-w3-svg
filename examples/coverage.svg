@@ -36,6 +36,7 @@
     </text>
     <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132" marker-end="url(#arrow)"/>
     <rect x="18" y="18" width="28" height="18" fill="#bbf7d0" stroke="#111827" stroke-width="0"/>
+    <rect x="52" y="18" width="28" height="18" fill="#111827" fill-opacity="0" stroke="#111827" stroke-opacity="0" stroke-width="2"/>
     <polygon points="40,54 66,42 92,54 82,86 50,86" fill="#f008" stroke="#991b1b" stroke-width="2"/>
     <polyline points="1.10e2,86 1.38e2,56 1.66e2,86 1.94e2,56" fill="none" stroke="#4338ca" stroke-width="3"/>
     <g class="badges" transform="translate(232 42) rotate(12)">
