@@ -1162,10 +1162,10 @@ def _svg_text_rotation(element: ET.Element, style: dict[str, str]) -> float | No
 def _single_svg_rotation(value: str | None) -> float | None:
     if value is None:
         return None
-    numbers = re.findall(NUMBER_RE, value)
-    if len(numbers) != 1:
+    numbers = [float(number) for number in re.findall(NUMBER_RE, value)]
+    if not numbers or any(number != numbers[0] for number in numbers):
         return None
-    return float(numbers[0])
+    return numbers[0]
 
 
 def _svg_letter_spacing(style: dict[str, str], viewport: tuple[float, float]) -> float | None:
