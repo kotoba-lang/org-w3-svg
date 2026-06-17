@@ -2009,6 +2009,21 @@ def test_percentage_opacity_values_are_written_as_drawingml_alpha() -> None:
     assert 'stroke-opacity="0.25"' in round_trip
 
 
+def test_opacity_css_math_functions_are_written_as_drawingml_alpha() -> None:
+    svg = """<svg>
+      <rect x="0" y="0" width="10" height="8" fill="#ff0000" fill-opacity="clamp(0%, 25%, 100%)" stroke="#0000ff" stroke-opacity="calc(50% - 10%)" stroke-width="2"/>
+      <rect x="12" y="0" width="10" height="8" fill="#16a34a" opacity="min(80%, 0.5)"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="FF0000"' in dml
+    assert 'val="0000FF"' in dml
+    assert 'val="25000"' in dml
+    assert 'val="40000"' in dml
+    assert 'val="50000"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_zero_alpha_paint_is_skipped_as_invisible() -> None:
     dml = svg_to_drawingml(
         '<svg><rect width="10" height="8" fill="#111111" fill-opacity="0" stroke="#222222" stroke-opacity="0" stroke-width="2"/></svg>'
@@ -2027,6 +2042,15 @@ def test_percentage_opacity_can_make_paint_invisible() -> None:
 
     assert "<p:sp>" not in svg_to_drawingml(svg)
     assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_css_math_opacity_can_make_paint_invisible() -> None:
+    svg = '<svg><rect width="10" height="8" fill="#111111" opacity="calc(10% - 10%)"/><image href="photo.png" width="10" height="8" opacity="max(0%, 0%)"/></svg>'
+
+    assert "<p:sp>" not in svg_to_drawingml(svg)
+    report = analyze_svg(svg)
+    assert report.ignored_elements == 2
+    assert report.unsupported_attributes == {}
 
 
 def test_css_color_functions_named_colors_and_gradient_fallback() -> None:
@@ -2588,6 +2612,17 @@ def test_data_uri_image_opacity_maps_to_picture_alpha_and_round_trips() -> None:
 
 def test_data_uri_image_percentage_opacity_maps_to_picture_alpha() -> None:
     svg = f'<svg><image href="{PNG_DATA_URI}" x="10" y="12" width="20" height="16" opacity="35%"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    alpha = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}alphaModFix")
+    assert alpha is not None
+    assert alpha.attrib == {"amt": "35000"}
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_data_uri_image_css_math_opacity_maps_to_picture_alpha() -> None:
+    svg = f'<svg><image href="{PNG_DATA_URI}" x="10" y="12" width="20" height="16" opacity="calc(25% + 10%)"/></svg>'
     dml = svg_to_drawingml(svg)
 
     root = ET.fromstring(dml)

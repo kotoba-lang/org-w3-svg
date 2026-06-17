@@ -7,6 +7,7 @@ from xml.etree import ElementTree as ET
 from .converter import (
     CssRule,
     NUMBER_RE,
+    _alpha_value,
     _collect_css,
     _collect_refs,
     _computed_style,
@@ -594,15 +595,8 @@ def _is_multiple_of(value: float, period: float) -> bool:
 
 
 def _alpha_is_zero(value: str | None) -> bool:
-    if value is None:
-        return False
-    value = value.strip()
-    try:
-        if value.endswith("%"):
-            return float(value[:-1]) <= 0
-        return float(value) <= 0
-    except ValueError:
-        return False
+    alpha = _alpha_value(value)
+    return alpha is not None and alpha <= 0
 
 
 def _font_variant_is_supported(style: dict[str, str]) -> bool:

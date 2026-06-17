@@ -3221,15 +3221,33 @@ def _combined_alpha(*values: float | None) -> float | None:
 
 
 def _clamped_num(value: str | None, default: float) -> float:
+    parsed = _alpha_value(value)
+    if parsed is None:
+        parsed = float(default)
+    return max(0.0, min(parsed, 1.0))
+
+
+def _alpha_value(value: str | None) -> float | None:
     if value is None:
-        return max(0.0, min(float(default), 1.0))
-    value = value.strip()
-    if value.endswith("%"):
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    if stripped.endswith("%"):
         try:
-            return max(0.0, min(_finite_float(value[:-1]) / 100, 1.0))
+            return _finite_float(stripped[:-1]) / 100
         except ValueError:
-            return max(0.0, min(float(default), 1.0))
-    return max(0.0, min(_num(value, default), 1.0))
+            return None
+    lower = stripped.lower()
+    if lower.startswith("calc(") and stripped.endswith(")"):
+        return _calc_length(stripped[5:-1], "x", (1.0, 1.0), allow_percent=True)
+    function_result = _css_length_function(stripped, "x", (1.0, 1.0), allow_percent=True)
+    if function_result is not None:
+        return function_result
+    try:
+        return _finite_float(stripped)
+    except ValueError:
+        return None
 
 
 def _identity_matrix() -> tuple[float, float, float, float, float, float]:
