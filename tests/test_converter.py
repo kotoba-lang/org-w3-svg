@@ -572,6 +572,37 @@ def test_css_not_pseudo_class_selectors_are_applied() -> None:
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_css_custom_properties_resolve_var_colors() -> None:
+    svg = """<svg>
+      <style>
+        :root { --brand: #dc2626; --line: rgb(22, 163, 74); }
+        g.theme { --accent: #2563eb; color: var(--brand); }
+        rect { fill: var(--accent); stroke: var(--line); stroke-width: 2; }
+        circle { fill: var(--missing, #f97316); stroke: var(--line-missing, hsl(0.5turn 100% 25%)); stroke-width: 2; }
+      </style>
+      <g class="theme">
+        <rect width="10" height="8"/>
+        <circle cx="18" cy="4" r="4"/>
+      </g>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="2563EB"' in dml
+    assert 'val="16A34A"' in dml
+    assert 'val="F97316"' in dml
+    assert 'val="007F80"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_inline_css_custom_properties_resolve_current_color() -> None:
+    svg = '<svg><rect width="10" height="8" style="--brand: #dc2626; color: var(--brand); fill: currentColor; stroke: var(--missing, #2563eb); stroke-width: 2"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="DC2626"' in dml
+    assert 'val="2563EB"' in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_css_media_rules_apply_only_screen_compatible_queries() -> None:
     svg = """<svg>
       <style>

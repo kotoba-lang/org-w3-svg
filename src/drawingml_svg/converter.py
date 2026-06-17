@@ -2474,6 +2474,8 @@ def _computed_style(
                 style.pop(key)
         elif normalized == "initial":
             style.pop(key)
+    for key, value in tuple(style.items()):
+        style[key] = _resolve_css_vars(value, style)
     if style.get("fill", "").strip().lower() == "currentcolor":
         style["fill"] = style.get("color", "#000000")
     if style.get("stroke", "").strip().lower() == "currentcolor":
@@ -2632,6 +2634,8 @@ def _marker_is_supported(element: ET.Element, style: dict[str, str], refs: dict[
 
 
 def _selector_matches(selector: str, element: ET.Element, ancestors: tuple[ET.Element, ...]) -> bool:
+    if selector.strip() == ":root":
+        return not ancestors
     parts = _selector_parts(selector)
     if not parts or parts[-1] == ">":
         return False
@@ -2664,6 +2668,7 @@ def _selector_matches(selector: str, element: ET.Element, ancestors: tuple[ET.El
 
 def _selector_specificity(selector: str) -> tuple[int, int, int]:
     selector_without_attrs = _selector_without_attribute_selectors(_selector_without_supported_pseudo_classes(selector))
+    selector_without_attrs = selector_without_attrs.replace(":root", "")
     if any(mark in selector_without_attrs for mark in ("+", "~", ":")):
         return (0, 0, 0)
     id_count = len(re.findall(r"#[A-Za-z_][\w:-]*", selector))
@@ -2780,6 +2785,65 @@ def _selector_not_arguments(selector: str) -> list[str]:
 
 def _selector_without_supported_pseudo_classes(selector: str) -> str:
     return re.sub(r":not\([^()]*\)", "", selector)
+
+
+def _resolve_css_vars(value: str, style: dict[str, str]) -> str:
+    resolved = value
+    for _ in range(8):
+        next_value = _resolve_one_css_var(resolved, style)
+        if next_value == resolved:
+            return resolved
+        resolved = next_value
+    return resolved
+
+
+def _resolve_one_css_var(value: str, style: dict[str, str]) -> str:
+    start = value.find("var(")
+    if start < 0:
+        return value
+    index = start + 4
+    depth = 1
+    quote: str | None = None
+    while index < len(value):
+        char = value[index]
+        if quote is not None:
+            if char == quote:
+                quote = None
+        elif char in {"'", '"'}:
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                break
+        index += 1
+    if depth != 0:
+        return value
+    body = value[start + 4 : index]
+    name, fallback = _split_css_var_body(body)
+    replacement = style.get(name.strip())
+    if replacement is None:
+        replacement = fallback.strip() if fallback is not None else f"var({body})"
+    return value[:start] + replacement + value[index + 1 :]
+
+
+def _split_css_var_body(body: str) -> tuple[str, str | None]:
+    depth = 0
+    quote: str | None = None
+    for index, char in enumerate(body):
+        if quote is not None:
+            if char == quote:
+                quote = None
+        elif char in {"'", '"'}:
+            quote = char
+        elif char == "(":
+            depth += 1
+        elif char == ")" and depth:
+            depth -= 1
+        elif char == "," and depth == 0:
+            return body[:index], body[index + 1 :]
+    return body, None
 
 
 def _attribute_selector_matches(selector: str, element: ET.Element) -> bool:
