@@ -68,6 +68,7 @@ jobs:
 
           assert "<p:pic>" in slide, "embedded image was not converted to a picture"
           assert 'x="6290310"' in slide and 'cy="293370"' in slide, "image clip-path was not reflected in picture geometry"
+          assert 'flipV="1"' in slide, "reflected image transform was not preserved as a picture flip"
           assert '<a:alphaModFix amt="65000"' in slide, "image opacity was not written to DrawingML"
           assert "<a:headEnd type=\"triangle\"" in slide, "line marker was not converted to a DrawingML arrow"
           assert "<a:custDash>" in slide, "non-zero custom dash was not written"

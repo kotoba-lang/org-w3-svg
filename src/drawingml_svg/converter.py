@@ -579,7 +579,7 @@ def _transformed_image_shape(
     dot = ux[0] * vy[0] + ux[1] * vy[1]
     determinant = ux[0] * vy[1] - ux[1] * vy[0]
     tolerance = max(transformed_width * transformed_height, 1.0) * 1e-9
-    if transformed_width > 0 and transformed_height > 0 and abs(dot) <= tolerance and determinant > 0:
+    if transformed_width > 0 and transformed_height > 0 and abs(dot) <= tolerance and abs(determinant) > tolerance:
         center_x = sum(px for px, _ in points) / 4
         center_y = sum(py for _, py in points) / 4
         rotation = math.degrees(math.atan2(ux[1], ux[0])) % 360
@@ -592,6 +592,7 @@ def _transformed_image_shape(
             transformed_width,
             transformed_height,
             paint,
+            flip_v=determinant < 0,
             image_href=href,
             rotation=rotation or None,
         )

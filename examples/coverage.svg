@@ -85,6 +85,7 @@
       <rect x="0" y="0" width="16" height="8" rx="2" fill="#fee2e2" stroke="#991b1b" stroke-width="1"/>
     </svg>
     <image xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg==" x="286" y="36" width="28" height="28" opacity=".65" clip-path="url(#object-crop)"/>
+    <image xlink:href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg==" x="318" y="126" width="16" height="16" transform="translate(0 284) scale(1 -1)"/>
     <use xlink:href="#pin" x="276" y="78" width="40" height="40" color="#2563eb"/>
   </g>
 </svg>
