@@ -375,6 +375,23 @@ def test_root_viewbox_preserve_aspect_ratio_none_stretches_content() -> None:
     assert shape_ext.attrib == {"cx": "1905000", "cy": "1905000"}
 
 
+def test_nested_svg_viewbox_translates_scales_and_sets_child_viewport() -> None:
+    svg = """<svg>
+      <svg x="10" y="20" width="40" height="20" viewBox="0 0 20 10" preserveAspectRatio="none">
+        <rect x="50%" y="50%" width="25%" height="50%" fill="#0f766e"/>
+      </svg>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    shape_off = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")[1]
+    shape_ext = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}ext")[1]
+    assert shape_off.attrib == {"x": "476250", "y": "381000"}
+    assert shape_ext.attrib == {"cx": "190500", "cy": "190500"}
+    assert 'val="0F766E"' in dml
+    assert analyze_svg(svg).estimated_element_coverage == 1.0
+
+
 def test_percent_lengths_resolve_against_root_viewport() -> None:
     dml = svg_to_drawingml(
         '<svg viewBox="0 0 200 100" width="400" height="200"><rect x="10%" y="20%" width="25%" height="40%"/><line x1="0%" y1="100%" x2="50%" y2="0%" stroke="#111111"/></svg>'

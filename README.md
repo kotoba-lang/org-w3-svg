@@ -11,7 +11,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Paint: SVG default fill/stroke/stroke-width/line-cap/line-join/miterlimit values, solid fill, stroke color, stroke width including zero-width no-line strokes, line cap/join/miter/custom dash, fill/stroke alpha including fully transparent no-fill/no-line paint, short/long alpha hex colors, CSS rgb/hsl color functions, named colors, `currentColor`, paint-server fallback colors, gradient fallback
 - Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, attribute selectors (`=`, `~=`, `|=`, `^=`, `$=`, `*=`), child, and descendant selectors, CSS specificity, and `!important` cascade priority
 - Line markers: `marker-start` and `marker-end` arrow markers are converted to DrawingML line arrows
-- Coordinate systems: root and symbol `viewBox` normalization with `preserveAspectRatio` support
+- Coordinate systems: root, nested SVG, and symbol `viewBox` normalization with `preserveAspectRatio` support
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis
 - Clipping: rectangular `clipPath` on `rect` and `text` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
 - Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`

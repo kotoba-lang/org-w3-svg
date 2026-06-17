@@ -133,6 +133,16 @@ def _svg_shapes_walk(
     if _is_hidden(style):
         return
     matrix = _matrix_multiply(inherited_matrix, _parse_transform(element.get("transform", "")))
+    child_viewport = viewport
+    if tag == "svg" and ancestors:
+        svg_width = _optional_length(element.get("width"), "x", viewport)
+        svg_height = _optional_length(element.get("height"), "y", viewport)
+        matrix = _matrix_multiply(
+            matrix,
+            _parse_transform(f"translate({_length(element.get('x'), 0, 'x', viewport)} {_length(element.get('y'), 0, 'y', viewport)})"),
+        )
+        matrix = _matrix_multiply(matrix, _viewbox_matrix(element, svg_width, svg_height))
+        child_viewport = _viewport_size(element, svg_width, svg_height)
     if tag == "use":
         href = _href(element)
         if href and href.startswith("#") and href[1:] in refs and href[1:] not in ref_stack:
@@ -160,7 +170,7 @@ def _svg_shapes_walk(
         yield shape
 
     for child in element:
-        yield from _svg_shapes_walk(child, css, refs, style, matrix, ref_stack, ancestors + (element,), viewport)
+        yield from _svg_shapes_walk(child, css, refs, style, matrix, ref_stack, ancestors + (element,), child_viewport)
 
 
 def _svg_shape_from_element(
