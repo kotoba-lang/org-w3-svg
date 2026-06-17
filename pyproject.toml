@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "Small, dependency-free converter between DrawingML shape fragments and SVG."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
   { name = "Jun Kawasaki", email = "jun784@gmail.com" },
 ]
@@ -12,7 +13,6 @@ keywords = ["drawingml", "svg", "ooxml", "converter"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
@@ -29,10 +29,10 @@ svg2dml = "drawingml_svg.cli:main"
 drawingml-svg-analyze = "drawingml_svg.cli:main"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "ruff>=0.5"]
+dev = ["build>=1.2", "pytest>=8.0", "ruff>=0.5"]
 
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]

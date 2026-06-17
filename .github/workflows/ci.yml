@@ -76,9 +76,11 @@ jobs:
           assert any(name.startswith("ppt/media/image") for name in names), "PPTX media image was not embedded"
           PY
 
-      - name: Build wheel smoke
+      - name: Build distribution smoke
         run: |
-          python -m pip wheel . -w tmp/dist --no-deps
+          python -m build --sdist --wheel -o tmp/dist
+          test -f tmp/dist/drawingml_svg-*.tar.gz
+          test -f tmp/dist/drawingml_svg-*.whl
           python -m venv tmp/wheel-venv
           tmp/wheel-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
           tmp/wheel-venv/bin/drawingml-svg analyze examples/coverage.svg
