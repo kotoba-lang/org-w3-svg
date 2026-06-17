@@ -98,6 +98,33 @@ def test_analyze_svg_ignores_non_rendering_non_positive_dimension_shapes() -> No
     assert report.unsupported_attributes == {}
 
 
+def test_css_geometry_properties_convert_for_basic_shapes() -> None:
+    dml = svg_to_drawingml(
+        """<svg viewBox="0 0 100 100">
+          <style>
+            .box { x: 10%; y: 6px; width: 20%; height: 12px; rx: 3px; fill: #ef4444; }
+            .dot { cx: 44px; cy: 18px; r: 5px; fill: #22c55e; }
+            .oval { cx: 64px; cy: 18px; rx: 7px; ry: 4px; fill: #3b82f6; }
+            .rule { x1: 4px; y1: 36px; x2: 40px; y2: 36px; stroke: #111111; }
+          </style>
+          <rect class="box"/>
+          <circle class="dot"/>
+          <ellipse class="oval"/>
+          <line class="rule"/>
+        </svg>"""
+    )
+
+    assert dml.count("<p:sp>") == 4
+    assert 'prst="roundRect"' in dml
+    assert 'x="95250"' in dml
+    assert 'y="57150"' in dml
+    assert 'cx="190500"' in dml
+    assert 'cy="114300"' in dml
+    assert analyze_svg(
+        '<svg><style>.box { width: 20px; height: 12px; }</style><rect class="box"/></svg>'
+    ).unsupported_attributes == {}
+
+
 def test_default_stroke_linecap_is_explicitly_flat() -> None:
     dml = svg_to_drawingml('<svg><line x1="0" y1="0" x2="10" y2="0" stroke="#111111"/></svg>')
 

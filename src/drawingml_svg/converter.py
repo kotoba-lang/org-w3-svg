@@ -195,36 +195,55 @@ def _svg_shape_from_element(
     paint = _svg_paint(style, refs, default_fill=tag != "line", css=css)
     plain_paint = _paint_without_markers(paint)
     if tag == "rect":
-        x = _length(element.get("x"), 0, "x", viewport)
-        y = _length(element.get("y"), 0, "y", viewport)
-        width = _length(element.get("width"), 0, "x", viewport)
-        height = _length(element.get("height"), 0, "y", viewport)
+        x = _geometry_length(element, style, "x", 0, "x", viewport)
+        y = _geometry_length(element, style, "y", 0, "y", viewport)
+        width = _geometry_length(element, style, "width", 0, "x", viewport)
+        height = _geometry_length(element, style, "height", 0, "y", viewport)
         if width <= 0 or height <= 0:
             return None
-        rx = _length(element.get("rx"), _length(element.get("ry"), 0, "y", viewport), "x", viewport)
-        ry = _length(element.get("ry"), rx, "y", viewport)
+        rx = _geometry_length(
+            element,
+            style,
+            "rx",
+            _geometry_length(element, style, "ry", 0, "y", viewport),
+            "x",
+            viewport,
+        )
+        ry = _geometry_length(element, style, "ry", rx, "y", viewport)
         if _is_identity_matrix(matrix):
             return Shape("roundRect" if rx or ry else "rect", x, y, width, height, plain_paint, rx=rx or None, ry=ry or None)
         points = _transform_points(_rect_points(x, y, width, height), matrix)
         return _freeform_shape(points, plain_paint, closed=True)
     if tag == "circle":
-        cx = _length(element.get("cx"), 0, "x", viewport)
-        cy = _length(element.get("cy"), 0, "y", viewport)
-        r = _length(element.get("r"), 0, "diag", viewport)
+        cx = _geometry_length(element, style, "cx", 0, "x", viewport)
+        cy = _geometry_length(element, style, "cy", 0, "y", viewport)
+        r = _geometry_length(element, style, "r", 0, "diag", viewport)
         if r <= 0:
             return None
         return _ellipse_shape(cx, cy, r, r, plain_paint, matrix)
     if tag == "ellipse":
-        cx = _length(element.get("cx"), 0, "x", viewport)
-        cy = _length(element.get("cy"), 0, "y", viewport)
-        rx = _length(element.get("rx"), 0, "x", viewport)
-        ry = _length(element.get("ry"), 0, "y", viewport)
+        cx = _geometry_length(element, style, "cx", 0, "x", viewport)
+        cy = _geometry_length(element, style, "cy", 0, "y", viewport)
+        rx = _geometry_length(element, style, "rx", 0, "x", viewport)
+        ry = _geometry_length(element, style, "ry", 0, "y", viewport)
         if rx <= 0 or ry <= 0:
             return None
         return _ellipse_shape(cx, cy, rx, ry, plain_paint, matrix)
     if tag == "line":
-        p1 = _apply_matrix(matrix, (_length(element.get("x1"), 0, "x", viewport), _length(element.get("y1"), 0, "y", viewport)))
-        p2 = _apply_matrix(matrix, (_length(element.get("x2"), 0, "x", viewport), _length(element.get("y2"), 0, "y", viewport)))
+        p1 = _apply_matrix(
+            matrix,
+            (
+                _geometry_length(element, style, "x1", 0, "x", viewport),
+                _geometry_length(element, style, "y1", 0, "y", viewport),
+            ),
+        )
+        p2 = _apply_matrix(
+            matrix,
+            (
+                _geometry_length(element, style, "x2", 0, "x", viewport),
+                _geometry_length(element, style, "y2", 0, "y", viewport),
+            ),
+        )
         return Shape(
             "line",
             min(p1[0], p2[0]),
@@ -286,10 +305,10 @@ def _svg_shape_from_element(
     if tag == "image":
         href = _href(element)
         if href and _supported_data_image(href):
-            x = _length(element.get("x"), 0, "x", viewport)
-            y = _length(element.get("y"), 0, "y", viewport)
-            width = _length(element.get("width"), 0, "x", viewport)
-            height = _length(element.get("height"), 0, "y", viewport)
+            x = _geometry_length(element, style, "x", 0, "x", viewport)
+            y = _geometry_length(element, style, "y", 0, "y", viewport)
+            width = _geometry_length(element, style, "width", 0, "x", viewport)
+            height = _geometry_length(element, style, "height", 0, "y", viewport)
             if width <= 0 or height <= 0:
                 return None
             points = _transform_points(_rect_points(x, y, width, height), matrix)
@@ -299,6 +318,17 @@ def _svg_shape_from_element(
             max_y = max(py for _, py in points)
             return Shape("image", min_x, min_y, max_x - min_x, max_y - min_y, Paint(), image_href=href)
     return None
+
+
+def _geometry_length(
+    element: ET.Element,
+    style: dict[str, str],
+    attr: str,
+    default: float,
+    axis: str,
+    viewport: tuple[float, float],
+) -> float:
+    return _length(style.get(attr, element.get(attr)), default, axis, viewport)
 
 
 def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
