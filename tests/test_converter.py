@@ -3028,6 +3028,17 @@ def test_tspan_text_anchor_and_bold_convert() -> None:
     assert 'y="40"' in svg
 
 
+def test_quoted_font_family_with_comma_is_preserved() -> None:
+    source = '<svg><text x="0" y="20" font-family="\'A,B Display\', Arial, sans-serif" font-size="10" fill="#111111">Name</text></svg>'
+    dml = svg_to_drawingml(source)
+
+    assert 'typeface="A,B Display"' in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'font-family="A,B Display"' in svg
+
+
 def test_text_anchor_and_baseline_values_are_normalized() -> None:
     source = '<svg><text x="100" y="40" text-anchor=" MIDDLE " dominant-baseline=" CENTRAL " font-size="20" fill="#111111">Center</text></svg>'
     dml = svg_to_drawingml(source)

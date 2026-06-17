@@ -888,7 +888,7 @@ def _text_paint(
 def _font_family(value: str | None) -> str | None:
     if not value:
         return None
-    first = value.split(",", 1)[0].strip()
+    first = _css_function_args(value)[0].strip()
     return first.strip("\"'") or None
 
 

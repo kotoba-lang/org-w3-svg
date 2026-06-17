@@ -57,6 +57,7 @@
     <text x="222" y="154" word-spacing="5" letter-spacing=" NORMAL " text-transform="uppercase" font-size="8" fill="#0f172a">word gap</text>
     <text x="302" y="154" text-anchor=" MIDDLE " dominant-baseline=" CENTRAL " font-size="7" fill="#0f172a">anchor</text>
     <text x="302" y="144" font-weight=" BOLD " font-style=" oblique 10deg " font-size="7" fill="#0f172a">style</text>
+    <text x="302" y="126" font-family="'A,B Display', Arial, sans-serif" font-size="6" fill="#0f172a">family</text>
     <text x="12" y="116" font-size="6" fill="#111827" stroke="#ffffff" stroke-width="1" transform="SCALE(1.5)">outline</text>
     <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132" marker-start="none" marker-mid="none" marker-end="url(#arrow)" stroke-dashoffset="3mm" fill-rule="evenodd" clip-rule="evenodd" clip-path="none" filter="none" mask="none" paint-order="fill stroke markers" shape-rendering="auto" vector-effect="none"/>
     <rect x="18" y="18" width="28" height="18" fill="#bbf7d0" stroke="#111827" stroke-width="0"/>
