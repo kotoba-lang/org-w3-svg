@@ -36,6 +36,7 @@ class Paint:
     stroke_linecap: str | None = None
     stroke_linejoin: str | None = None
     stroke_dasharray: str | None = None
+    stroke_miterlimit: float | None = None
     marker_start: str | None = None
     marker_end: str | None = None
 
@@ -459,6 +460,7 @@ def _svg_paint(style: dict[str, str], refs: dict[str, ET.Element] | None = None)
         stroke_linecap=style.get("stroke-linecap"),
         stroke_linejoin=style.get("stroke-linejoin"),
         stroke_dasharray=style.get("stroke-dasharray"),
+        stroke_miterlimit=_optional_num(style.get("stroke-miterlimit")),
         marker_start=_svg_marker_value(style.get("marker-start"), refs),
         marker_end=_svg_marker_value(style.get("marker-end"), refs),
     )
@@ -474,6 +476,7 @@ def _paint_without_markers(paint: Paint) -> Paint:
         paint.stroke_linecap,
         paint.stroke_linejoin,
         paint.stroke_dasharray,
+        paint.stroke_miterlimit,
     )
 
 
@@ -514,6 +517,7 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
     stroke_linecap = None
     stroke_linejoin = None
     stroke_dasharray = None
+    stroke_miterlimit = None
     marker_start = None
     marker_end = None
     ln = sp_pr.find(qn(NS_A, "ln"))
@@ -522,6 +526,7 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
         stroke_linecap = _dml_linecap(ln.get("cap"))
         stroke_linejoin = _dml_linejoin(ln)
         stroke_dasharray = _dml_dasharray(ln)
+        stroke_miterlimit = _dml_miterlimit(ln)
         marker_start = _dml_line_arrow(ln.find(qn(NS_A, "tailEnd")))
         marker_end = _dml_line_arrow(ln.find(qn(NS_A, "headEnd")))
         no_line = ln.find(qn(NS_A, "noFill"))
@@ -540,6 +545,7 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
         stroke_linecap=stroke_linecap,
         stroke_linejoin=stroke_linejoin,
         stroke_dasharray=stroke_dasharray,
+        stroke_miterlimit=stroke_miterlimit,
         marker_start=marker_start,
         marker_end=marker_end,
     )
@@ -568,7 +574,7 @@ def _append_dml_paint(parent: ET.Element, paint: Paint) -> None:
             color = ET.SubElement(solid, qn(NS_A, "srgbClr"), {"val": paint.stroke.removeprefix("#").upper()})
             _append_alpha(color, paint.stroke_alpha)
         _append_dml_dash(ln, paint.stroke_dasharray)
-        _append_dml_join(ln, paint.stroke_linejoin)
+        _append_dml_join(ln, paint.stroke_linejoin, paint.stroke_miterlimit)
         _append_dml_arrow(ln, "tailEnd", paint.marker_start)
         _append_dml_arrow(ln, "headEnd", paint.marker_end)
 
@@ -663,13 +669,16 @@ def _dml_line_arrow(element: ET.Element | None) -> str | None:
     return None
 
 
-def _append_dml_join(ln: ET.Element, value: str | None) -> None:
+def _append_dml_join(ln: ET.Element, value: str | None, miterlimit: float | None = None) -> None:
     if value == "round":
         ET.SubElement(ln, qn(NS_A, "round"))
     elif value == "bevel":
         ET.SubElement(ln, qn(NS_A, "bevel"))
     elif value == "miter":
-        ET.SubElement(ln, qn(NS_A, "miter"))
+        attrs = {}
+        if miterlimit is not None:
+            attrs["lim"] = str(round(max(1.0, miterlimit) * 100000))
+        ET.SubElement(ln, qn(NS_A, "miter"), attrs)
 
 
 def _dml_linejoin(ln: ET.Element) -> str | None:
@@ -680,6 +689,13 @@ def _dml_linejoin(ln: ET.Element) -> str | None:
     if ln.find(qn(NS_A, "miter")) is not None:
         return "miter"
     return None
+
+
+def _dml_miterlimit(ln: ET.Element) -> float | None:
+    miter = ln.find(qn(NS_A, "miter"))
+    if miter is None or miter.get("lim") is None:
+        return None
+    return int(miter.get("lim", "0")) / 100000
 
 
 def _append_dml_dash(ln: ET.Element, value: str | None) -> None:
@@ -813,6 +829,8 @@ def _svg_paint_attrs(paint: Paint) -> dict[str, str]:
         attrs["stroke-linejoin"] = paint.stroke_linejoin
     if paint.stroke_dasharray:
         attrs["stroke-dasharray"] = paint.stroke_dasharray
+    if paint.stroke_miterlimit is not None:
+        attrs["stroke-miterlimit"] = _fmt(paint.stroke_miterlimit)
     if paint.marker_start:
         attrs["marker-start"] = f"url(#{paint.marker_start})"
     if paint.marker_end:
@@ -1220,6 +1238,7 @@ def _computed_style(
         "stroke-dasharray",
         "stroke-linecap",
         "stroke-linejoin",
+        "stroke-miterlimit",
         "font-size",
         "font-family",
         "font-weight",

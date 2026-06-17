@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -30 400 240" width="800" height="480">
   <style>
     #board .panel { fill: url(#panel); stroke: #14532d; stroke-width: 3; }
-    #board > rect.panel.featured { stroke-linejoin: round; }
+    #board > rect.panel.featured { stroke-linejoin: miter; stroke-miterlimit: 6; }
     g.badges .badge { fill: currentColor; color: #f97316; stroke: rgba(124, 45, 18, .7); stroke-width: 2; }
     text.title { fill: #111827; font-size: 20; font-weight: 700; text-anchor: middle; }
     .route { fill: none; stroke: #0891b2; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 4; }
