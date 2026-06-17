@@ -6,6 +6,7 @@ from xml.etree import ElementTree as ET
 
 from .converter import (
     CssRule,
+    NUMBER_RE,
     _collect_css,
     _collect_refs,
     _computed_style,
@@ -189,6 +190,8 @@ def _inspect_attributes(
             continue
         if attr in {"marker-start", "marker-end"} and _marker_is_supported(element, style, refs):
             continue
+        if attr == "rotate" and _text_rotate_is_supported(element, specified_style):
+            continue
         if specified_style.get(attr) is not None:
             stats.add_unsupported_attribute(attr)
     href = _href(element)
@@ -221,6 +224,13 @@ def _inspect_path(path_data: str, stats: _CoverageStats) -> None:
     for command in path_data:
         if command.isalpha() and command not in supported:
             stats.add_unsupported_path_command(command)
+
+
+def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> bool:
+    if _local_name(element.tag) not in {"text", "tspan"}:
+        return False
+    value = style.get("rotate")
+    return value is not None and len(re.findall(NUMBER_RE, value)) == 1
 
 
 def _path_is_supported(path_data: str) -> bool:

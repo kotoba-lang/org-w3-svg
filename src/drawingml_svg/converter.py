@@ -64,6 +64,7 @@ class Shape:
     rx: float | None = None
     ry: float | None = None
     image_href: str | None = None
+    rotation: float | None = None
 
 
 CssDeclaration = tuple[str, bool]
@@ -266,6 +267,7 @@ def _svg_shape_from_element(
                 text_decoration=style.get("text-decoration"),
                 text_anchor=anchor,
                 text_baseline=baseline,
+                rotation=_svg_text_rotation(element, style),
             )
     if tag == "image":
         href = _href(element)
@@ -301,7 +303,7 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
         text = _dml_text(element)
         if text is not None:
             xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-            x, y, width, height, flip_h, flip_v = _dml_xfrm(xfrm)
+            x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
             yield Shape(
                 "text",
                 x,
@@ -319,15 +321,16 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
                 text_decoration=_dml_text_decoration(element),
                 text_anchor=_dml_text_anchor(element),
                 text_baseline=_dml_text_baseline(element),
+                rotation=rotation,
             )
             continue
         cust = sp_pr.find(qn(NS_A, "custGeom"))
         if cust is not None:
             xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-            x, y, width, height, flip_h, flip_v = _dml_xfrm(xfrm)
+            x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
             points, closed = _dml_custom_points(cust, x, y)
             if points:
-                yield Shape("freeform", x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, tuple(points), closed)
+                yield Shape("freeform", x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, tuple(points), closed, rotation=rotation)
             continue
         prst = sp_pr.find(qn(NS_A, "prstGeom"))
         if prst is None:
@@ -336,9 +339,9 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
         if kind is None:
             continue
         xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-        x, y, width, height, flip_h, flip_v = _dml_xfrm(xfrm)
+        x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
         radius = min(width, height) / 6 if kind == "roundRect" else None
-        yield Shape(kind, x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, rx=radius, ry=radius)
+        yield Shape(kind, x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, rx=radius, ry=radius, rotation=rotation)
 
 
 def _shape_to_dml(shape: Shape, shape_id: int) -> ET.Element:
@@ -355,6 +358,8 @@ def _shape_to_dml(shape: Shape, shape_id: int) -> ET.Element:
         xfrm_attrs["flipH"] = "1"
     if shape.flip_v:
         xfrm_attrs["flipV"] = "1"
+    if shape.rotation is not None:
+        xfrm_attrs["rot"] = str(round(shape.rotation * 60000))
     xfrm = ET.SubElement(sp_pr, qn(NS_A, "xfrm"), xfrm_attrs)
     ET.SubElement(xfrm, qn(NS_A, "off"), {"x": str(_emu(shape.x)), "y": str(_emu(shape.y))})
     ET.SubElement(
@@ -440,6 +445,8 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
             attrs["text-anchor"] = shape.text_anchor
         if shape.text_baseline:
             attrs["dominant-baseline"] = shape.text_baseline
+        if shape.rotation is not None:
+            attrs["rotate"] = _fmt(shape.rotation)
         element = ET.Element(qn(NS_SVG, "text"), attrs)
         lines = (shape.text or "").split("\n")
         element.text = lines[0] if lines else ""
@@ -481,8 +488,8 @@ def _dml_picture_shape(element: ET.Element) -> Shape | None:
     href = blip.get(qn(NS_R, "embed"))
     if not href:
         return None
-    x, y, width, height, flip_h, flip_v = _dml_xfrm(sp_pr.find(qn(NS_A, "xfrm")))
-    return Shape("image", x, y, width, height, Paint(), flip_h, flip_v, image_href=href)
+    x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(sp_pr.find(qn(NS_A, "xfrm")))
+    return Shape("image", x, y, width, height, Paint(), flip_h, flip_v, image_href=href, rotation=rotation)
 
 
 def _append_svg_marker_defs(svg: ET.Element, shapes: list[Shape]) -> None:
@@ -1053,6 +1060,27 @@ def _first_optional_length(value: str | None, axis: str, viewport: tuple[float, 
     return _optional_length(first or None, axis, viewport)
 
 
+def _svg_text_rotation(element: ET.Element, style: dict[str, str]) -> float | None:
+    rotation = _single_svg_rotation(style.get("rotate"))
+    if rotation is not None:
+        return rotation
+    for child in element:
+        if _local_name(child.tag) == "tspan":
+            rotation = _single_svg_rotation(child.get("rotate"))
+            if rotation is not None:
+                return rotation
+    return None
+
+
+def _single_svg_rotation(value: str | None) -> float | None:
+    if value is None:
+        return None
+    numbers = re.findall(NUMBER_RE, value)
+    if len(numbers) != 1:
+        return None
+    return float(numbers[0])
+
+
 def _is_bold(value: str | None) -> bool:
     if value is None:
         return False
@@ -1118,16 +1146,17 @@ def _svg_paint_attrs(paint: Paint) -> dict[str, str]:
     return attrs
 
 
-def _dml_xfrm(xfrm: ET.Element | None) -> tuple[float, float, float, float, bool, bool]:
+def _dml_xfrm(xfrm: ET.Element | None) -> tuple[float, float, float, float, bool, bool, float | None]:
     if xfrm is None:
-        return 0.0, 0.0, 0.0, 0.0, False, False
+        return 0.0, 0.0, 0.0, 0.0, False, False, None
     off = xfrm.find(qn(NS_A, "off"))
     ext = xfrm.find(qn(NS_A, "ext"))
     x = _px(int(off.get("x", "0"))) if off is not None else 0.0
     y = _px(int(off.get("y", "0"))) if off is not None else 0.0
     width = _px(int(ext.get("cx", "0"))) if ext is not None else 0.0
     height = _px(int(ext.get("cy", "0"))) if ext is not None else 0.0
-    return x, y, width, height, xfrm.get("flipH") in {"1", "true"}, xfrm.get("flipV") in {"1", "true"}
+    rotation = float(xfrm.get("rot", "0")) / 60000 if xfrm.get("rot") is not None else None
+    return x, y, width, height, xfrm.get("flipH") in {"1", "true"}, xfrm.get("flipV") in {"1", "true"}, rotation
 
 
 def _shape_kind_to_dml(kind: str) -> str:

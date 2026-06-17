@@ -14,10 +14,10 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Coordinate systems: root, nested SVG, and symbol `viewBox` normalization with `preserveAspectRatio` support
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis
 - Clipping: rectangular `clipPath` on `rect` and `text` is converted as bounding-box intersection, including `userSpaceOnUse` and `objectBoundingBox` units
-- Analysis: unsupported visual/layout attributes such as filters, masks, fill/clip rules, paint order, vector effects, text rotation/length adjustments, path length adjustments, unsupported markers, and unresolved paint servers are reported
+- Analysis: unsupported visual/layout attributes such as filters, masks, fill/clip rules, paint order, vector effects, multi-value text rotation, text/path length adjustments, unsupported markers, and unresolved paint servers are reported
 - Transforms: inherited `transform` on elements and groups for `matrix`, `translate`, `scale`, `rotate`, `skewX`, `skewY`
 - Reuse: local `defs`/`use` expansion for referenced shapes, groups, and basic `symbol viewBox` scaling, with unsupported missing/external use references reported by the analyzer
-- Text: basic font size, weight, italic style, font family, underline/strike decoration, horizontal/vertical anchor, `xml:space="preserve"`, `dx`/`dy` positioning, first-`tspan` positioning fallback, and multi-line `tspan` extraction
+- Text: basic font size, weight, italic style, font family, underline/strike decoration, horizontal/vertical anchor, `xml:space="preserve"`, single-value `rotate`, `dx`/`dy` positioning, first-`tspan` positioning fallback, and multi-line `tspan` extraction
 
 The converter accepts fragments, not complete `.pptx` or `.docx` packages. It is intended as a reusable core that can later be wrapped by OOXML package readers/writers.
 

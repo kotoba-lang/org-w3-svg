@@ -319,6 +319,18 @@ def test_text_position_applies_text_dx_dy() -> None:
     assert shape_off.attrib == {"x": "133350", "y": "152400"}
 
 
+def test_text_single_rotate_maps_to_shape_rotation() -> None:
+    dml = svg_to_drawingml('<svg><text x="10" y="20" rotate="30" font-size="10" fill="#111">Rotated</text></svg>')
+
+    root = ET.fromstring(dml)
+    shape_xfrm = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm")[1]
+    assert shape_xfrm.get("rot") == "1800000"
+    assert analyze_svg('<svg><text x="10" y="20" rotate="30">Rotated</text></svg>').unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'rotate="30"' in svg
+
+
 def test_xml_space_preserve_keeps_text_whitespace() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'

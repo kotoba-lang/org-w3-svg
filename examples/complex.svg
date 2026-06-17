@@ -34,6 +34,6 @@
   <use href="#reused-mark" x="650" y="128" transform="scale(.82)"/>
   <text class="label" x="170" y="58" text-anchor="middle" font-weight="700">
     <tspan>Text</tspan>
-    <tspan x="170" dy="20" rotate="0">converts</tspan>
+    <tspan x="170" dy="20" rotate="0 8">converts</tspan>
   </text>
 </svg>
