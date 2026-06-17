@@ -1,3 +1,4 @@
+import base64
 import io
 import zipfile
 from importlib import resources
@@ -11,6 +12,12 @@ from drawingml_svg.cli import main as cli_main
 from examples.make_pptx import build_slide_xml, main as make_pptx_main, prepare_slide_media, write_pptx
 
 PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="
+
+
+def _webp_data_uri(width: int, height: int) -> str:
+    payload = b"\0\0\0\0" + (width - 1).to_bytes(3, "little") + (height - 1).to_bytes(3, "little")
+    data = b"RIFF" + (len(payload) + 10).to_bytes(4, "little") + b"WEBPVP8X" + len(payload).to_bytes(4, "little") + payload
+    return f"data:image/webp;base64,{base64.b64encode(data).decode('ascii')}"
 
 
 def test_package_declares_inline_types() -> None:
@@ -3128,6 +3135,23 @@ def test_data_uri_image_preserve_aspect_ratio_slice_crops_picture_source() -> No
     assert off.attrib == {"x": "95250", "y": "190500"}
     assert ext.attrib == {"cx": "190500", "cy": "95250"}
     assert src_rect.attrib == {"t": "25000", "b": "25000"}
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_webp_data_uri_dimensions_support_preserve_aspect_ratio() -> None:
+    webp = _webp_data_uri(32, 16)
+    svg = f'<svg><image href="{webp}" x="10" y="20" width="10" height="20" preserveAspectRatio="xMaxYMax meet"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/presentationml/2006/main}pic/{http://schemas.openxmlformats.org/presentationml/2006/main}spPr/{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm")
+    assert xfrm is not None
+    off = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}off")
+    ext = xfrm.find("{http://schemas.openxmlformats.org/drawingml/2006/main}ext")
+    assert off is not None
+    assert ext is not None
+    assert off.attrib == {"x": "95250", "y": "333375"}
+    assert ext.attrib == {"cx": "95250", "cy": "47625"}
     assert analyze_svg(svg).unsupported_attributes == {}
 
 

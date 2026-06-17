@@ -3491,6 +3491,8 @@ def _data_image_dimensions(value: str) -> tuple[int, int] | None:
         return int.from_bytes(data[6:8], "little"), int.from_bytes(data[8:10], "little")
     if data.startswith(b"\xff\xd8"):
         return _jpeg_dimensions(data)
+    if data.startswith(b"RIFF") and data[8:12] == b"WEBP":
+        return _webp_dimensions(data)
     return None
 
 
@@ -3530,6 +3532,30 @@ def _jpeg_dimensions(data: bytes) -> tuple[int, int] | None:
             width = int.from_bytes(data[index + 5 : index + 7], "big")
             return width, height
         index += segment_length
+    return None
+
+
+def _webp_dimensions(data: bytes) -> tuple[int, int] | None:
+    if len(data) < 30:
+        return None
+    chunk_type = data[12:16]
+    chunk_size = int.from_bytes(data[16:20], "little")
+    payload = data[20 : 20 + chunk_size]
+    if len(payload) < chunk_size:
+        return None
+    if chunk_type == b"VP8X":
+        if len(payload) < 10:
+            return None
+        return int.from_bytes(payload[4:7], "little") + 1, int.from_bytes(payload[7:10], "little") + 1
+    if chunk_type == b"VP8L":
+        if len(payload) < 5 or payload[0] != 0x2F:
+            return None
+        bits = int.from_bytes(payload[1:5], "little")
+        return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+    if chunk_type == b"VP8 ":
+        if len(payload) < 10 or payload[3:6] != b"\x9d\x01\x2a":
+            return None
+        return int.from_bytes(payload[6:8], "little") & 0x3FFF, int.from_bytes(payload[8:10], "little") & 0x3FFF
     return None
 
 
