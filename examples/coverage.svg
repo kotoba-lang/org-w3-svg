@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-40 -30 400 240" width="800" height="480">
+  <style>
+    #board .panel { fill: url(#panel); stroke: #14532d; stroke-width: 3; }
+    #board > rect.panel.featured { stroke-linejoin: round; }
+    g.badges .badge { fill: currentColor; color: #f97316; stroke: rgba(124, 45, 18, .7); stroke-width: 2; }
+    text.title { fill: #111827; font-size: 20; font-weight: 700; text-anchor: middle; }
+    .route { fill: none; stroke: #0891b2; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 4; }
+    .hidden-probe { display: none; }
+  </style>
+  <defs>
+    <linearGradient id="panel">
+      <stop offset="0%" stop-color="#dcfce7" stop-opacity=".95"/>
+      <stop offset="100%" stop-color="rgb(187, 247, 208)" stop-opacity=".6"/>
+    </linearGradient>
+    <symbol id="pin" viewBox="-10 -10 20 20">
+      <circle cx="0" cy="0" r="8" fill="#ffffff" fill-opacity=".8" stroke="currentColor" stroke-width="2"/>
+      <path d="M-4 0 Q0 -6 4 0 T-4 0" fill="none" stroke="currentColor" stroke-width="2"/>
+    </symbol>
+  </defs>
+  <g id="board">
+    <rect class="panel featured" x="-20" y="-10" width="360" height="180" rx="12"/>
+    <rect class="hidden-probe" x="-40" y="-30" width="400" height="240"/>
+    <text class="title" x="160" y="22">
+      <tspan>Coverage</tspan>
+      <tspan x="160" dy="24">fixture</tspan>
+    </text>
+    <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132"/>
+    <polygon points="40,54 66,42 92,54 82,86 50,86" fill="#fee2e2" stroke="#991b1b" stroke-width="2"/>
+    <polyline points="1.10e2,86 1.38e2,56 1.66e2,86 1.94e2,56" fill="none" stroke="#4338ca" stroke-width="3"/>
+    <g class="badges" transform="translate(232 42) rotate(12)">
+      <ellipse class="badge" cx="0" cy="0" rx="34" ry="20"/>
+      <line x1="-22" y1="0" x2="22" y2="0" stroke="#7c2d12" stroke-width="2"/>
+    </g>
+    <use href="#pin" x="276" y="78" width="40" height="40" color="#2563eb"/>
+  </g>
+</svg>

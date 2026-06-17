@@ -1,0 +1,40 @@
+[project]
+name = "drawingml-svg"
+version = "0.1.0"
+description = "Small, dependency-free converter between DrawingML shape fragments and SVG."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "Jun Kawasaki", email = "jun784@gmail.com" },
+]
+keywords = ["drawingml", "svg", "ooxml", "converter"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Graphics :: Editors :: Vector-Based",
+  "Topic :: Text Processing :: Markup :: XML",
+]
+
+[project.scripts]
+drawingml-svg = "drawingml_svg.cli:main"
+dml2svg = "drawingml_svg.cli:main"
+svg2dml = "drawingml_svg.cli:main"
+drawingml-svg-analyze = "drawingml_svg.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run unit tests
+        run: pytest -q
+
+      - name: Run analyzer fixtures
+        run: |
+          drawingml-svg analyze examples/sample.svg
+          drawingml-svg analyze examples/complex.svg
+          drawingml-svg analyze examples/coverage.svg
+
+      - name: Build PPTX smoke fixture
+        run: |
+          python examples/make_pptx.py examples/coverage.svg -o tmp/ci-coverage.pptx
+          python -m zipfile --test tmp/ci-coverage.pptx
