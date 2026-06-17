@@ -32,6 +32,8 @@ from .converter import (
     _svg_word_spacing_is_supported,
     _svg_dasharray_numbers,
     _svg_dashoffset_is_supported,
+    _svg_linecap,
+    _svg_linejoin,
     _svg_rotation_values,
     _transform_origin,
     _switch_selected_child,
@@ -89,6 +91,8 @@ UNSUPPORTED_ATTRIBUTES = {
     "shape-rendering",
     "spreadMethod",
     "stroke-dashoffset",
+    "stroke-linecap",
+    "stroke-linejoin",
     "textLength",
     "text-decoration-color",
     "text-decoration-style",
@@ -310,6 +314,10 @@ def _inspect_attributes(
         if attr == "stroke-dashoffset" and (
             _stroke_dashoffset_has_no_effect(style, viewport) or _svg_dashoffset_is_supported(style, viewport)
         ):
+            continue
+        if attr == "stroke-linecap" and _stroke_linecap_is_supported_or_noop(element, style, refs, css, viewport):
+            continue
+        if attr == "stroke-linejoin" and _stroke_linejoin_is_supported_or_noop(element, style, refs, css, viewport):
             continue
         if attr == "text-decoration-color" and _text_decoration_color_has_no_effect(specified_style):
             continue
@@ -660,6 +668,43 @@ def _stroke_dashoffset_has_no_effect(style: dict[str, str], viewport: tuple[floa
     if stroke_width == 0:
         return True
     return _alpha_is_zero(style.get("opacity")) or _alpha_is_zero(style.get("stroke-opacity"))
+
+
+def _stroke_linecap_is_supported_or_noop(
+    element: ET.Element,
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
+    value = style.get("stroke-linecap")
+    if value is None:
+        return False
+    return _stroke_has_no_effect(element, style, refs, css, viewport) or _svg_linecap(value) is not None
+
+
+def _stroke_linejoin_is_supported_or_noop(
+    element: ET.Element,
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
+    value = style.get("stroke-linejoin")
+    if value is None:
+        return False
+    return _stroke_has_no_effect(element, style, refs, css, viewport) or _svg_linejoin(value) is not None
+
+
+def _stroke_has_no_effect(
+    element: ET.Element,
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
+    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css, viewport=viewport)
+    return paint.stroke in {None, "none"} or (paint.stroke_width or 0) <= 0
 
 
 def _dash_pattern_period(value: str, viewport: tuple[float, float]) -> float | None:
