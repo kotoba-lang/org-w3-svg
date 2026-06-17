@@ -606,7 +606,7 @@ def _append_dml_paint(parent: ET.Element, paint: Paint) -> None:
             solid = ET.SubElement(ln, qn(NS_A, "solidFill"))
             color = ET.SubElement(solid, qn(NS_A, "srgbClr"), {"val": paint.stroke.removeprefix("#").upper()})
             _append_alpha(color, paint.stroke_alpha)
-        _append_dml_dash(ln, paint.stroke_dasharray)
+        _append_dml_dash(ln, paint.stroke_dasharray, paint.stroke_width)
         _append_dml_join(ln, paint.stroke_linejoin, paint.stroke_miterlimit)
         _append_dml_arrow(ln, "tailEnd", paint.marker_start)
         _append_dml_arrow(ln, "headEnd", paint.marker_end)
@@ -740,21 +740,42 @@ def _dml_miterlimit(ln: ET.Element) -> float | None:
     return int(miter.get("lim", "0")) / 100000
 
 
-def _append_dml_dash(ln: ET.Element, value: str | None) -> None:
+def _append_dml_dash(ln: ET.Element, value: str | None, stroke_width: float | None = None) -> None:
     if not value or value == "none":
+        return
+    nums = _svg_dasharray_numbers(value)
+    if nums and stroke_width and stroke_width > 0:
+        if len(nums) % 2 == 1:
+            nums = nums * 2
+        custom = ET.SubElement(ln, qn(NS_A, "custDash"))
+        for dash, space in zip(nums[0::2], nums[1::2], strict=False):
+            ET.SubElement(
+                custom,
+                qn(NS_A, "ds"),
+                {
+                    "d": str(round(max(0.0, dash) / stroke_width * 100000)),
+                    "sp": str(round(max(0.0, space) / stroke_width * 100000)),
+                },
+            )
         return
     dash = _svg_dasharray_to_dml(value)
     if dash:
         ET.SubElement(ln, qn(NS_A, "prstDash"), {"val": dash})
 
 
-def _svg_dasharray_to_dml(value: str) -> str | None:
+def _svg_dasharray_numbers(value: str) -> list[float] | None:
     parts = [part for part in re.split(r"[\s,]+", value.strip()) if part]
     if not parts:
         return None
     try:
-        nums = [float(part) for part in parts]
+        return [float(part) for part in parts]
     except ValueError:
+        return None
+
+
+def _svg_dasharray_to_dml(value: str) -> str | None:
+    nums = _svg_dasharray_numbers(value)
+    if not nums:
         return None
     if len(nums) == 1:
         return "dot"
@@ -765,6 +786,15 @@ def _svg_dasharray_to_dml(value: str) -> str | None:
 
 
 def _dml_dasharray(ln: ET.Element) -> str | None:
+    custom = ln.find(qn(NS_A, "custDash"))
+    if custom is not None:
+        width = _px(int(ln.get("w", "0"))) if ln.get("w") else None
+        if width:
+            values = []
+            for item in custom.findall(qn(NS_A, "ds")):
+                values.append(_fmt(int(item.get("d", "0")) / 100000 * width))
+                values.append(_fmt(int(item.get("sp", "0")) / 100000 * width))
+            return " ".join(values) or None
     dash = ln.find(qn(NS_A, "prstDash"))
     if dash is None:
         return None

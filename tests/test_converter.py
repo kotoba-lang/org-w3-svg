@@ -387,14 +387,14 @@ def test_round_rect_and_stroke_style_convert() -> None:
     assert 'prst="roundRect"' in dml
     assert 'cap="rnd"' in dml
     assert '<a:miter lim="600000"/>' in dml
-    assert '<a:prstDash val="lgDash"/>' in dml
+    assert '<a:ds d="400000" sp="200000"/>' in dml
 
     svg = drawingml_to_svg(dml)
     assert 'rx="' in svg
     assert 'stroke-linecap="round"' in svg
     assert 'stroke-linejoin="miter"' in svg
     assert 'stroke-miterlimit="6"' in svg
-    assert 'stroke-dasharray="8 3"' in svg
+    assert 'stroke-dasharray="8 4"' in svg
 
 
 def test_line_markers_convert_to_drawingml_arrows_and_round_trip() -> None:
