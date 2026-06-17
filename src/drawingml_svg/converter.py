@@ -1062,8 +1062,29 @@ def _dml_color(parent: ET.Element) -> str | None:
         return f"#{srgb.get('val', '').lower()}"
     scheme = parent.find(qn(NS_A, "schemeClr"))
     if scheme is not None and scheme.get("val"):
-        return scheme.get("val")
+        return _dml_scheme_color(scheme.get("val"))
     return None
+
+
+def _dml_scheme_color(value: str | None) -> str | None:
+    return {
+        "accent1": "#4472c4",
+        "accent2": "#ed7d31",
+        "accent3": "#a5a5a5",
+        "accent4": "#ffc000",
+        "accent5": "#5b9bd5",
+        "accent6": "#70ad47",
+        "bg1": "#ffffff",
+        "bg2": "#e7e6e6",
+        "dk1": "#000000",
+        "dk2": "#44546a",
+        "folHlink": "#954f72",
+        "hlink": "#0563c1",
+        "lt1": "#ffffff",
+        "lt2": "#e7e6e6",
+        "tx1": "#000000",
+        "tx2": "#44546a",
+    }.get(value or "")
 
 
 def _dml_alpha(parent: ET.Element) -> float | None:
