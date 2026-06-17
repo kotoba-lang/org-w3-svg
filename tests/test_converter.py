@@ -173,6 +173,49 @@ def test_css_specificity_wins_over_later_lower_specificity_rules() -> None:
     assert analyze_svg(svg).estimated_element_coverage == 1.0
 
 
+def test_css_cascade_honors_presentation_inline_and_important_priority() -> None:
+    svg = """<svg>
+      <style>
+        rect { fill: #2563eb; stroke: #9333ea !important; stroke-width: 3 !important; }
+        #target { fill: #dc2626; stroke: #16a34a; }
+      </style>
+      <rect id="target" x="1" y="2" width="3" height="4" fill="#f8fafc" stroke-width="1" style="fill: #f97316; stroke: #0f172a"/>
+    </svg>"""
+    dml = svg_to_drawingml(svg)
+
+    assert 'val="F97316"' in dml
+    assert 'val="9333EA"' in dml
+    assert 'w="28575"' in dml
+    assert 'val="F8FAFC"' not in dml
+    assert 'val="0F172A"' not in dml
+
+
+def test_css_rules_override_presentation_attributes() -> None:
+    dml = svg_to_drawingml(
+        """<svg>
+          <style>rect { fill: #2563eb; stroke-width: 3; }</style>
+          <rect width="10" height="8" fill="#f8fafc" stroke="#111111" stroke-width="1"/>
+        </svg>"""
+    )
+
+    assert 'val="2563EB"' in dml
+    assert 'w="28575"' in dml
+    assert 'val="F8FAFC"' not in dml
+    assert 'w="9525"' not in dml
+
+
+def test_inline_important_wins_over_stylesheet_important() -> None:
+    dml = svg_to_drawingml(
+        """<svg>
+          <style>rect { fill: #2563eb !important; }</style>
+          <rect width="10" height="8" style="fill: #dc2626 !important"/>
+        </svg>"""
+    )
+
+    assert 'val="DC2626"' in dml
+    assert 'val="2563EB"' not in dml
+
+
 def test_compound_child_selectors_hidden_shapes_and_scientific_numbers() -> None:
     svg = """<svg>
       <style>

@@ -9,7 +9,7 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Geometry: position, size, rounded rectangles, line endpoints, horizontal/vertical flips for lines
 - Images: embedded SVG `image` elements with base64 data URI sources
 - Paint: solid fill, stroke color, stroke width, line cap/join/miter/custom dash, fill/stroke alpha, short/long alpha hex colors, CSS rgb/hsl color functions, named colors, `currentColor`, gradient fallback
-- Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, child, and descendant selectors, CSS specificity, with `!important` value normalization
+- Styling: inline presentation attributes, inline `style`, simple `<style>` rules for element/class/id, compound class, child, and descendant selectors, CSS specificity, and `!important` cascade priority
 - Line markers: `marker-start` and `marker-end` arrow markers are converted to DrawingML line arrows
 - Coordinate systems: root and symbol `viewBox` normalization with `preserveAspectRatio` support
 - Visibility: `display:none` and `visibility:hidden` are skipped during conversion and analysis

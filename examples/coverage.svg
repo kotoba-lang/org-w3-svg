@@ -5,7 +5,7 @@
     g.badges .badge { fill: currentColor; color: #f97316; stroke: hsla(0.349066rad, 75%, 28%, .7); stroke-width: 2; }
     text.title { fill: #111827; font-size: 15pt !important; font-weight: 700; font-style: italic; font-family: 'Aptos Display', Arial, sans-serif; text-decoration: underline; text-anchor: middle; dominant-baseline: middle; }
     .route { fill: none; stroke: #0891b2; stroke-width: 1mm !important; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 2mm, 1mm; }
-    rect { stroke: #ef4444; }
+    rect.panel { stroke: #ef4444; }
     .hidden-probe { display: none; }
   </style>
   <defs>

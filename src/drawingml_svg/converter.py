@@ -66,7 +66,8 @@ class Shape:
     image_href: str | None = None
 
 
-CssRule = tuple[str, dict[str, str], tuple[int, int, int], int]
+CssDeclaration = tuple[str, bool]
+CssRule = tuple[str, dict[str, CssDeclaration], tuple[int, int, int], int]
 
 
 def svg_to_drawingml(svg_text: str) -> str:
@@ -1329,17 +1330,32 @@ def _vector_angle(u: tuple[float, float], v: tuple[float, float]) -> float:
 
 
 def _parse_style(style: str) -> dict[str, str]:
-    result = {}
+    return {key: value for key, (value, _) in _parse_style_declarations(style).items()}
+
+
+def _parse_style_declarations(style: str) -> dict[str, CssDeclaration]:
+    result: dict[str, CssDeclaration] = {}
     for item in style.split(";"):
         if ":" not in item:
             continue
         key, value = item.split(":", 1)
-        result[key.strip()] = _normalize_css_value(value)
+        key = key.strip()
+        normalized, important = _normalize_css_value_with_importance(value)
+        if key not in result or important or not result[key][1]:
+            result[key] = (normalized, important)
     return result
 
 
 def _normalize_css_value(value: str) -> str:
-    return re.sub(r"\s*!important\s*$", "", value.strip(), flags=re.I).strip()
+    return _normalize_css_value_with_importance(value)[0]
+
+
+def _normalize_css_value_with_importance(value: str) -> CssDeclaration:
+    stripped = value.strip()
+    important = bool(re.search(r"\s*!important\s*$", stripped, flags=re.I))
+    if important:
+        stripped = re.sub(r"\s*!important\s*$", "", stripped, flags=re.I).strip()
+    return stripped, important
 
 
 def _collect_css(root: ET.Element) -> list[CssRule]:
@@ -1351,7 +1367,7 @@ def _collect_css(root: ET.Element) -> list[CssRule]:
         text = "".join(element.itertext())
         text = re.sub(r"/\*.*?\*/", "", text, flags=re.S)
         for selector, body in re.findall(r"([^{}]+)\{([^{}]+)\}", text):
-            declarations = _parse_style(body)
+            declarations = _parse_style_declarations(body)
             for item in selector.split(","):
                 key = item.strip()
                 if key:
@@ -1431,16 +1447,15 @@ def _computed_style(
     inherited: dict[str, str],
     ancestors: tuple[ET.Element, ...] = (),
 ) -> dict[str, str]:
-    tag = _local_name(element.tag)
     style = dict(inherited)
-    css_priorities: dict[str, tuple[tuple[int, int, int], int]] = {}
-    for selector, declarations, specificity, order in css:
-        if _selector_matches(selector, element, ancestors):
-            for key, value in declarations.items():
-                priority = (specificity, order)
-                if priority >= css_priorities.get(key, ((-1, -1, -1), -1)):
-                    style[key] = value
-                    css_priorities[key] = priority
+    css_priorities: dict[str, tuple[int, tuple[int, int, int, int], int]] = {}
+
+    def apply_declaration(key: str, value: str, important: bool, specificity: tuple[int, int, int, int], order: int) -> None:
+        priority = (1 if important else 0, specificity, order)
+        if priority >= css_priorities.get(key, (-1, (-1, -1, -1, -1), -1)):
+            style[key] = value
+            css_priorities[key] = priority
+
     for attr in (
         "fill",
         "fill-opacity",
@@ -1468,8 +1483,16 @@ def _computed_style(
         "marker-end",
     ):
         if element.get(attr) is not None:
-            style[attr] = element.get(attr, "")
-    style.update(_parse_style(element.get("style", "")))
+            apply_declaration(attr, element.get(attr, ""), False, (0, 0, 0, 0), -1)
+
+    for selector, declarations, specificity, order in css:
+        if _selector_matches(selector, element, ancestors):
+            css_specificity = (0, *specificity)
+            for key, (value, important) in declarations.items():
+                apply_declaration(key, value, important, css_specificity, order)
+
+    for key, (value, important) in _parse_style_declarations(element.get("style", "")).items():
+        apply_declaration(key, value, important, (1, 0, 0, 0), 1_000_000)
     if style.get("fill") == "currentColor":
         style["fill"] = style.get("color", "#000000")
     if style.get("stroke") == "currentColor":
