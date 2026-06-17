@@ -257,6 +257,8 @@ def _inspect_attributes(
             element, refs, css
         ):
             continue
+        if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css):
+            continue
         if attr == "isolation" and _isolation_is_redundant_with_blend(element, css, style, ancestors):
             continue
         if attr == "letter-spacing" and _letter_spacing_is_supported(specified_style):
@@ -486,6 +488,19 @@ def _paint_order_has_no_effect(
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
     return not (has_fill and has_stroke)
+
+
+def _fill_rule_has_no_effect(
+    element: ET.Element,
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+) -> bool:
+    value = style.get("fill-rule")
+    if value is None:
+        return False
+    paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css)
+    return paint.fill in {None, "none"}
 
 
 def _stroke_dashoffset_has_no_effect(style: dict[str, str]) -> bool:

@@ -1193,6 +1193,21 @@ def test_analyze_svg_reports_paint_order_when_fill_and_stroke_are_visible() -> N
     assert analyze_svg(svg).unsupported_attributes == {"paint-order": 1}
 
 
+def test_analyze_svg_ignores_fill_rule_without_visible_fill() -> None:
+    svg = """<svg>
+      <path d="M0 0 H10 V10 Z" fill="none" stroke="#111111" fill-rule="evenodd"/>
+      <path d="M20 0 H30 V10 Z" fill="#111111" fill-opacity="0" stroke="#111111" fill-rule="evenodd"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_fill_rule_when_fill_is_visible() -> None:
+    svg = '<svg><path d="M0 0 H10 V10 Z" fill="#111111" fill-rule="evenodd"/></svg>'
+
+    assert analyze_svg(svg).unsupported_attributes == {"fill-rule": 1}
+
+
 def test_analyze_svg_ignores_rendering_quality_hints() -> None:
     svg = """<svg>
       <path d="M0 0 H10 V10 Z" color-rendering="optimizeQuality" shape-rendering="crispEdges"/>
