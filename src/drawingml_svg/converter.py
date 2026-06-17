@@ -998,18 +998,29 @@ def _dominant_baseline(value: str | None) -> str | None:
 
 
 def _svg_text_content(element: ET.Element) -> str:
+    preserve_space = _xml_space_preserve(element)
     if not any(_local_name(child.tag) == "tspan" for child in element):
-        return "".join(element.itertext()).strip()
+        text = "".join(element.itertext())
+        return text if preserve_space else text.strip()
     lines = []
-    leading = (element.text or "").strip()
+    leading = element.text or ""
+    if not preserve_space:
+        leading = leading.strip()
     if leading:
         lines.append(leading)
     for child in element:
         if _local_name(child.tag) == "tspan":
-            text = "".join(child.itertext()).strip()
+            child_preserve_space = preserve_space or _xml_space_preserve(child)
+            text = "".join(child.itertext())
+            if not child_preserve_space:
+                text = text.strip()
             if text:
                 lines.append(text)
     return "\n".join(lines)
+
+
+def _xml_space_preserve(element: ET.Element) -> bool:
+    return element.get("{http://www.w3.org/XML/1998/namespace}space") == "preserve" or element.get("xml:space") == "preserve"
 
 
 def _svg_text_position(element: ET.Element, viewport: tuple[float, float] = (0.0, 0.0)) -> tuple[float, float]:

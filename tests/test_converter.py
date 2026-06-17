@@ -311,6 +311,16 @@ def test_text_position_can_come_from_first_tspan() -> None:
     assert "<a:t>From tspan</a:t>" in dml
 
 
+def test_xml_space_preserve_keeps_text_whitespace() -> None:
+    dml = svg_to_drawingml(
+        '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'
+    )
+
+    assert "<a:t>  padded  </a:t>" in dml
+    assert "<a:t> kept </a:t>" in dml
+    assert analyze_svg('<svg><text xml:space="preserve">  padded  </text></svg>').unsupported_attributes == {}
+
+
 def test_rectangular_clip_path_clips_rect_geometry() -> None:
     svg = """<svg>
       <defs><clipPath id="crop"><rect x="10" y="12" width="20" height="10"/></clipPath></defs>
