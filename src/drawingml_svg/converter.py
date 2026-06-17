@@ -1545,7 +1545,7 @@ def _transformed_rect_shape(
     )
 
 
-def _transformed_axis_aligned_ellipse_shape(
+def _transformed_ellipse_shape(
     cx: float,
     cy: float,
     rx: float,
@@ -1560,12 +1560,16 @@ def _transformed_axis_aligned_ellipse_shape(
     center = _apply_matrix(matrix, (cx, cy))
     horizontal = (right[0] - left[0], right[1] - left[1])
     vertical = (bottom[0] - top[0], bottom[1] - top[1])
-    if abs(horizontal[1]) > 1e-9 or abs(vertical[0]) > 1e-9:
+    transformed_width = math.hypot(*horizontal)
+    transformed_height = math.hypot(*vertical)
+    dot = horizontal[0] * vertical[0] + horizontal[1] * vertical[1]
+    determinant = horizontal[0] * vertical[1] - horizontal[1] * vertical[0]
+    tolerance = max(transformed_width * transformed_height, 1.0) * 1e-9
+    if transformed_width <= 0 or transformed_height <= 0 or abs(dot) > tolerance or determinant <= 0:
         return None
-    transformed_width = abs(horizontal[0])
-    transformed_height = abs(vertical[1])
-    if transformed_width <= 0 or transformed_height <= 0:
-        return None
+    rotation = math.degrees(math.atan2(horizontal[1], horizontal[0])) % 360
+    if abs(rotation) < 1e-9 or abs(rotation - 360) < 1e-9:
+        rotation = 0.0
     return Shape(
         "ellipse",
         center[0] - transformed_width / 2,
@@ -1573,6 +1577,7 @@ def _transformed_axis_aligned_ellipse_shape(
         transformed_width,
         transformed_height,
         paint,
+        rotation=rotation or None,
     )
 
 
@@ -2519,7 +2524,7 @@ def _ellipse_shape(
     paint: Paint,
     matrix: tuple[float, float, float, float, float, float],
 ) -> Shape:
-    shape = _transformed_axis_aligned_ellipse_shape(cx, cy, rx, ry, matrix, paint)
+    shape = _transformed_ellipse_shape(cx, cy, rx, ry, matrix, paint)
     if shape is not None:
         return shape
     points = [

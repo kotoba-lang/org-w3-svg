@@ -906,6 +906,22 @@ def test_scaled_circle_and_ellipse_stay_as_editable_ellipses() -> None:
     assert analyze_svg('<svg><g transform="scale(2 3)"><circle cx="5" cy="4" r="3"/></g></svg>').estimated_element_coverage == 1.0
 
 
+def test_rotated_ellipse_stays_as_editable_ellipse_with_rotation() -> None:
+    svg = '<svg><ellipse cx="20" cy="20" rx="10" ry="6" fill="#3b82f6" transform="rotate(90 20 20)"/></svg>'
+    dml = svg_to_drawingml(svg)
+
+    root = ET.fromstring(dml)
+    xfrm = root.find(".//{http://schemas.openxmlformats.org/drawingml/2006/main}xfrm[@rot]")
+    assert xfrm is not None
+    assert xfrm.get("rot") == "5400000"
+    assert 'prst="ellipse"' in dml
+    assert "<a:custGeom>" not in dml
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+    round_trip = drawingml_to_svg(dml)
+    assert 'transform="rotate(90 20 20)"' in round_trip
+
+
 def test_percent_lengths_resolve_against_root_viewport() -> None:
     dml = svg_to_drawingml(
         '<svg viewBox="0 0 200 100" width="400" height="200"><rect x="10%" y="20%" width="25%" height="40%"/><line x1="0%" y1="100%" x2="50%" y2="0%" stroke="#111111"/></svg>'
