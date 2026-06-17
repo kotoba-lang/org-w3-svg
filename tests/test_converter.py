@@ -462,6 +462,7 @@ def test_tspan_text_anchor_and_bold_convert() -> None:
     )
 
     assert '<a:br/>' in dml
+    assert '<a:pPr algn="ctr"/>' in dml
     assert 'b="1"' in dml
     assert 'i="1"' in dml
     assert 'u="sng"' in dml
@@ -478,3 +479,5 @@ def test_tspan_text_anchor_and_bold_convert() -> None:
     assert 'font-style="italic"' in svg
     assert 'font-family="Aptos Display"' in svg
     assert 'text-decoration="underline line-through"' in svg
+    assert 'text-anchor="middle"' in svg
+    assert 'x="100"' in svg

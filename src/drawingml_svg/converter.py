@@ -281,6 +281,7 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
                 font_style=_dml_font_style(element),
                 font_family=_dml_font_family(element),
                 text_decoration=_dml_text_decoration(element),
+                text_anchor=_dml_text_anchor(element),
             )
             continue
         cust = sp_pr.find(qn(NS_A, "custGeom"))
@@ -387,7 +388,7 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
         tag = "polygon" if shape.closed else "polyline"
         return ET.Element(qn(NS_SVG, tag), attrs)
     if shape.kind == "text":
-        attrs.update({"x": _fmt(shape.x), "y": _fmt(shape.y + (shape.font_size or shape.height / 1.4))})
+        attrs.update({"x": _fmt(_svg_text_x(shape)), "y": _fmt(shape.y + (shape.font_size or shape.height / 1.4))})
         if shape.font_size:
             attrs["font-size"] = _fmt(shape.font_size)
         if shape.font_weight:
@@ -471,6 +472,14 @@ def _line_points(shape: Shape) -> dict[str, str]:
     y1 = shape.y + shape.height if shape.flip_v else shape.y
     y2 = shape.y if shape.flip_v else shape.y + shape.height
     return {"x1": _fmt(x1), "y1": _fmt(y1), "x2": _fmt(x2), "y2": _fmt(y2)}
+
+
+def _svg_text_x(shape: Shape) -> float:
+    if shape.text_anchor == "middle":
+        return shape.x + shape.width / 2
+    if shape.text_anchor == "end":
+        return shape.x + shape.width
+    return shape.x
 
 
 def _svg_paint(style: dict[str, str], refs: dict[str, ET.Element] | None = None) -> Paint:
@@ -644,6 +653,9 @@ def _append_text_body(parent: ET.Element, shape: Shape) -> None:
     ET.SubElement(tx_body, qn(NS_A, "bodyPr"), {"wrap": "none", "lIns": "0", "rIns": "0", "tIns": "0", "bIns": "0"})
     ET.SubElement(tx_body, qn(NS_A, "lstStyle"))
     paragraph = ET.SubElement(tx_body, qn(NS_A, "p"))
+    paragraph_align = _text_anchor_to_dml(shape.text_anchor)
+    if paragraph_align:
+        ET.SubElement(paragraph, qn(NS_A, "pPr"), {"algn": paragraph_align})
     run = ET.SubElement(paragraph, qn(NS_A, "r"))
     r_pr_attrs = {}
     if shape.font_size:
@@ -873,6 +885,17 @@ def _dml_text_decoration(element: ET.Element) -> str | None:
     if r_pr.get("strike") and r_pr.get("strike") != "noStrike":
         values.append("line-through")
     return " ".join(values) or None
+
+
+def _dml_text_anchor(element: ET.Element) -> str | None:
+    p_pr = element.find(f".//{qn(NS_A, 'pPr')}")
+    if p_pr is None:
+        return None
+    return {"ctr": "middle", "r": "end", "l": "start"}.get(p_pr.get("algn", ""))
+
+
+def _text_anchor_to_dml(value: str | None) -> str | None:
+    return {"middle": "ctr", "end": "r", "start": "l"}.get(value or "")
 
 
 def _svg_text_content(element: ET.Element) -> str:
