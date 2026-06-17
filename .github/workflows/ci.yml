@@ -75,3 +75,12 @@ jobs:
           assert "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\"" in rels
           assert any(name.startswith("ppt/media/image") for name in names), "PPTX media image was not embedded"
           PY
+
+      - name: Build wheel smoke
+        run: |
+          python -m pip wheel . -w tmp/dist --no-deps
+          python -m venv tmp/wheel-venv
+          tmp/wheel-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
+          tmp/wheel-venv/bin/drawingml-svg analyze examples/coverage.svg
+          tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml
+          test -s tmp/wheel-smoke.xml
