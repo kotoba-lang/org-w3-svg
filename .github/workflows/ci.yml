@@ -61,3 +61,20 @@ jobs:
         run: |
           python examples/make_pptx.py examples/coverage.svg -o tmp/ci-coverage.pptx
           python -m zipfile --test tmp/ci-coverage.pptx
+          python - <<'PY'
+          import zipfile
+
+          with zipfile.ZipFile("tmp/ci-coverage.pptx") as pptx:
+              slide = pptx.read("ppt/slides/slide1.xml").decode("utf-8")
+              rels = pptx.read("ppt/slides/_rels/slide1.xml.rels").decode("utf-8")
+              names = set(pptx.namelist())
+
+          assert "<p:pic>" in slide, "embedded image was not converted to a picture"
+          assert "<a:headEnd type=\"triangle\"" in slide, "line marker was not converted to a DrawingML arrow"
+          assert "<a:custDash>" in slide, "non-zero custom dash was not written"
+          assert "<a:ds d=\"0\" sp=\"0\"" not in slide, "zero dasharray should remain a solid line"
+          assert "cap=\"all\"" in slide, "all-small-caps text was not preserved"
+          assert "spc=\"" in slide, "text spacing adjustments were not written"
+          assert "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/image\"" in rels
+          assert any(name.startswith("ppt/media/image") for name in names), "PPTX media image was not embedded"
+          PY
