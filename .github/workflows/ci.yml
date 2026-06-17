@@ -81,6 +81,26 @@ jobs:
           python -m build --sdist --wheel -o tmp/dist
           test -f tmp/dist/drawingml_svg-*.tar.gz
           test -f tmp/dist/drawingml_svg-*.whl
+          python - <<'PY'
+          import glob
+          import tarfile
+          import zipfile
+
+          wheel_path = glob.glob("tmp/dist/drawingml_svg-*.whl")[0]
+          sdist_path = glob.glob("tmp/dist/drawingml_svg-*.tar.gz")[0]
+          with zipfile.ZipFile(wheel_path) as wheel:
+              wheel_names = set(wheel.namelist())
+          assert "drawingml_svg/py.typed" in wheel_names
+          dist_info = next(name.rsplit("/", 1)[0] for name in wheel_names if name.endswith(".dist-info/METADATA"))
+          assert f"{dist_info}/entry_points.txt" in wheel_names
+
+          with tarfile.open(sdist_path) as sdist:
+              sdist_names = set(sdist.getnames())
+          root = next(name for name in sdist_names if name.endswith("/pyproject.toml")).rsplit("/", 1)[0]
+          assert f"{root}/README.md" in sdist_names
+          assert f"{root}/LICENSE" in sdist_names
+          assert f"{root}/src/drawingml_svg/py.typed" in sdist_names
+          PY
           python -m venv tmp/wheel-venv
           tmp/wheel-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
           tmp/wheel-venv/bin/drawingml-svg analyze examples/coverage.svg

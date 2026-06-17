@@ -8,7 +8,7 @@ import pytest
 import drawingml_svg
 from drawingml_svg import analyze_svg, drawingml_to_svg, svg_to_drawingml
 from drawingml_svg.cli import main as cli_main
-from examples.make_pptx import build_slide_xml, prepare_slide_media, write_pptx
+from examples.make_pptx import build_slide_xml, main as make_pptx_main, prepare_slide_media, write_pptx
 
 PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="
 
@@ -309,6 +309,36 @@ def test_write_pptx_creates_package_with_unique_relationship_ids(tmp_path) -> No
     for rels in (root_rels, slide_rels):
         ids = [rel.get("Id") for rel in rels]
         assert len(ids) == len(set(ids))
+
+
+def test_make_pptx_cli_writes_valid_package(tmp_path) -> None:
+    source = tmp_path / "input.svg"
+    output = tmp_path / "nested" / "sample.pptx"
+    source.write_text(f'<svg><rect width="10" height="8"/><image href="{PNG_DATA_URI}" x="12" y="0" width="8" height="8"/></svg>', encoding="utf-8")
+
+    assert make_pptx_main([str(source), "-o", str(output)]) == 0
+
+    with zipfile.ZipFile(output) as pptx:
+        names = set(pptx.namelist())
+        slide = pptx.read("ppt/slides/slide1.xml").decode("utf-8")
+    assert "ppt/slides/slide1.xml" in names
+    assert "ppt/slides/_rels/slide1.xml.rels" in names
+    assert "<p:sp>" in slide
+    assert "<p:pic>" in slide
+    assert any(name.startswith("ppt/media/image") for name in names)
+
+
+def test_make_pptx_cli_reports_errors_without_traceback(tmp_path, capsys) -> None:
+    source = tmp_path / "empty.svg"
+    source.write_text("<svg><defs><rect width='10' height='8'/></defs></svg>", encoding="utf-8")
+
+    with pytest.raises(SystemExit) as excinfo:
+        make_pptx_main([str(source), "-o", str(tmp_path / "out.pptx")])
+
+    captured = capsys.readouterr()
+    assert excinfo.value.code == 1
+    assert "make_pptx.py: error: input did not produce any DrawingML shapes" in captured.err
+    assert "Traceback" not in captured.err
 
 
 def test_polygon_polyline_linear_path_and_text_convert() -> None:

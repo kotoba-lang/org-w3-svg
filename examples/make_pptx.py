@@ -4,6 +4,7 @@ import argparse
 import base64
 import binascii
 import re
+import sys
 import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
@@ -15,21 +16,24 @@ PRESENTATION_NS = "http://schemas.openxmlformats.org/presentationml/2006/main"
 REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="make_pptx.py")
     parser.add_argument("input", type=Path)
     parser.add_argument("-o", "--output", type=Path, default=Path("drawingml-svg-sample.pptx"))
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
-    svg_text = args.input.read_text(encoding="utf-8")
-    sp_tree_fragment = ET.fromstring(svg_to_drawingml(svg_text))
+    try:
+        svg_text = args.input.read_text(encoding="utf-8")
+        sp_tree_fragment = ET.fromstring(svg_to_drawingml(svg_text))
+    except (ET.ParseError, OSError, ValueError) as exc:
+        parser.exit(1, f"{parser.prog}: error: {exc}\n")
     shapes = [
         child
         for child in sp_tree_fragment
         if child.tag in {qn(NS_P, "sp"), qn(NS_P, "cxnSp"), qn(NS_P, "pic")}
     ]
     if not shapes:
-        raise SystemExit("input did not produce any DrawingML shapes")
+        parser.exit(1, f"{parser.prog}: error: input did not produce any DrawingML shapes\n")
 
     slide_xml = build_slide_xml(shapes)
     write_pptx(args.output, slide_xml)
@@ -237,4 +241,4 @@ THEME = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))
