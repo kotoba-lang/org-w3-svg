@@ -1185,6 +1185,9 @@ def _dml_color(parent: ET.Element) -> str | None:
     scheme = parent.find(qn(NS_A, "schemeClr"))
     if scheme is not None and scheme.get("val"):
         return _dml_scheme_color(scheme)
+    system = parent.find(qn(NS_A, "sysClr"))
+    if system is not None and system.get("lastClr"):
+        return _apply_dml_luminance_modifiers(f"#{system.get('lastClr', '').lower()}", system)
     return None
 
 
