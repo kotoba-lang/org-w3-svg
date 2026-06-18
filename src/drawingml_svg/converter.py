@@ -2840,6 +2840,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
     arrow_head_y = y + height * 0.65
     if kind == "triangle":
         return [(center_x, top), (right, bottom), (left, bottom)]
+    if kind == "flowChartExtract":
+        return [(center_x, top), (right, bottom), (left, bottom)]
+    if kind == "flowChartMerge":
+        return [(left, top), (right, top), (center_x, bottom)]
     if kind == "rtTriangle":
         return [(left, top), (right, bottom), (left, bottom)]
     if kind in {"diamond", "flowChartDecision"}:
