@@ -1104,6 +1104,8 @@ def _path_length_has_no_effect(
     dasharray = style.get("stroke-dasharray")
     if dasharray is None or dasharray.strip().lower() in {"", "none"}:
         return True
+    if _dash_pattern_period(dasharray, viewport) is None:
+        return True
     return _stroke_has_no_effect(element, style, refs, css, viewport)
 
 
