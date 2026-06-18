@@ -80,6 +80,7 @@
     <line x1="104" y1="66" x2="132" y2="66" stroke="#111827" stroke-width="2%"/>
     <line x1="104" y1="72" x2="132" y2="72" stroke="#111827" stroke-width="2" stroke-dasharray="8% 4%" stroke-dashoffset="2%"/>
     <line x1="104" y1="78" x2="132" y2="78" stroke="#111827" stroke-width="2" stroke-dasharray="8 4" stroke-dashoffset="10"/>
+    <path d="M142 18 H166 V34 H142 Z" fill="#e0f2fe" stroke="none" stroke-dasharray="4 2" pathLength="100"/>
     <polyline points="104,84 118,84 132,92" fill="none" stroke="#111827" stroke-width="2" stroke-linecap=" ROUND " stroke-linejoin=" BEVEL "/>
     <polyline points="96,84 140,128" fill="none" stroke="#0f766e" stroke-width="2" clip-path="url(#segment-crop)"/>
     <path d="M96 120 L132 84" fill="none" stroke="#7c3aed" stroke-width="2" clip-path="url(#segment-crop)"/>

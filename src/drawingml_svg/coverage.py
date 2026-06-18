@@ -350,7 +350,7 @@ def _inspect_attributes(
             continue
         if attr == "paint-order" and _paint_order_has_no_effect(element, style, refs, css, viewport):
             continue
-        if attr == "pathLength" and _path_length_has_no_effect(specified_style):
+        if attr == "pathLength" and _path_length_has_no_effect(element, style, refs, css, viewport):
             continue
         if attr == "preserveAspectRatio" and _preserve_aspect_ratio_is_supported_or_noop(element, specified_style):
             continue
@@ -834,12 +834,20 @@ def _clip_rule_has_no_effect(ancestors: tuple[ET.Element, ...]) -> bool:
     return not any(_local_name(ancestor.tag) == "clipPath" for ancestor in ancestors)
 
 
-def _path_length_has_no_effect(style: dict[str, str]) -> bool:
+def _path_length_has_no_effect(
+    element: ET.Element,
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
     value = style.get("pathLength")
     if value is None:
         return False
     dasharray = style.get("stroke-dasharray")
-    return dasharray is None or dasharray.strip().lower() in {"", "none"}
+    if dasharray is None or dasharray.strip().lower() in {"", "none"}:
+        return True
+    return _stroke_has_no_effect(element, style, refs, css, viewport)
 
 
 def _preserve_aspect_ratio_is_supported_or_noop(element: ET.Element, style: dict[str, str]) -> bool:

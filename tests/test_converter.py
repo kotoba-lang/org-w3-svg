@@ -2346,6 +2346,15 @@ def test_analyze_svg_reports_unconverted_layout_length_attributes() -> None:
     }
 
 
+def test_analyze_svg_ignores_path_length_without_visible_stroke() -> None:
+    svg = """<svg>
+      <path d="M0 0 H10 V10 Z" fill="#111111" stroke="none" stroke-dasharray="4 2" pathLength="100"/>
+      <path d="M20 0 H30 V10 Z" fill="#111111" stroke="#111111" stroke-opacity="0" stroke-dasharray="4 2" pathLength="100"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_text_stroke_maps_to_run_outline() -> None:
     svg = '<svg><text x="0" y="10" fill="#111111" stroke="#ffffff" stroke-width="2" stroke-opacity=".5">Outlined</text></svg>'
 

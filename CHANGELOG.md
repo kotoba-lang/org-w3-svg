@@ -23,6 +23,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for marker-only `paint-order` changes that have no visible effect without markers.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.
 - Refined analyzer handling for zero-valued SVG `kerning` attributes.
+- Refined analyzer handling for `pathLength` on shapes without a visible dashed stroke.
 
 ## 0.1.0
 
