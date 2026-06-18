@@ -133,6 +133,14 @@ def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     assert "svg2dml examples/sample.svg -o tmp/release-smoke.xml" in release
 
 
+def test_ci_pptx_smoke_covers_recent_fixture_regressions() -> None:
+    workflow = (_project_root() / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert '<a:miter lim="400000"' in workflow
+    assert 'u=\\"wavy\\"' in workflow or "u=\"wavy\"" in workflow
+    assert 'spc="' in workflow
+
+
 def test_dependabot_tracks_actions_and_python_dependencies() -> None:
     dependabot = (_project_root() / ".github" / "dependabot.yml").read_text(encoding="utf-8")
 
