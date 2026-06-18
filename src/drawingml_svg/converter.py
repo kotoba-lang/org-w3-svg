@@ -2838,6 +2838,30 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind in {"hexagon", "flowChartPreparation"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
+    if kind == "octagon":
+        return [
+            (quarter_x, top),
+            (three_quarter_x, top),
+            (right, quarter_y),
+            (right, three_quarter_y),
+            (three_quarter_x, bottom),
+            (quarter_x, bottom),
+            (left, three_quarter_y),
+            (left, quarter_y),
+        ]
+    if kind == "bevel":
+        bevel_x = x + width * 0.18
+        bevel_y = y + height * 0.18
+        return [
+            (bevel_x, top),
+            (right - width * 0.18, top),
+            (right, bevel_y),
+            (right, bottom - height * 0.18),
+            (right - width * 0.18, bottom),
+            (bevel_x, bottom),
+            (left, bottom - height * 0.18),
+            (left, bevel_y),
+        ]
     if kind == "flowChartOffpageConnector":
         return [(left, top), (right, top), (right, three_quarter_y), (center_x, bottom), (left, three_quarter_y)]
     if kind == "chevron":
