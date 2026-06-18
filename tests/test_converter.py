@@ -2213,6 +2213,15 @@ def test_analyze_svg_ignores_paint_order_when_only_one_paint_channel_is_visible(
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_analyze_svg_ignores_paint_order_when_only_markers_move_without_markers() -> None:
+    svg = """<svg>
+      <path d="M0 0 H10 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2" paint-order="markers fill stroke"/>
+      <path d="M20 0 H30 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2" paint-order="fill markers stroke"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_analyze_svg_reports_paint_order_when_fill_and_stroke_are_visible() -> None:
     svg = '<svg><path d="M0 0 H10 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2" paint-order="stroke fill"/></svg>'
 

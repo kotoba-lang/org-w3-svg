@@ -885,7 +885,20 @@ def _paint_order_has_no_effect(
     paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css, viewport=viewport)
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
-    return not (has_fill and has_stroke)
+    if not (has_fill and has_stroke):
+        return True
+    normalized = " ".join(value.strip().lower().split())
+    if normalized in {"markers fill stroke", "fill markers stroke"}:
+        return not _has_visible_marker(style)
+    return False
+
+
+def _has_visible_marker(style: dict[str, str]) -> bool:
+    for attr in ("marker", "marker-start", "marker-mid", "marker-end"):
+        value = style.get(attr)
+        if value is not None and value.strip().lower() not in {"", "none"}:
+            return True
+    return False
 
 
 def _fill_rule_has_no_effect(

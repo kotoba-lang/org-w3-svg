@@ -20,6 +20,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added DrawingML rich text run extraction to SVG `tspan` styles for fill/font/outline/decoration/letter-spacing/baseline round trips.
 - Added first-positioned SVG `tspan` `text-anchor` fallback conversion and analyzer support.
 - Added first-positioned SVG `tspan` baseline fallback conversion and analyzer support.
+- Refined analyzer handling for marker-only `paint-order` changes that have no visible effect without markers.
 
 ## 0.1.0
 
