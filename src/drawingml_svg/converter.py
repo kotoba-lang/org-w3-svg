@@ -2801,6 +2801,7 @@ def _dml_kind_to_shape(kind: str) -> str | None:
         "flowChartTerminator": "roundRect",
         "ellipse": "ellipse",
         "oval": "ellipse",
+        "flowChartConnector": "ellipse",
         "line": "line",
         "straightConnector1": "line",
     }.get(kind)
@@ -2827,13 +2828,13 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(left, top), (right, bottom), (left, bottom)]
     if kind in {"diamond", "flowChartDecision"}:
         return [(center_x, top), (right, center_y), (center_x, bottom), (left, center_y)]
-    if kind in {"parallelogram", "flowChartData"}:
+    if kind in {"parallelogram", "flowChartData", "flowChartInputOutput"}:
         return [(quarter_x, top), (right, top), (three_quarter_x, bottom), (left, bottom)]
     if kind in {"trapezoid", "flowChartManualInput"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, bottom), (left, bottom)]
     if kind == "pentagon":
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
-    if kind == "hexagon":
+    if kind in {"hexagon", "flowChartPreparation"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
     if kind == "chevron":
         return [(left, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (left, bottom), (quarter_x, center_y)]
@@ -2843,6 +2844,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(left, top), (three_quarter_x, top), (right, quarter_y), (right, bottom), (left, bottom)]
     if kind == "corner":
         return [(left, top), (right, top), (right, quarter_y), (quarter_x, quarter_y), (quarter_x, bottom), (left, bottom)]
+    if kind == "leftBracket":
+        return [(right, top), (left, top), (left, bottom), (right, bottom), (right, three_quarter_y), (quarter_x, three_quarter_y), (quarter_x, quarter_y), (right, quarter_y)]
+    if kind == "rightBracket":
+        return [(left, top), (right, top), (right, bottom), (left, bottom), (left, three_quarter_y), (three_quarter_x, three_quarter_y), (three_quarter_x, quarter_y), (left, quarter_y)]
     if kind == "plus":
         return [
             (x + width * 0.35, top),
