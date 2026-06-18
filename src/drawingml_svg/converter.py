@@ -2835,6 +2835,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind == "hexagon":
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
+    if kind == "chevron":
+        return [(left, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (left, bottom), (quarter_x, center_y)]
+    if kind == "homePlate":
+        return [(left, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (left, bottom)]
     if kind == "plus":
         return [
             (x + width * 0.35, top),

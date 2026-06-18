@@ -2794,6 +2794,33 @@ def test_drawingml_common_polygon_presets_round_trip_to_svg_polygons() -> None:
     assert '<polygon fill="#fef3c7" points="125,20 135,20 140,30 135,40 125,40 120,30"/>' in svg
 
 
+def test_drawingml_step_diagram_presets_round_trip_to_svg_polygons() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="chevron"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="chevron"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DBEAFE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="home plate"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="571500" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="homePlate"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DCFCE7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert '<polygon fill="#dbeafe" points="10,20 40,20 50,30 40,40 10,40 20,30"/>' in svg
+    assert '<polygon fill="#dcfce7" points="60,20 90,20 100,30 90,40 60,40"/>' in svg
+
+
 def test_drawingml_polygon_presets_preserve_rotation_and_flip() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
