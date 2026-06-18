@@ -1534,6 +1534,39 @@ def test_foreign_object_html_table_border_color_alpha_converts() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_dashed_and_dotted_borders_convert() -> None:
+    svg = """<svg width="150" height="50">
+      <foreignObject x="10" y="8" width="120" height="24">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="border:2px dashed #2563eb">Dash</td>
+              <td style="border-style:dotted;border-width:3px;border-color:#dc2626">Dot</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    root = ET.fromstring(dml)
+    ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+    left_borders = root.findall(".//a:tcPr/a:lnL", ns)
+    dash_segments = left_borders[0].findall("a:custDash/a:ds", ns)
+    dot_segments = left_borders[1].findall("a:custDash/a:ds", ns)
+
+    assert "<a:tbl>" in dml
+    assert left_borders[0].get("w") == "19050"
+    assert left_borders[0].find("a:solidFill/a:srgbClr", ns).get("val") == "2563EB"
+    assert [(segment.get("d"), segment.get("sp")) for segment in dash_segments] == [("150000", "150000")]
+    assert left_borders[1].get("w") == "28575"
+    assert left_borders[1].find("a:solidFill/a:srgbClr", ns).get("val") == "DC2626"
+    assert [(segment.get("d"), segment.get("sp")) for segment in dot_segments] == [("33333", "33333")]
+    assert "<a:t>Dash</a:t>" in dml
+    assert "<a:t>Dot</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_css_selectors_apply_to_cells() -> None:
     svg = """<svg width="140" height="50">
       <style>

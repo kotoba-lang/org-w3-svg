@@ -477,6 +477,7 @@ def _svg_foreign_object_table_shapes(
                         stroke_width=_html_border_width(cell_style),
                         fill_alpha=fill_alpha,
                         stroke_alpha=stroke_alpha,
+                        stroke_dasharray=_html_border_dasharray(cell_style),
                     ),
                 )
             )
@@ -1027,6 +1028,20 @@ def _html_border_width(style: dict[str, str]) -> float:
         width = _html_first_length(border)
         return max(0.0, width if width is not None else 1.0)
     return 1.0
+
+
+def _html_border_dasharray(style: dict[str, str]) -> str | None:
+    tokens = [
+        token.strip(",").lower()
+        for value in (style.get("border-style"), style.get("border"))
+        if value
+        for token in _css_value_tokens(value)
+    ]
+    if "dotted" in tokens:
+        return "1 1"
+    if "dashed" in tokens:
+        return "3 3"
+    return None
 
 
 def _html_padding_insets(

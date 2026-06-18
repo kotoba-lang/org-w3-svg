@@ -39,6 +39,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added simple SVG `foreignObject` HTML table `colgroup`/`col` background conversion.
 - Added simple SVG `foreignObject` HTML table header cell default center alignment conversion.
 - Added simple SVG `foreignObject` HTML table row, column, column group, and table background layer conversion.
+- Added simple SVG `foreignObject` HTML table dashed and dotted border style conversion.
 - Fixed DrawingML native table vertical merge continuation cell placement.
 - Added simple SVG text `direction="rtl"` conversion to DrawingML paragraph direction.
 - Added simple SVG `foreignObject` HTML table cell RTL text direction conversion.
