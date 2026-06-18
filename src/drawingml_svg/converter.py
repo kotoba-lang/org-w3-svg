@@ -2862,6 +2862,12 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (left, bottom - height * 0.18),
             (left, bevel_y),
         ]
+    if kind == "snip1Rect":
+        return [(left, top), (three_quarter_x, top), (right, quarter_y), (right, bottom), (left, bottom)]
+    if kind == "snip2SameRect":
+        return [(quarter_x, top), (right, top), (right, three_quarter_y), (three_quarter_x, bottom), (left, bottom), (left, quarter_y)]
+    if kind == "snip2DiagRect":
+        return [(left, top), (three_quarter_x, top), (right, quarter_y), (right, bottom), (quarter_x, bottom), (left, three_quarter_y)]
     if kind == "flowChartOffpageConnector":
         return [(left, top), (right, top), (right, three_quarter_y), (center_x, bottom), (left, three_quarter_y)]
     if kind == "chevron":

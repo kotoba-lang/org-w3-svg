@@ -2813,12 +2813,39 @@ def test_drawingml_cut_corner_presets_round_trip_to_svg_polygons() -> None:
           <a:solidFill><a:srgbClr val="FEE2E2"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="4" name="snip one rectangle"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1047750" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="snip1Rect"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DCFCE7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="5" name="same corner snip rectangle"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1524000" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="snip2SameRect"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="6" name="diagonal snip rectangle"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1990725" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="snip2DiagRect"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="EDE9FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
 
     assert '<polygon fill="#dbeafe" points="20,20 40,20 50,30 50,50 40,60 20,60 10,50 10,30"/>' in svg
     assert '<polygon fill="#fee2e2" points="67.2,20 92.8,20 100,27.2 100,52.8 92.8,60 67.2,60 60,52.8 60,27.2"/>' in svg
+    assert '<polygon fill="#dcfce7" points="110,20 140,20 150,25 150,40 110,40"/>' in svg
+    assert '<polygon fill="#fef3c7" points="170,20 200,20 200,35 190,40 160,40 160,25"/>' in svg
+    assert '<polygon fill="#ede9fe" points="209,20 239,20 249,25 249,40 219,40 209,35"/>' in svg
 
 
 def test_drawingml_step_diagram_presets_round_trip_to_svg_polygons() -> None:
