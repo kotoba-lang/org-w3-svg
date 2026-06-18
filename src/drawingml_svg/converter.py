@@ -95,6 +95,10 @@ class Shape:
     image_src_rect: tuple[int, int, int, int] | None = None
     rotation: float | None = None
     text_runs: tuple[TextRun, ...] = ()
+    table_border_left: Paint | None = None
+    table_border_right: Paint | None = None
+    table_border_top: Paint | None = None
+    table_border_bottom: Paint | None = None
 
 
 @dataclass(frozen=True)
@@ -487,6 +491,7 @@ def _svg_foreign_object_table_shapes(
                 css,
             )
             stroke, stroke_alpha = _html_border_stroke(cell_style)
+            border_left, border_right, border_top, border_bottom = _html_table_cell_border_paints(cell_style)
             shapes.append(
                 Shape(
                     "rect",
@@ -503,6 +508,10 @@ def _svg_foreign_object_table_shapes(
                         stroke_dasharray=_html_border_dasharray(cell_style),
                         stroke_compound=_html_border_compound(cell_style),
                     ),
+                    table_border_left=border_left,
+                    table_border_right=border_right,
+                    table_border_top=border_top,
+                    table_border_bottom=border_bottom,
                 )
             )
             text = _html_table_cell_text(cell)
@@ -1114,6 +1123,49 @@ def _html_border_dasharray(style: dict[str, str]) -> str | None:
 def _html_border_compound(style: dict[str, str]) -> str | None:
     tokens = _html_border_style_tokens(style)
     return "dbl" if "double" in tokens else None
+
+
+def _html_table_cell_border_paints(style: dict[str, str]) -> tuple[Paint, Paint, Paint, Paint]:
+    return (
+        _html_border_side_paint(style, "left"),
+        _html_border_side_paint(style, "right"),
+        _html_border_side_paint(style, "top"),
+        _html_border_side_paint(style, "bottom"),
+    )
+
+
+def _html_border_side_paint(style: dict[str, str], side: str) -> Paint:
+    side_style = _html_border_side_style(style, side)
+    stroke, stroke_alpha = _html_border_stroke(side_style)
+    return Paint(
+        fill="none",
+        stroke=stroke or "#000000",
+        stroke_width=_html_border_width(side_style),
+        stroke_alpha=stroke_alpha,
+        stroke_dasharray=_html_border_dasharray(side_style),
+        stroke_compound=_html_border_compound(side_style),
+    )
+
+
+def _html_border_side_style(style: dict[str, str], side: str) -> dict[str, str]:
+    side_prefix = f"border-{side}"
+    side_shorthand = style.get(side_prefix)
+    if side_shorthand is None:
+        effective = {
+            key: value
+            for key in ("border", "border-style", "border-width", "border-color")
+            if (value := style.get(key)) is not None
+        }
+    else:
+        effective = {"border": side_shorthand}
+    for suffix, property_name in (
+        ("style", "border-style"),
+        ("width", "border-width"),
+        ("color", "border-color"),
+    ):
+        if (value := style.get(f"{side_prefix}-{suffix}")) is not None:
+            effective[property_name] = value
+    return effective
 
 
 def _html_border_style_tokens(style: dict[str, str]) -> list[str]:
@@ -2203,6 +2255,8 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
                 borders = _svg_table_cell_grid_borders(border_paints, row, column) if border_paints is not None else ()
                 if borders:
                     rect = _svg_table_rect_with_border_paint(rect, borders[0])
+                else:
+                    borders = _svg_table_rect_borders(rect)
                 table_cells.append(
                     SvgTableCell(
                         rect,
@@ -2288,8 +2342,25 @@ def _svg_table_rect_with_border_paint(rect: Shape, border: Paint) -> Shape:
         stroke_linejoin=border.stroke_linejoin,
         stroke_dasharray=border.stroke_dasharray,
         stroke_miterlimit=border.stroke_miterlimit,
+        stroke_compound=border.stroke_compound,
     )
     return replace(rect, paint=paint)
+
+
+def _svg_table_rect_borders(rect: Shape) -> tuple[Paint, Paint, Paint, Paint] | tuple[()]:
+    if (
+        rect.table_border_left is not None
+        and rect.table_border_right is not None
+        and rect.table_border_top is not None
+        and rect.table_border_bottom is not None
+    ):
+        return (
+            rect.table_border_left,
+            rect.table_border_right,
+            rect.table_border_top,
+            rect.table_border_bottom,
+        )
+    return ()
 
 
 def _svg_table_grid_border_paints(
@@ -2619,7 +2690,7 @@ def _append_svg_table_cell_borders(parent: ET.Element, cell: SvgTableCell) -> No
         ("lnT", cell.border_top or fallback),
         ("lnB", cell.border_bottom or fallback),
     ):
-        attrs = {"w": str(_emu(paint.stroke_width or 1.0))}
+        attrs = {"w": str(_emu(paint.stroke_width if paint.stroke_width is not None else 1.0))}
         if paint.stroke_linecap:
             attrs["cap"] = _svg_linecap_to_dml(paint.stroke_linecap)
         if paint.stroke_compound:

@@ -1678,6 +1678,49 @@ def test_foreign_object_html_table_double_borders_convert() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_side_borders_convert() -> None:
+    svg = """<svg width="150" height="50">
+      <foreignObject x="10" y="8" width="120" height="24">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="border:1px solid #111111;border-left:none;border-right:3px dotted #dc2626;border-top:4px double #2563eb;border-bottom-style:dashed;border-bottom-width:2px;border-bottom-color:#16a34a">Sides</td>
+              <td>Other</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    root = ET.fromstring(dml)
+    ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+    tc_pr = root.find(".//a:tcPr", ns)
+    left = tc_pr.find("a:lnL", ns)
+    right = tc_pr.find("a:lnR", ns)
+    top = tc_pr.find("a:lnT", ns)
+    bottom = tc_pr.find("a:lnB", ns)
+
+    assert "<a:tbl>" in dml
+    assert left.get("w") == "0"
+    assert left.find("a:noFill", ns) is not None
+    assert right.get("w") == "28575"
+    assert right.find("a:solidFill/a:srgbClr", ns).get("val") == "DC2626"
+    assert [(segment.get("d"), segment.get("sp")) for segment in right.findall("a:custDash/a:ds", ns)] == [
+        ("33333", "33333")
+    ]
+    assert top.get("w") == "38100"
+    assert top.get("cmpd") == "dbl"
+    assert top.find("a:solidFill/a:srgbClr", ns).get("val") == "2563EB"
+    assert bottom.get("w") == "19050"
+    assert bottom.find("a:solidFill/a:srgbClr", ns).get("val") == "16A34A"
+    assert [(segment.get("d"), segment.get("sp")) for segment in bottom.findall("a:custDash/a:ds", ns)] == [
+        ("150000", "150000")
+    ]
+    assert "<a:t>Sides</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_css_selectors_apply_to_cells() -> None:
     svg = """<svg width="140" height="50">
       <style>
