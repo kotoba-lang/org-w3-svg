@@ -2857,6 +2857,51 @@ def test_drawingml_arrow_presets_round_trip_to_svg_polygons() -> None:
     assert '<polygon fill="#fef3c7" points="145,20 145,46 140,46 150,60 160,46 155,46 155,20"/>' in svg
 
 
+def test_drawingml_flowchart_presets_round_trip_to_svg_shapes() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="process"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartProcess"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DBEAFE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="decision"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="571500" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartDecision"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FEE2E2"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="4" name="data"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="857250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartData"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DCFCE7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="5" name="terminator"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1333500" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartTerminator"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert '<rect fill="#dbeafe" x="10" y="20" width="40" height="20"/>' in svg
+    assert '<polygon fill="#fee2e2" points="70,20 80,30 70,40 60,30"/>' in svg
+    assert '<polygon fill="#dcfce7" points="100,20 130,20 120,40 90,40"/>' in svg
+    assert '<rect fill="#fef3c7" x="140" y="20" width="40" height="20" rx="3.3333" ry="3.3333"/>' in svg
+
+
 def test_drawingml_group_transform_scales_child_shapes_to_svg() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">

@@ -2796,7 +2796,9 @@ def _shape_kind_to_dml(kind: str) -> str:
 def _dml_kind_to_shape(kind: str) -> str | None:
     return {
         "rect": "rect",
+        "flowChartProcess": "rect",
         "roundRect": "roundRect",
+        "flowChartTerminator": "roundRect",
         "ellipse": "ellipse",
         "oval": "ellipse",
         "line": "line",
@@ -2823,11 +2825,11 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, bottom), (left, bottom)]
     if kind == "rtTriangle":
         return [(left, top), (right, bottom), (left, bottom)]
-    if kind == "diamond":
+    if kind in {"diamond", "flowChartDecision"}:
         return [(center_x, top), (right, center_y), (center_x, bottom), (left, center_y)]
-    if kind == "parallelogram":
+    if kind in {"parallelogram", "flowChartData"}:
         return [(quarter_x, top), (right, top), (three_quarter_x, bottom), (left, bottom)]
-    if kind == "trapezoid":
+    if kind in {"trapezoid", "flowChartManualInput"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, bottom), (left, bottom)]
     if kind == "pentagon":
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
