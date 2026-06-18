@@ -30,6 +30,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added SVG `stroke-linejoin="miter-clip"` conversion and analyzer support as a DrawingML miter approximation.
 - Refined analyzer handling for marker-only `paint-order` changes that have no visible effect without markers.
 - Refined analyzer handling for default SVG `isolation="auto"` values.
+- Refined analyzer handling for group-level effect attributes when the subtree has no visible rendering.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.
 - Refined analyzer handling for zero-valued SVG `kerning` attributes.
 - Refined analyzer handling for `pathLength` on shapes without a visible dashed stroke.

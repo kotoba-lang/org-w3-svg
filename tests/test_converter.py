@@ -2524,6 +2524,29 @@ def test_analyze_svg_ignores_default_isolation_auto() -> None:
     }
 
 
+def test_analyze_svg_ignores_group_effects_without_visible_rendering() -> None:
+    svg = """<svg>
+      <g filter="url(#blur)"/>
+      <g mask="url(#fade)"><rect width="10" height="8" fill="none" stroke="none"/></g>
+      <g mix-blend-mode="multiply"><rect width="10" height="8" opacity="0"/></g>
+      <g isolation="isolate"><text x="0" y="20"></text></g>
+    </svg>"""
+    visible = """<svg>
+      <g filter="url(#blur)"><rect width="10" height="8"/></g>
+      <g mask="url(#fade)"><rect x="12" width="10" height="8"/></g>
+      <g mix-blend-mode="multiply"><rect x="24" width="10" height="8"/></g>
+      <g isolation="isolate"><rect x="36" width="10" height="8"/></g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+    assert analyze_svg(visible).unsupported_attributes == {
+        "filter": 1,
+        "isolation": 1,
+        "mask": 1,
+        "mix-blend-mode": 1,
+    }
+
+
 def test_analyze_svg_ignores_noop_blend_and_dash_offset() -> None:
     svg = """<svg>
       <rect width="10" height="8" mix-blend-mode="normal"/>

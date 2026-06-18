@@ -76,6 +76,7 @@ TEXT_DECORATION_NOOP_THICKNESS_TOKENS = {"auto"}
 SUPPORTED_TEXT_DECORATION_LINE_TOKENS = {"underline", "line-through"}
 GRADIENT_ELEMENTS = {"linearGradient", "radialGradient", "stop"}
 GRAPHIC_ELEMENTS_WITHOUT_TEXT_LAYOUT = {"circle", "ellipse", "image", "line", "path", "polygon", "polyline", "rect"}
+RENDERING_ELEMENTS = {"circle", "ellipse", "image", "line", "path", "polygon", "polyline", "rect", "text", "tspan", "use"}
 TEXT_LAYOUT_ATTRIBUTES = {
     "alignment-baseline",
     "baseline-shift",
@@ -385,6 +386,15 @@ def _inspect_attributes(
             continue
         if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css, viewport):
             continue
+        if attr in {"filter", "isolation", "mask", "mix-blend-mode"} and not _subtree_has_visible_rendering(
+            element,
+            css,
+            refs,
+            style,
+            ancestors,
+            viewport,
+        ):
+            continue
         if attr == "isolation" and _isolation_is_redundant_with_blend(element, css, style, ancestors):
             continue
         if attr == "letter-spacing" and _letter_spacing_is_supported(specified_style):
@@ -649,6 +659,62 @@ def _has_unresolved_paint_server(style: dict[str, str], refs: dict[str, ET.Eleme
         color, _ = _paint_server_value(refs.get(ref[0]), refs, style.get("color"), css)
         if not color:
             return True
+    return False
+
+
+def _subtree_has_visible_rendering(
+    element: ET.Element,
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
+    inherited_style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
+    previous_siblings: tuple[ET.Element, ...] = (),
+) -> bool:
+    style = _computed_style(element, css, inherited_style, ancestors, previous_siblings)
+    if _is_display_none(style):
+        return False
+    tag = _local_name(element.tag)
+    if (
+        not _is_visibility_hidden(style)
+        and tag in RENDERING_ELEMENTS
+        and not _has_non_rendering_geometry(element, style, viewport)
+        and not _has_no_visible_paint(element, style, refs, css, viewport)
+    ):
+        return True
+    child_viewport = viewport
+    if tag == "svg" and ancestors:
+        child_viewport = _viewport_size(
+            element,
+            _optional_length(element.get("width"), "x", viewport),
+            _optional_length(element.get("height"), "y", viewport),
+        )
+    if tag == "switch":
+        selected = _switch_selected_child(element)
+        if selected is None:
+            return False
+        return _subtree_has_visible_rendering(
+            selected,
+            css,
+            refs,
+            style,
+            ancestors + (element,),
+            child_viewport,
+            _previous_element_siblings(element, selected),
+        )
+    previous_children: list[ET.Element] = []
+    for child in element:
+        if _subtree_has_visible_rendering(
+            child,
+            css,
+            refs,
+            style,
+            ancestors + (element,),
+            child_viewport,
+            tuple(previous_children),
+        ):
+            return True
+        previous_children.append(child)
     return False
 
 
