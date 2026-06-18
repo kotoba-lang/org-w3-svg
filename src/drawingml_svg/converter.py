@@ -1257,10 +1257,17 @@ def _dml_float(value: str | None, default: float | None = None) -> float | None:
 
 def _dml_alpha(parent: ET.Element) -> float | None:
     alpha = parent.find(f".//{qn(NS_A, 'alpha')}")
+    result = None
     if alpha is not None and alpha.get("val"):
         value = _dml_int(alpha.get("val"))
-        return value / 100000 if value is not None else None
-    return None
+        if value is not None:
+            result = value / 100000
+    alpha_mod = parent.find(f".//{qn(NS_A, 'alphaMod')}")
+    if alpha_mod is not None and alpha_mod.get("amt"):
+        value = _dml_int(alpha_mod.get("amt"))
+        if value is not None:
+            result = (1.0 if result is None else result) * value / 100000
+    return result
 
 
 def _dml_blip_alpha(blip: ET.Element) -> float | None:

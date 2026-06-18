@@ -2073,6 +2073,25 @@ def test_drawingml_srgb_color_luminance_modifiers_round_trip_to_svg_hex_colors()
     assert 'stroke="#666666"' in svg
 
 
+def test_drawingml_alpha_mod_round_trips_to_svg_opacity() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="shape"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="76200"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="336699"><a:alpha val="80000"/><a:alphaMod amt="50000"/></a:srgbClr></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'fill-opacity="0.4"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_drawingml_invalid_numeric_paint_and_transform_values_do_not_crash() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -3196,6 +3215,23 @@ def test_drawingml_picture_alpha_round_trips_to_svg_opacity() -> None:
       <p:pic>
         <p:nvPicPr><p:cNvPr id="2" name="image"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
         <p:blipFill><a:blip r:embed="{PNG_DATA_URI}"><a:alpha val="40000"/></a:blip><a:stretch><a:fillRect/></a:stretch></p:blipFill>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="95250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+      </p:pic>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'opacity="0.4"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_drawingml_picture_alpha_mod_round_trips_to_svg_opacity() -> None:
+    dml = f"""<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"
+      xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+      <p:pic>
+        <p:nvPicPr><p:cNvPr id="2" name="image"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr>
+        <p:blipFill><a:blip r:embed="{PNG_DATA_URI}"><a:alpha val="80000"/><a:alphaMod amt="50000"/></a:blip><a:stretch><a:fillRect/></a:stretch></p:blipFill>
         <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="95250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
       </p:pic>
     </p:spTree>"""
