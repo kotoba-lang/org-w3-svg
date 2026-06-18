@@ -2898,6 +2898,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(left, top), (three_quarter_x, top), (right, quarter_y), (right, bottom), (left, bottom)]
     if kind == "corner":
         return [(left, top), (right, top), (right, quarter_y), (quarter_x, quarter_y), (quarter_x, bottom), (left, bottom)]
+    if kind == "halfFrame":
+        return [(left, top), (right, top), (right, quarter_y), (quarter_x, quarter_y), (quarter_x, bottom), (left, bottom)]
+    if kind == "diagStripe":
+        return [(left, bottom), (quarter_x, bottom), (right, top), (three_quarter_x, top)]
     if kind == "leftBracket":
         return [(right, top), (left, top), (left, bottom), (right, bottom), (right, three_quarter_y), (quarter_x, three_quarter_y), (quarter_x, quarter_y), (right, quarter_y)]
     if kind == "rightBracket":
