@@ -1,5 +1,9 @@
 # drawingml-svg
 
+[![CI](https://github.com/com-junkawasaki/drawingml-svg/actions/workflows/ci.yml/badge.svg)](https://github.com/com-junkawasaki/drawingml-svg/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 `drawingml-svg` is a small, dependency-free converter between SVG and DrawingML shape fragments.
 
 It targets the practical subset needed for generated Office graphics and simple round-trips:
@@ -20,6 +24,13 @@ It targets the practical subset needed for generated Office graphics and simple 
 - Text: basic font size, weight, italic style, font family, `small-caps` and `all-small-caps` font variants, inherited and per-`tspan` `text-transform`, text fill/no-fill, text outline color/width/cap/join/dash/miter, underline/strike decoration including `text-decoration-line`, horizontal/vertical anchor including supported `alignment-baseline` fallback, `xml:space="preserve"`, single-value `rotate` including CSS angle units, `letter-spacing`, simple `word-spacing`, `textLength` spacing adjustment, approximate `spacingAndGlyphs`, `dx`/`dy` positioning, first-`tspan` positioning fallback, multi-line `tspan` extraction, and multiple DrawingML paragraph extraction
 
 The converter accepts fragments, not complete `.pptx` or `.docx` packages. It is intended as a reusable core that can later be wrapped by OOXML package readers/writers.
+
+## Project links
+
+- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security policy: [SECURITY.md](SECURITY.md)
+- Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- Issue tracker: <https://github.com/com-junkawasaki/drawingml-svg/issues>
 
 ## Install
 
