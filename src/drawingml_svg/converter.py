@@ -2846,8 +2846,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(left, top), (right, top), (center_x, bottom)]
     if kind == "rtTriangle":
         return [(left, top), (right, bottom), (left, bottom)]
-    if kind in {"diamond", "flowChartDecision"}:
+    if kind in {"diamond", "flowChartDecision", "flowChartSort"}:
         return [(center_x, top), (right, center_y), (center_x, bottom), (left, center_y)]
+    if kind == "flowChartCollate":
+        return [(left, top), (right, top), (center_x, center_y), (right, bottom), (left, bottom), (center_x, center_y)]
     if kind in {"parallelogram", "flowChartData", "flowChartInputOutput"}:
         return [(quarter_x, top), (right, top), (three_quarter_x, bottom), (left, bottom)]
     if kind in {"trapezoid", "flowChartManualInput"}:
