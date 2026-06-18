@@ -5704,6 +5704,32 @@ def test_marker_shorthand_converts_to_drawingml_arrows_when_no_mid_marker_is_nee
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_inherited_group_markers_are_analyzed_on_visible_children() -> None:
+    svg = """<svg>
+      <defs><marker id="arrow" viewBox="0 0 10 10"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <g marker-end="url(#arrow)">
+        <line x1="0" y1="0" x2="40" y2="10" stroke="#111111"/>
+        <polyline points="0,20 40,30" fill="none" stroke="#222222"/>
+        <path d="M0 40 L40 50" fill="none" stroke="#333333"/>
+      </g>
+    </svg>"""
+    unsupported_polygon = """<svg>
+      <defs><marker id="arrow" viewBox="0 0 10 10"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <g marker-end="url(#arrow)"><polygon points="0,0 20,0 10,10" stroke="#111111"/></g>
+    </svg>"""
+    unsupported_mid = """<svg>
+      <defs><marker id="arrow" viewBox="0 0 10 10"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>
+      <g marker="url(#arrow)"><polyline points="0,0 20,0 20,20" fill="none" stroke="#111111"/></g>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert dml.count('<a:headEnd type="triangle"/>') == 3
+    assert analyze_svg(svg).unsupported_attributes == {}
+    assert analyze_svg(unsupported_polygon).unsupported_attributes == {"marker-end": 1}
+    assert analyze_svg(unsupported_mid).unsupported_attributes == {"marker": 1}
+
+
 def test_marker_shorthand_with_midpoints_is_reported_as_unsupported() -> None:
     svg = """<svg>
       <defs><marker id="arrow" viewBox="0 0 10 10"><path d="M0 0 L10 5 L0 10 Z"/></marker></defs>

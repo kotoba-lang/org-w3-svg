@@ -358,7 +358,10 @@ def _inspect_attributes(
             continue
         if attr == "clip-rule" and _clip_rule_has_no_effect(ancestors):
             continue
-        if attr in {"marker", "marker-start", "marker-end"} and _marker_is_supported(element, style, refs):
+        if attr in {"marker", "marker-start", "marker-end"} and (
+            _marker_is_supported(element, style, refs)
+            or _subtree_marker_is_supported(element, css, refs, style, ancestors, viewport)
+        ):
             continue
         if attr == "marker-mid" and _marker_mid_has_no_effect(element, specified_style):
             continue
@@ -716,6 +719,62 @@ def _subtree_has_visible_rendering(
             return True
         previous_children.append(child)
     return False
+
+
+def _subtree_marker_is_supported(
+    element: ET.Element,
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
+    inherited_style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
+    previous_siblings: tuple[ET.Element, ...] = (),
+) -> bool:
+    style = _computed_style(element, css, inherited_style, ancestors, previous_siblings)
+    if _is_display_none(style):
+        return True
+    tag = _local_name(element.tag)
+    if (
+        not _is_visibility_hidden(style)
+        and tag in RENDERING_ELEMENTS
+        and not _has_non_rendering_geometry(element, style, viewport)
+        and not _has_no_visible_paint(element, style, refs, css, viewport)
+    ):
+        return _marker_is_supported(element, style, refs)
+    child_viewport = viewport
+    if tag == "svg" and ancestors:
+        child_viewport = _viewport_size(
+            element,
+            _optional_length(element.get("width"), "x", viewport),
+            _optional_length(element.get("height"), "y", viewport),
+        )
+    if tag == "switch":
+        selected = _switch_selected_child(element)
+        if selected is None:
+            return True
+        return _subtree_marker_is_supported(
+            selected,
+            css,
+            refs,
+            style,
+            ancestors + (element,),
+            child_viewport,
+            _previous_element_siblings(element, selected),
+        )
+    previous_children: list[ET.Element] = []
+    for child in element:
+        if not _subtree_marker_is_supported(
+            child,
+            css,
+            refs,
+            style,
+            ancestors + (element,),
+            child_viewport,
+            tuple(previous_children),
+        ):
+            return False
+        previous_children.append(child)
+    return True
 
 
 def _geometry_length(element: ET.Element, style: dict[str, str], attr: str, axis: str, viewport: tuple[float, float]) -> float:
