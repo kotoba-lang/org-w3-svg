@@ -1370,6 +1370,8 @@ def test_supported_underline_styles_map_to_drawingml_underline_values() -> None:
       <text x="0" y="60" font-size="10" fill="#111111" text-decoration-line="underline" text-decoration-style="double">Double</text>
       <text x="0" y="80" font-size="10" fill="#111111" text-decoration-line="underline" text-decoration-style="wavy">Wavy</text>
       <text x="0" y="100" font-size="10" fill="#111111" text-decoration="underline wavy">Shorthand</text>
+      <text x="0" y="120" font-size="10" color="#111111" fill="currentColor" text-decoration="underline dotted currentColor">Current</text>
+      <text x="0" y="140" font-size="10" fill="#111111" text-decoration="underline dotted #111111">Same color</text>
     </svg>"""
     dml = svg_to_drawingml(svg)
 
@@ -1380,6 +1382,8 @@ def test_supported_underline_styles_map_to_drawingml_underline_values() -> None:
     assert run_prs[2].get("u") == "dbl"
     assert run_prs[3].get("u") == "wavy"
     assert run_prs[4].get("u") == "wavy"
+    assert run_prs[5].get("u") == "dotted"
+    assert run_prs[6].get("u") == "dotted"
     assert analyze_svg(svg).unsupported_attributes == {}
 
     round_trip = drawingml_to_svg(dml)
@@ -1395,6 +1399,7 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
       <text x="0" y="40" text-decoration="line-through" text-decoration-style="dashed">Style</text>
       <text x="0" y="50" text-decoration="underline line-through" text-decoration-style="wavy">Mixed style</text>
       <text x="0" y="55" text-decoration="line-through dashed">Shorthand style</text>
+      <text x="0" y="58" fill="#111111" text-decoration="underline wavy #dc2626">Shorthand color</text>
       <text x="0" y="60" text-decoration-style="dotted">No decoration</text>
       <text x="0" y="80" text-decoration-line="underline" text-decoration-style="solid">Solid</text>
       <text x="0" y="100" fill="#111111" text-decoration-line="underline" text-decoration-color="#111111">Same</text>
@@ -1408,7 +1413,7 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
 
     assert analyze_svg(svg).unsupported_attributes == {
         "text-decoration-color": 1,
-        "text-decoration": 1,
+        "text-decoration": 2,
         "text-decoration-style": 2,
     }
 

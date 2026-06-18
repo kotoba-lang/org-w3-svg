@@ -375,7 +375,12 @@ def _inspect_attributes(
             and specified_style.get("text-decoration") == specified_style.get("text-decoration-line")
         ):
             continue
-        if attr == "text-decoration" and _text_decoration_shorthand_is_supported_or_noop(specified_style):
+        if attr == "text-decoration" and _text_decoration_shorthand_is_supported_or_noop(
+            style,
+            refs,
+            css,
+            viewport,
+        ):
             continue
         if attr == "text-decoration-line" and _text_decoration_line_is_supported_or_noop(specified_style):
             continue
@@ -864,11 +869,18 @@ def _text_decoration_style_is_supported_or_noop(style: dict[str, str]) -> bool:
     return normalized in (TEXT_DECORATION_STYLE_TOKENS - {"solid"}) and _has_only_visible_underline(style)
 
 
-def _text_decoration_shorthand_is_supported_or_noop(style: dict[str, str]) -> bool:
+def _text_decoration_shorthand_is_supported_or_noop(
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
     value = style.get("text-decoration")
     if value is None:
         return False
     if not _text_decoration_shorthand_line_is_supported_or_noop(value):
+        return False
+    if not _text_decoration_shorthand_color_has_no_effect(style, refs, css, viewport):
         return False
     style_value = _text_decoration_shorthand_style(value)
     if style_value is None or style_value == "solid" or not _has_visible_text_decoration(style):
@@ -881,12 +893,47 @@ def _text_decoration_shorthand_line_is_supported_or_noop(value: str | None) -> b
         return False
     tokens = [part.lower() for part in value.strip().split()]
     known = TEXT_DECORATION_LINE_TOKENS | TEXT_DECORATION_STYLE_TOKENS
-    if any(token not in known for token in tokens):
+    if any(token not in known and not _text_decoration_color_token(token) for token in tokens):
         return False
     line_tokens = {token for token in tokens if token in TEXT_DECORATION_LINE_TOKENS}
     if not line_tokens or line_tokens <= {"none"}:
         return True
     return line_tokens <= SUPPORTED_TEXT_DECORATION_LINE_TOKENS
+
+
+def _text_decoration_shorthand_color_has_no_effect(
+    style: dict[str, str],
+    refs: dict[str, ET.Element],
+    css: list[CssRule],
+    viewport: tuple[float, float],
+) -> bool:
+    value = style.get("text-decoration")
+    if value is None:
+        return False
+    color_tokens = [_text_decoration_color_token(part) for part in value.strip().split()]
+    color_tokens = [token for token in color_tokens if token is not None]
+    if not color_tokens:
+        return True
+    if len(color_tokens) > 1:
+        return False
+    if not _has_visible_text_decoration(style):
+        return True
+    paint = _svg_paint(style, refs, default_fill=True, css=css, viewport=viewport)
+    if paint.fill in {None, "none"} or (paint.fill_alpha is not None and paint.fill_alpha < 1):
+        return False
+    color_value = style.get("color", "#000000") if color_tokens[0].lower() == "currentcolor" else color_tokens[0]
+    decoration_color, decoration_alpha = _parse_color(color_value)
+    return decoration_color == paint.fill and decoration_alpha in {None, 1.0}
+
+
+def _text_decoration_color_token(value: str) -> str | None:
+    normalized = value.strip().lower()
+    if normalized in TEXT_DECORATION_LINE_TOKENS or normalized in TEXT_DECORATION_STYLE_TOKENS:
+        return None
+    if normalized == "currentcolor":
+        return value
+    color, _ = _parse_color(value)
+    return value if color is not None else None
 
 
 def _text_decoration_shorthand_style(value: str | None) -> str | None:
