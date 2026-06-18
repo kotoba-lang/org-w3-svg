@@ -1893,13 +1893,13 @@ def _dml_paragraph_bullet(tx_body: ET.Element, paragraph: ET.Element, number: in
         return bullet.get("char")
     auto_number = p_pr.find(qn(NS_A, "buAutoNum")) if p_pr is not None else None
     if auto_number is None:
-        lvl1p_pr = tx_body.find(f"{qn(NS_A, 'lstStyle')}/{qn(NS_A, 'lvl1pPr')}")
-        if lvl1p_pr is not None and lvl1p_pr.find(qn(NS_A, "buNone")) is not None:
+        list_p_pr = _dml_list_style_paragraph_properties(tx_body, p_pr)
+        if list_p_pr is not None and list_p_pr.find(qn(NS_A, "buNone")) is not None:
             return None
-        bullet = lvl1p_pr.find(qn(NS_A, "buChar")) if lvl1p_pr is not None else None
+        bullet = list_p_pr.find(qn(NS_A, "buChar")) if list_p_pr is not None else None
         if bullet is not None and bullet.get("char"):
             return bullet.get("char")
-        auto_number = lvl1p_pr.find(qn(NS_A, "buAutoNum")) if lvl1p_pr is not None else None
+        auto_number = list_p_pr.find(qn(NS_A, "buAutoNum")) if list_p_pr is not None else None
     return _dml_auto_number_bullet(auto_number, number)
 
 
@@ -2065,13 +2065,29 @@ def _dml_paragraph_properties(
     element: ET.Element,
     predicate: Callable[[ET.Element], bool],
 ) -> ET.Element | None:
-    p_pr = element.find(f".//{qn(NS_A, 'pPr')}")
+    tx_body = element.find(qn(NS_P, "txBody"))
+    p_pr = tx_body.find(f"{qn(NS_A, 'p')}/{qn(NS_A, 'pPr')}") if tx_body is not None else None
+    if p_pr is None:
+        p_pr = element.find(f".//{qn(NS_A, 'pPr')}")
     if p_pr is not None and predicate(p_pr):
         return p_pr
-    lvl1p_pr = element.find(f".//{qn(NS_A, 'lstStyle')}/{qn(NS_A, 'lvl1pPr')}")
-    if lvl1p_pr is not None and predicate(lvl1p_pr):
-        return lvl1p_pr
+    if tx_body is not None:
+        list_p_pr = _dml_list_style_paragraph_properties(tx_body, p_pr)
+        if list_p_pr is not None and predicate(list_p_pr):
+            return list_p_pr
     return None
+
+
+def _dml_list_style_paragraph_properties(tx_body: ET.Element, p_pr: ET.Element | None) -> ET.Element | None:
+    level = _dml_paragraph_level(p_pr)
+    return tx_body.find(f"{qn(NS_A, 'lstStyle')}/{qn(NS_A, f'lvl{level + 1}pPr')}")
+
+
+def _dml_paragraph_level(p_pr: ET.Element | None) -> int:
+    if p_pr is None or p_pr.get("lvl") is None:
+        return 0
+    level = _dml_int(p_pr.get("lvl"), 0) or 0
+    return max(0, min(level, 8))
 
 
 def _text_anchor_to_dml(value: str | None) -> str | None:

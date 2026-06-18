@@ -3899,6 +3899,27 @@ def test_drawingml_list_style_paragraph_alignment_falls_back_to_svg_text_anchor(
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_drawingml_list_style_paragraph_alignment_uses_paragraph_level() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="285750"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/>
+          <a:lstStyle><a:lvl1pPr algn="ctr"/><a:lvl2pPr algn="r"/></a:lstStyle>
+          <a:p><a:pPr lvl="1"/><a:r><a:rPr sz="1200"/><a:t>Indented</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'text-anchor="end"' in svg
+    assert 'text-anchor="middle"' not in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_drawingml_paragraph_alignment_overrides_list_style_alignment() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -3960,6 +3981,28 @@ def test_drawingml_list_style_bullet_character_falls_back_to_svg_text() -> None:
     assert "- Plain</tspan>" not in svg
 
 
+def test_drawingml_list_style_bullet_character_uses_paragraph_level() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="571500"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle><a:lvl1pPr><a:buChar char="-"/></a:lvl1pPr><a:lvl2pPr><a:buChar char="+"/></a:lvl2pPr></a:lstStyle>
+          <a:p><a:r><a:rPr sz="1200"/><a:t>Top</a:t></a:r></a:p>
+          <a:p><a:pPr lvl="1"/><a:r><a:rPr sz="1200"/><a:t>Nested</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "- Top" in svg
+    assert "+ Nested" in svg
+    assert "- Nested" not in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_drawingml_auto_number_bullet_round_trips_to_svg_text() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -4000,6 +4043,28 @@ def test_drawingml_list_style_auto_number_falls_back_to_svg_text() -> None:
     assert "(2) First" in svg
     assert "Plain</tspan>" in svg
     assert "(3) Plain" not in svg
+
+
+def test_drawingml_list_style_auto_number_uses_paragraph_level() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="571500"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle><a:lvl1pPr><a:buAutoNum type="arabicPeriod" startAt="1"/></a:lvl1pPr><a:lvl2pPr><a:buAutoNum type="alphaLcParenR" startAt="2"/></a:lvl2pPr></a:lstStyle>
+          <a:p><a:r><a:rPr sz="1200"/><a:t>Top</a:t></a:r></a:p>
+          <a:p><a:pPr lvl="1"/><a:r><a:rPr sz="1200"/><a:t>Nested</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "1. Top" in svg
+    assert "c) Nested" in svg
+    assert "2. Nested" not in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
 
 
 def test_drawingml_alpha_and_roman_auto_number_bullets_round_trip_to_svg_text() -> None:
