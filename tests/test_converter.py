@@ -94,6 +94,16 @@ def test_cli_analyze_writes_json_to_stdout(tmp_path, capsys) -> None:
     assert '"unsupported_attributes": {}' in captured.out
 
 
+def test_cli_version_writes_installed_package_version(capsys) -> None:
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main(["--version"])
+
+    captured = capsys.readouterr()
+
+    assert excinfo.value.code == 0
+    assert captured.out == "drawingml-svg 0.1.0\n"
+
+
 def test_cli_converts_between_files_and_creates_output_parent(tmp_path) -> None:
     source = tmp_path / "input.svg"
     dml_output = tmp_path / "nested" / "shape.xml"

@@ -114,6 +114,7 @@ jobs:
           PY
           python -m venv tmp/wheel-venv
           tmp/wheel-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
+          tmp/wheel-venv/bin/drawingml-svg --version
           tmp/wheel-venv/bin/drawingml-svg analyze examples/coverage.svg
           tmp/wheel-venv/bin/drawingml-svg-analyze examples/coverage.svg
           tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml

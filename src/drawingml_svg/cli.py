@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -13,6 +14,7 @@ from .converter import drawingml_to_svg, svg_to_drawingml
 def main(argv: list[str] | None = None) -> int:
     argv = _normalize_argv(argv)
     parser = argparse.ArgumentParser(prog="drawingml-svg")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {_package_version()}")
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True
 
@@ -38,6 +40,13 @@ def main(argv: list[str] | None = None) -> int:
     except (ET.ParseError, OSError, ValueError) as exc:
         parser.exit(1, f"{parser.prog}: error: {exc}\n")
     return 0
+
+
+def _package_version() -> str:
+    try:
+        return version("drawingml-svg")
+    except PackageNotFoundError:
+        return "0+unknown"
 
 
 def _normalize_argv(argv: list[str] | None) -> list[str] | None:

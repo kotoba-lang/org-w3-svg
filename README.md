@@ -52,6 +52,9 @@ cat input.svg | drawingml-svg svg2dml > shape.xml
 
 # coverage / maturity report
 drawingml-svg analyze input.svg
+
+# installed package version
+drawingml-svg --version
 ```
 
 `dml2svg` and `svg2dml` are also installed as aliases.
