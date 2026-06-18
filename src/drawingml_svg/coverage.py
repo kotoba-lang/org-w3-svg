@@ -337,6 +337,7 @@ def _inspect_attributes(
         "fill-rule",
         "filter",
         "image-rendering",
+        "isolation",
         "marker",
         "marker-end",
         "marker-mid",
@@ -1134,6 +1135,8 @@ def _attribute_has_no_effect(attr: str, style: dict[str, str]) -> bool:
             "optimizespeed",
             "pixelated",
         }
+    if attr == "isolation":
+        return normalized in {"", "auto"}
     if attr == "vector-effect":
         return normalized in {"none", "non-scaling-stroke"}
     return False

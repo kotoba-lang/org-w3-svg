@@ -2512,6 +2512,18 @@ def test_analyze_svg_deduplicates_isolation_when_blend_is_reported() -> None:
     assert analyze_svg(svg).unsupported_attributes == {"mix-blend-mode": 1}
 
 
+def test_analyze_svg_ignores_default_isolation_auto() -> None:
+    svg = """<svg>
+      <g isolation="auto"><rect width="10" height="8"/></g>
+      <text x="0" y="20" style="isolation:auto">Hint</text>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+    assert analyze_svg('<svg><g isolation="isolate"><rect width="10" height="8"/></g></svg>').unsupported_attributes == {
+        "isolation": 1
+    }
+
+
 def test_analyze_svg_ignores_noop_blend_and_dash_offset() -> None:
     svg = """<svg>
       <rect width="10" height="8" mix-blend-mode="normal"/>
