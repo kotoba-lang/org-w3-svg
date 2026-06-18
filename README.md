@@ -8,7 +8,7 @@
 
 It targets the practical subset needed for generated Office graphics and simple round-trips:
 
-- SVG: `rect`, `circle`, `ellipse`, `line`, `polygon`, `polyline`, linear/quadratic/cubic/arc `path`, simple rect/text, line/text, rect-background/line-border grids, and simple `foreignObject` HTML tables with basic `colspan`/`rowspan` merges as native DrawingML tables, `text`, simple `tspan`, link/group containers, and basic `switch` fallback selection
+- SVG: `rect`, `circle`, `ellipse`, `line`, `polygon`, `polyline`, linear/quadratic/cubic/arc `path`, simple rect/text, line/text, single-row/column rect grids, rect-background/line-border grids, and simple `foreignObject` HTML tables with basic `colspan`/`rowspan` merges as native DrawingML tables, `text`, simple `tspan`, link/group containers, and basic `switch` fallback selection
 - DrawingML: preset geometry shapes including common polygon, arrow, symbol, and flowchart presets, custom geometry paths including line/quadratic/cubic segments, native table cells, simple merged cells, cell text insets/anchors/list-style alignment/default run fill/outline/decoration and rich text runs, and individual table cell borders with line paint/cap/dash/join/miter/alpha under `p:graphicFrame` as editable SVG rectangles/lines/text, and text boxes under `p:sp`, with invalid numeric DrawingML attributes ignored where possible
 - Geometry: position, size, CSS geometry properties, percent geometry lengths, rounded rectangles, transformed line endpoints, horizontal/vertical flips for lines, and DrawingML line/custom-geometry transform round-trips
 - Images: embedded SVG `image` elements with valid base64 PNG/JPEG/GIF/WebP data URI sources, opacity, and legacy `xlink:href`

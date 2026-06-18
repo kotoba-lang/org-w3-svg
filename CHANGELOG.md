@@ -25,6 +25,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added DrawingML table cell rich text run extraction as SVG `tspan` runs.
 - Added simple SVG `foreignObject` HTML table conversion to native DrawingML tables.
 - Added simple SVG `foreignObject` HTML table `colspan`/`rowspan` merge conversion.
+- Added single-row and single-column SVG rect grid conversion to native DrawingML tables.
 - Added conservative SVG rect/text, line/text, and rect-background/line-border grid detection that exports complete simple grids and merged cells as native DrawingML tables.
 - Added SVG table grid-line paint preservation as individual DrawingML table cell borders.
 - Added SVG table grid-line cap/dash/join preservation as individual DrawingML table cell borders.

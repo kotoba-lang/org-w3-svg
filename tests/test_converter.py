@@ -1066,6 +1066,56 @@ def test_foreign_object_html_table_converts_to_native_drawingml_table() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_single_row_converts_to_native_drawingml_table() -> None:
+    svg = """<svg width="150" height="40">
+      <foreignObject x="10" y="8" width="120" height="20">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="background-color:#ffffff;color:#111827;border:1px solid #94a3b8">Q1</td>
+              <td style="background-color:#f8fafc;color:#111827;border:1px solid #94a3b8">Q2</td>
+              <td style="background-color:#eef2ff;color:#111827;border:1px solid #94a3b8">Q3</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert dml.count("<a:gridCol") == 3
+    assert dml.count("<a:tr") == 1
+    assert dml.count("<a:tc>") == 3
+    assert "<a:t>Q1</a:t>" in dml
+    assert "<a:t>Q3</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
+def test_foreign_object_html_table_single_column_converts_to_native_drawingml_table() -> None:
+    svg = """<svg width="80" height="90">
+      <foreignObject x="10" y="8" width="50" height="60">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr><td style="background-color:#ffffff;color:#111827;border:1px solid #94a3b8">North</td></tr>
+            <tr><td style="background-color:#f8fafc;color:#111827;border:1px solid #94a3b8">South</td></tr>
+            <tr><td style="background-color:#eef2ff;color:#111827;border:1px solid #94a3b8">West</td></tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert dml.count("<a:gridCol") == 1
+    assert dml.count("<a:tr") == 3
+    assert dml.count("<a:tc>") == 3
+    assert "<a:t>North</a:t>" in dml
+    assert "<a:t>West</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_spans_convert_to_native_table_merges() -> None:
     svg = """<svg width="120" height="60">
       <foreignObject x="10" y="8" width="100" height="40">
@@ -7591,6 +7641,27 @@ def test_svg_rect_grid_spans_convert_to_native_table_merges() -> None:
     assert round_trip.count("<text") == 4
     assert "Wide" in round_trip
     assert "Tall" in round_trip
+
+
+def test_svg_single_row_rect_grid_converts_to_native_drawingml_table() -> None:
+    svg = """<svg>
+      <rect x="0" y="0" width="30" height="20" fill="#ffffff" stroke="#94a3b8"/>
+      <rect x="30" y="0" width="30" height="20" fill="#f8fafc" stroke="#94a3b8"/>
+      <rect x="60" y="0" width="30" height="20" fill="#eef2ff" stroke="#94a3b8"/>
+      <text x="4" y="14" font-size="10" fill="#111111">A</text>
+      <text x="34" y="14" font-size="10" fill="#111111">B</text>
+      <text x="64" y="14" font-size="10" fill="#111111">C</text>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert dml.count("<a:gridCol") == 3
+    assert dml.count("<a:tr") == 1
+    assert dml.count("<a:tc>") == 3
+    assert dml.count("<p:sp>") == 0
+    assert "A" in dml
+    assert "C" in dml
 
 
 def test_svg_line_text_grid_converts_to_native_drawingml_table() -> None:

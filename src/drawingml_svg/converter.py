@@ -1387,7 +1387,7 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
 
     x_edges = _svg_table_edges([(rect.x, rect.x + rect.width) for rect in rects])
     y_edges = _svg_table_edges([(rect.y, rect.y + rect.height) for rect in rects])
-    if len(x_edges) < 3 or len(y_edges) < 3:
+    if len(x_edges) < 2 or len(y_edges) < 2:
         return None, shapes
 
     columns = tuple(x_edges[index + 1] - x_edges[index] for index in range(len(x_edges) - 1))
