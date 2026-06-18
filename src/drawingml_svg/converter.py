@@ -312,9 +312,7 @@ def _svg_shape_from_element(
                 x -= width / 2
             elif anchor == "end":
                 x -= width
-            baseline = _dominant_baseline(style.get("dominant-baseline")) or _dominant_baseline(
-                style.get("alignment-baseline")
-            )
+            baseline = _svg_text_baseline(element, style, css, ancestors)
             height = font_size * 1.4 * len(text.split("\n"))
             if baseline == "middle":
                 y -= height / 2
@@ -2733,6 +2731,38 @@ def _svg_text_anchor(
             return None
         child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
         return _text_anchor(child_style.get("text-anchor"))
+    return None
+
+
+def _svg_text_baseline(
+    element: ET.Element,
+    style: dict[str, str],
+    css: list[CssRule],
+    ancestors: tuple[ET.Element, ...],
+) -> str | None:
+    baseline = _dominant_baseline(style.get("dominant-baseline")) or _dominant_baseline(
+        style.get("alignment-baseline")
+    )
+    if baseline is not None:
+        return baseline
+    if element.get("x") is not None or element.get("y") is not None:
+        return None
+    if (element.text or "").strip():
+        return None
+    previous_children: list[ET.Element] = []
+    for child in element:
+        if _local_name(child.tag) != "tspan":
+            previous_children.append(child)
+            continue
+        if not "".join(child.itertext()).strip():
+            previous_children.append(child)
+            continue
+        if child.get("x") is None or child.get("y") is None:
+            return None
+        child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
+        return _dominant_baseline(child_style.get("dominant-baseline")) or _dominant_baseline(
+            child_style.get("alignment-baseline")
+        )
     return None
 
 

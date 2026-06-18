@@ -388,7 +388,16 @@ def _inspect_attributes(
             or _baseline_shift_is_supported(element, specified_style)
         ):
             continue
-        if attr == "alignment-baseline" and _alignment_baseline_is_supported_or_noop(element, specified_style):
+        if attr == "alignment-baseline" and (
+            _alignment_baseline_is_supported_or_noop(element, specified_style)
+            or _first_positioned_tspan_baseline_is_supported(
+                element,
+                specified_style,
+                attr,
+                ancestors,
+                previous_siblings,
+            )
+        ):
             continue
         if attr == "direction" and _direction_has_no_effect(specified_style):
             continue
@@ -396,7 +405,16 @@ def _inspect_attributes(
             continue
         if attr == "writing-mode" and _writing_mode_has_no_effect(specified_style):
             continue
-        if attr == "dominant-baseline" and _dominant_baseline_is_supported_or_noop(element, specified_style):
+        if attr == "dominant-baseline" and (
+            _dominant_baseline_is_supported_or_noop(element, specified_style)
+            or _first_positioned_tspan_baseline_is_supported(
+                element,
+                specified_style,
+                attr,
+                ancestors,
+                previous_siblings,
+            )
+        ):
             continue
         if attr == "word-spacing" and _word_spacing_has_no_effect(element, specified_style):
             continue
@@ -463,6 +481,30 @@ def _first_positioned_tspan_text_anchor_is_supported(
         return False
     value = specified_style.get("text-anchor")
     if value is None or value.strip().lower() not in {"start", "middle", "end"}:
+        return False
+    parent = ancestors[-1] if ancestors else None
+    if parent is None or _local_name(parent.tag) != "text":
+        return False
+    if parent.get("x") is not None or parent.get("y") is not None:
+        return False
+    if (parent.text or "").strip():
+        return False
+    if element.get("x") is None or element.get("y") is None:
+        return False
+    return not any(_local_name(sibling.tag) == "tspan" and "".join(sibling.itertext()).strip() for sibling in previous_siblings)
+
+
+def _first_positioned_tspan_baseline_is_supported(
+    element: ET.Element,
+    specified_style: dict[str, str],
+    attr: str,
+    ancestors: tuple[ET.Element, ...],
+    previous_siblings: tuple[ET.Element, ...],
+) -> bool:
+    if _local_name(element.tag) != "tspan":
+        return False
+    value = specified_style.get(attr)
+    if value is None or _dominant_baseline(value) is None:
         return False
     parent = ancestors[-1] if ancestors else None
     if parent is None or _local_name(parent.tag) != "text":

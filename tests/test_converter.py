@@ -1048,6 +1048,20 @@ def test_text_anchor_can_come_from_first_positioned_tspan() -> None:
     assert 'text-anchor="middle"' in svg
 
 
+def test_text_baseline_can_come_from_first_positioned_tspan() -> None:
+    source = '<svg><text font-size="10" fill="#111111"><tspan x="100" y="40" dominant-baseline="middle">Centered</tspan></text></svg>'
+    dml = svg_to_drawingml(source)
+
+    root = ET.fromstring(dml)
+    shape_off = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")[1]
+    assert shape_off.attrib == {"x": "952500", "y": "314325"}
+    assert 'anchor="ctr"' in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+    svg = drawingml_to_svg(dml)
+    assert 'dominant-baseline="middle"' in svg
+
+
 def test_text_position_applies_text_dx_dy() -> None:
     dml = svg_to_drawingml('<svg><text x="10" y="20" dx="4" dy="6" font-size="10" fill="#111">Shifted</text></svg>')
 

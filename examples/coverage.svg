@@ -57,7 +57,7 @@
     </text>
     <text x="96" y="66" dx="4" dy="2" rotate="3" letter-spacing="2px" font-variant="small-caps" xml:space="preserve" font-size="9" fill="#334155">  spaced  </text>
     <text x="30" y="72" rotate=".25turn" font-size="6" fill="#0f172a">turn</text>
-    <text font-size="7" fill="#0f172a"><tspan x="252" y="66" text-anchor="middle">tspan anchor</tspan></text>
+    <text font-size="7" fill="#0f172a"><tspan x="252" y="66" text-anchor="middle" dominant-baseline="middle">tspan anchor</tspan></text>
     <text x="302" y="134" text-transform=" NORMAL " font-size="7" fill="#0f172a">MiXeD</text>
     <text x="24" y="154" font-variant="all-small-caps" font-size="8" fill="#0f172a" text-rendering="auto" text-decoration-line="underline">caps mode</text>
     <text x="112" y="154" textLength="58" lengthAdjust=" SPACINGANDGLYPHS " letter-spacing=" NORMAL " font-size="8" fill="#0f172a">wide text</text>
