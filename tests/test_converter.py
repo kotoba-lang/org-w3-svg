@@ -3360,6 +3360,22 @@ def test_drawingml_additional_flowchart_presets_round_trip_to_svg_shapes() -> No
           <a:solidFill><a:srgbClr val="FCE7F3"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="6" name="manual operation"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1809750" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartManualOperation"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="EDE9FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="7" name="document"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="2286000" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartDocument"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="CCFBF1"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
@@ -3368,6 +3384,8 @@ def test_drawingml_additional_flowchart_presets_round_trip_to_svg_shapes() -> No
     assert '<polygon fill="#dcfce7" points="70,20 90,20 100,30 90,40 70,40 60,30"/>' in svg
     assert '<ellipse fill="#fef3c7" cx="120" cy="30" rx="10" ry="10"/>' in svg
     assert '<polygon fill="#fce7f3" points="140,20 180,20 180,35 160,40 140,35"/>' in svg
+    assert '<polygon fill="#ede9fe" points="190,20 230,20 220,40 200,40"/>' in svg
+    assert '<polygon fill="#ccfbf1" points="240,20 280,20 280,36.4 270,40 260,37.6 250,40 240,36.4"/>' in svg
 
 
 def test_drawingml_group_transform_scales_child_shapes_to_svg() -> None:

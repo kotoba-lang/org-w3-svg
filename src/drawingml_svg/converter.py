@@ -2848,6 +2848,18 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(quarter_x, top), (right, top), (three_quarter_x, bottom), (left, bottom)]
     if kind in {"trapezoid", "flowChartManualInput"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, bottom), (left, bottom)]
+    if kind == "flowChartManualOperation":
+        return [(left, top), (right, top), (three_quarter_x, bottom), (quarter_x, bottom)]
+    if kind == "flowChartDocument":
+        return [
+            (left, top),
+            (right, top),
+            (right, y + height * 0.82),
+            (three_quarter_x, bottom),
+            (center_x, y + height * 0.88),
+            (quarter_x, bottom),
+            (left, y + height * 0.82),
+        ]
     if kind == "pentagon":
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind in {"hexagon", "flowChartPreparation"}:
