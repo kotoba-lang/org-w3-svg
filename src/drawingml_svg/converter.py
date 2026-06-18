@@ -2852,7 +2852,7 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(right, top), (left, top), (left, bottom), (right, bottom), (right, three_quarter_y), (quarter_x, three_quarter_y), (quarter_x, quarter_y), (right, quarter_y)]
     if kind == "rightBracket":
         return [(left, top), (right, top), (right, bottom), (left, bottom), (left, three_quarter_y), (three_quarter_x, three_quarter_y), (three_quarter_x, quarter_y), (left, quarter_y)]
-    if kind == "plus":
+    if kind in {"plus", "mathPlus"}:
         return [
             (x + width * 0.35, top),
             (x + width * 0.65, top),
@@ -2866,6 +2866,23 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (left, y + height * 0.65),
             (left, y + height * 0.35),
             (x + width * 0.35, y + height * 0.35),
+        ]
+    if kind == "mathMinus":
+        return [(left, arrow_shaft_top), (right, arrow_shaft_top), (right, arrow_shaft_bottom), (left, arrow_shaft_bottom)]
+    if kind == "mathMultiply":
+        return [
+            (x + width * 0.2, top),
+            (center_x, y + height * 0.3),
+            (x + width * 0.8, top),
+            (right, y + height * 0.2),
+            (x + width * 0.7, center_y),
+            (right, y + height * 0.8),
+            (x + width * 0.8, bottom),
+            (center_x, y + height * 0.7),
+            (x + width * 0.2, bottom),
+            (left, y + height * 0.8),
+            (x + width * 0.3, center_y),
+            (left, y + height * 0.2),
         ]
     if kind == "star5":
         return [
