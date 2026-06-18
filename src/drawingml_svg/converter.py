@@ -1050,7 +1050,7 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
 def _dml_text_paint(element: ET.Element, sp_pr: ET.Element) -> Paint:
     r_pr = _dml_text_run_properties(element)
     def_r_pr = _dml_default_text_run_properties(element)
-    ln = r_pr.find(qn(NS_A, "ln")) if r_pr is not None else None
+    ln = _dml_text_line_properties(r_pr, def_r_pr)
     shape_paint = _dml_paint(sp_pr)
     fill, fill_alpha = _dml_text_fill(r_pr, def_r_pr, shape_paint)
     return Paint(
@@ -1096,6 +1096,14 @@ def _dml_text_fill_properties(element: ET.Element | None) -> ET.Element | None:
     for tag in ("noFill", "solidFill", "gradFill", "pattFill"):
         if element.find(qn(NS_A, tag)) is not None:
             return element
+    return None
+
+
+def _dml_text_line_properties(r_pr: ET.Element | None, def_r_pr: ET.Element | None) -> ET.Element | None:
+    if r_pr is not None and r_pr.find(qn(NS_A, "ln")) is not None:
+        return r_pr.find(qn(NS_A, "ln"))
+    if def_r_pr is not None and def_r_pr.find(qn(NS_A, "ln")) is not None:
+        return def_r_pr.find(qn(NS_A, "ln"))
     return None
 
 

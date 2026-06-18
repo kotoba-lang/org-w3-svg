@@ -2074,6 +2074,73 @@ def test_drawingml_run_properties_override_default_run_properties() -> None:
     assert 'fill="#334455"' not in svg
 
 
+def test_drawingml_default_run_outline_falls_back_to_svg_text_stroke() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="285750"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle/>
+          <a:p>
+            <a:pPr>
+              <a:defRPr sz="1200">
+                <a:ln w="19050" cap="rnd">
+                  <a:solidFill><a:srgbClr val="224466"><a:alpha val="50000"/></a:srgbClr></a:solidFill>
+                  <a:prstDash val="dash"/>
+                  <a:round/>
+                </a:ln>
+              </a:defRPr>
+            </a:pPr>
+            <a:r><a:t>Outlined</a:t></a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'stroke="#224466"' in svg
+    assert 'stroke-width="2"' in svg
+    assert 'stroke-opacity="0.5"' in svg
+    assert 'stroke-linecap="round"' in svg
+    assert 'stroke-linejoin="round"' in svg
+    assert 'stroke-dasharray="4 3"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_drawingml_run_outline_overrides_default_run_outline() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="285750"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+        </p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle/>
+          <a:p>
+            <a:pPr><a:defRPr sz="1200"><a:ln w="19050"><a:solidFill><a:srgbClr val="224466"/></a:solidFill></a:ln></a:defRPr></a:pPr>
+            <a:r>
+              <a:rPr><a:ln w="9525"><a:solidFill><a:srgbClr val="AA5500"/></a:solidFill></a:ln></a:rPr>
+              <a:t>Override</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'stroke="#aa5500"' in svg
+    assert 'stroke-width="1"' in svg
+    assert 'stroke="#224466"' not in svg
+
+
 def test_drawingml_scheme_colors_round_trip_to_svg_hex_colors() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
