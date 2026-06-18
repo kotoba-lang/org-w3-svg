@@ -2727,6 +2727,52 @@ def test_analyze_svg_reports_group_clip_when_descendant_clip_overrides() -> None
     assert analyze_svg(svg).unsupported_attributes == {"clip-path": 1}
 
 
+def test_analyze_svg_accepts_group_rect_clip_on_use_descendants() -> None:
+    svg = """<svg>
+      <defs>
+        <clipPath id="crop"><rect x="0" y="0" width="10" height="8"/></clipPath>
+        <g id="glyph"><rect width="20" height="20" fill="#111111"/></g>
+        <symbol id="icon" viewBox="0 0 20 20">
+          <line x1="0" y1="0" x2="20" y2="20" stroke="#111111" stroke-width="2"/>
+        </symbol>
+      </defs>
+      <g clip-path="url(#crop)">
+        <use href="#glyph"/>
+        <use href="#icon" width="20" height="20"/>
+      </g>
+    </svg>"""
+
+    assert svg_to_drawingml(svg).count("<p:sp>") == 2
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_group_clip_on_missing_use_reference() -> None:
+    svg = """<svg>
+      <defs><clipPath id="crop"><rect x="0" y="0" width="10" height="8"/></clipPath></defs>
+      <g clip-path="url(#crop)"><use href="#missing"/></g>
+    </svg>"""
+
+    result = analyze_svg(svg)
+
+    assert result.unsupported_elements == {"use:unsupported-reference": 1}
+    assert result.unsupported_attributes == {"clip-path": 1, "href": 1}
+
+
+def test_analyze_svg_reports_group_clip_when_use_descendant_clip_overrides() -> None:
+    svg = """<svg>
+      <defs>
+        <clipPath id="group-crop"><rect x="0" y="0" width="10" height="8"/></clipPath>
+        <clipPath id="child-crop"><rect x="2" y="2" width="6" height="4"/></clipPath>
+        <g id="glyph">
+          <rect width="20" height="20" fill="#111111" clip-path="url(#child-crop)"/>
+        </g>
+      </defs>
+      <g clip-path="url(#group-crop)"><use href="#glyph"/></g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {"clip-path": 1}
+
+
 def test_analyze_svg_ignores_noop_blend_and_dash_offset() -> None:
     svg = """<svg>
       <rect width="10" height="8" mix-blend-mode="normal"/>

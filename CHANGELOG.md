@@ -44,6 +44,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for unsupported SVG `vector-effect` values without visible strokes.
 - Added analyzer reporting for inherited SVG `paint-order` values that change visible fill/stroke order.
 - Refined analyzer handling for group-level rectangular SVG `clipPath` values that can be applied to visible descendants.
+- Refined analyzer handling for group-level rectangular SVG `clipPath` values applied through `use` references.
 - Refined analyzer handling for default SVG `isolation="auto"` values.
 - Refined analyzer handling for group-level clipping and effect attributes when the subtree has no visible rendering.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.
