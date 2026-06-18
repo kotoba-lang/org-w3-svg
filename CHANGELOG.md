@@ -35,6 +35,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added simple SVG `foreignObject` HTML table inline `font` tag legacy numeric size conversion.
 - Added simple SVG `foreignObject` HTML table `nowrap` text wrap conversion.
 - Added simple SVG `foreignObject` HTML table `width`/`height`/`align` frame conversion.
+- Added simple SVG `foreignObject` HTML table CSS margin frame offset conversion.
 - Fixed DrawingML native table vertical merge continuation cell placement.
 - Added simple SVG text `direction="rtl"` conversion to DrawingML paragraph direction.
 - Added simple SVG `foreignObject` HTML table cell RTL text direction conversion.

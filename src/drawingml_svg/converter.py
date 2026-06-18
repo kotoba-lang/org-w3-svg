@@ -436,6 +436,7 @@ def _svg_foreign_object_table_shapes(
     table_width = _html_table_element_size(table, "width", width) or width
     table_height = _html_table_element_size(table, "height", height) or height
     table_x = _html_table_x_offset(table, width, table_width)
+    table_y = _html_table_y_offset(table)
     row_heights = _html_table_row_heights(table, len(rows), table_height)
     row_edges = [0.0]
     for row_height in row_heights:
@@ -450,7 +451,7 @@ def _svg_foreign_object_table_shapes(
             end_column = min(column_count, column_index + column_span)
             end_row = min(len(rows), row_index + row_span)
             cell_x = transformed.x + (table_x + column_edges[column_index]) * scale_x
-            cell_y = transformed.y + row_edges[row_index] * scale_y
+            cell_y = transformed.y + (table_y + row_edges[row_index]) * scale_y
             cell_width = (column_edges[end_column] - column_edges[column_index]) * scale_x
             cell_height = (row_edges[end_row] - row_edges[row_index]) * scale_y
             cell_style = _html_table_cell_style(element, cell, css, style)
@@ -779,18 +780,57 @@ def _html_table_element_size(table: ET.Element, axis: str, total_size: float) ->
 def _html_table_x_offset(table: ET.Element, foreign_object_width: float, table_width: float) -> float:
     extra = max(0.0, foreign_object_width - table_width)
     style = _parse_style(table.get("style", ""))
-    margin_left = (style.get("margin-left") or "").strip().lower()
-    margin_right = (style.get("margin-right") or "").strip().lower()
+    margin_left = _html_margin_side(style, "left")
+    margin_right = _html_margin_side(style, "right")
     if margin_left == "auto" and margin_right == "auto":
         return extra / 2
     if margin_left == "auto":
         return extra
+    if isinstance(margin_left, float):
+        return margin_left
     align = (style.get("text-align") or table.get("align") or "").strip().lower()
     if align in {"center", "middle"}:
         return extra / 2
     if align in {"right", "end"}:
         return extra
     return 0.0
+
+
+def _html_table_y_offset(table: ET.Element) -> float:
+    margin_top = _html_margin_side(_parse_style(table.get("style", "")), "top")
+    return margin_top if isinstance(margin_top, float) else 0.0
+
+
+def _html_margin_side(style: dict[str, str], side: str) -> float | str | None:
+    value = style.get(f"margin-{side}")
+    if value is None:
+        value = _html_margin_shorthand_side(style.get("margin"), side)
+    if value is None:
+        return None
+    normalized = value.strip().lower()
+    if normalized == "auto":
+        return "auto"
+    length = _html_first_length(normalized)
+    return max(0.0, length) if length is not None else None
+
+
+def _html_margin_shorthand_side(value: str | None, side: str) -> str | None:
+    if value is None:
+        return None
+    tokens = _css_value_tokens(value)[:4]
+    if not tokens:
+        return None
+    if len(tokens) == 1:
+        top = right = bottom = left = tokens[0]
+    elif len(tokens) == 2:
+        top = bottom = tokens[0]
+        right = left = tokens[1]
+    elif len(tokens) == 3:
+        top, right, bottom = tokens
+        left = right
+    else:
+        top, right, bottom, left = tokens
+    return {"top": top, "right": right, "bottom": bottom, "left": left}.get(side)
 
 
 def _html_table_first_row_column_widths(table: ET.Element, column_count: int, total_width: float) -> list[float | None]:

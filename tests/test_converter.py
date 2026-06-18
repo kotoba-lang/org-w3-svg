@@ -1206,6 +1206,38 @@ def test_foreign_object_html_table_box_size_and_alignment_convert_to_native_fram
     assert ("90", "8", "40", "20") in rects
 
 
+def test_foreign_object_html_table_css_margins_offset_native_frame() -> None:
+    svg = """<svg width="150" height="60">
+      <foreignObject x="10" y="8" width="120" height="36">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table style="width:60px;height:20px;margin:4px 0 0 12px">
+            <tr>
+              <td>A</td>
+              <td>B</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert '<a:off x="209550" y="114300"/>' in dml
+    assert '<a:ext cx="571500" cy="190500"/>' in dml
+    assert dml.count('<a:gridCol w="285750"/>') == 2
+    assert '<a:tr h="190500">' in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+    round_trip = drawingml_to_svg(dml)
+    rects = {
+        (rect.get("x"), rect.get("y"), rect.get("width"), rect.get("height"))
+        for rect in ET.fromstring(round_trip).findall("{http://www.w3.org/2000/svg}rect")
+    }
+    assert ("22", "12", "30", "20") in rects
+    assert ("52", "12", "30", "20") in rects
+
+
 def test_foreign_object_html_table_colspan_cell_width_distributes_to_spanned_columns() -> None:
     svg = """<svg width="150" height="60">
       <foreignObject x="10" y="8" width="120" height="36">
