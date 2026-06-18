@@ -399,6 +399,11 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
         if text is not None:
             xfrm = sp_pr.find(qn(NS_A, "xfrm"))
             x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
+            left_inset, top_inset, right_inset, bottom_inset = _dml_text_insets(element)
+            x += left_inset
+            y += top_inset
+            width = max(0.0, width - left_inset - right_inset)
+            height = max(0.0, height - top_inset - bottom_inset)
             yield Shape(
                 "text",
                 x,
@@ -2542,6 +2547,17 @@ def _dml_xfrm(xfrm: ET.Element | None) -> tuple[float, float, float, float, bool
     rotation_value = _dml_float(xfrm.get("rot")) if xfrm.get("rot") is not None else None
     rotation = rotation_value / 60000 if rotation_value is not None else None
     return x, y, width, height, xfrm.get("flipH") in {"1", "true"}, xfrm.get("flipV") in {"1", "true"}, rotation
+
+
+def _dml_text_insets(element: ET.Element) -> tuple[float, float, float, float]:
+    body_pr = element.find(f".//{qn(NS_A, 'bodyPr')}")
+    if body_pr is None:
+        return 0.0, 0.0, 0.0, 0.0
+    left = _dml_int(body_pr.get("lIns"), 0) or 0
+    top = _dml_int(body_pr.get("tIns"), 0) or 0
+    right = _dml_int(body_pr.get("rIns"), 0) or 0
+    bottom = _dml_int(body_pr.get("bIns"), 0) or 0
+    return _px(left), _px(top), _px(right), _px(bottom)
 
 
 def _shape_kind_to_dml(kind: str) -> str:

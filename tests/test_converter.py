@@ -4165,3 +4165,44 @@ def test_drawingml_field_and_tab_text_round_trip_to_svg_text() -> None:
 
     assert "Slide\t12" in svg
     assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_drawingml_text_body_insets_adjust_svg_text_position() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="95250" y="190500"/><a:ext cx="762000" cy="381000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr lIns="19050" tIns="28575" rIns="95250" bIns="19050"/>
+          <a:lstStyle/>
+          <a:p><a:r><a:rPr sz="1200"/><a:t>Inset</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'x="12"' in svg
+    assert 'y="35"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_drawingml_text_body_insets_adjust_centered_svg_text_anchor() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="952500" cy="190500"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr lIns="95250" rIns="285750"/>
+          <a:lstStyle/>
+          <a:p><a:pPr algn="ctr"/><a:r><a:rPr sz="1200"/><a:t>Centered</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'x="40"' in svg
+    assert 'text-anchor="middle"' in svg
