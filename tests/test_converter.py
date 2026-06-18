@@ -2749,6 +2749,41 @@ def test_drawingml_straight_connector_preset_round_trips_to_svg_line() -> None:
     assert 'fill="none"' in svg
 
 
+def test_drawingml_group_transform_scales_child_shapes_to_svg() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:grpSp>
+        <p:nvGrpSpPr><p:cNvPr id="2" name="group"/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
+        <p:grpSpPr>
+          <a:xfrm>
+            <a:off x="95250" y="190500"/><a:ext cx="190500" cy="190500"/>
+            <a:chOff x="0" y="0"/><a:chExt cx="95250" cy="95250"/>
+          </a:xfrm>
+        </p:grpSpPr>
+        <p:sp>
+          <p:nvSpPr><p:cNvPr id="3" name="rect"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+          <p:spPr>
+            <a:xfrm><a:off x="95250" y="95250"/><a:ext cx="95250" cy="95250"/></a:xfrm>
+            <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+            <a:solidFill><a:srgbClr val="DBEAFE"/></a:solidFill>
+            <a:ln w="9525"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:ln>
+          </p:spPr>
+        </p:sp>
+        <p:sp>
+          <p:nvSpPr><p:cNvPr id="4" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+          <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="95250"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+          <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1000"><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:rPr><a:t>Group</a:t></a:r></a:p></p:txBody>
+        </p:sp>
+      </p:grpSp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert '<rect fill="#dbeafe" stroke="#2563eb" stroke-width="2" x="30" y="40" width="20" height="20"/>' in svg
+    assert '<text fill="#111111" x="10" y="40" font-size="20">Group</text>' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_drawingml_invalid_srgb_colors_do_not_crash() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">

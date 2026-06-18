@@ -5,7 +5,7 @@ import binascii
 import colorsys
 import math
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable, Iterable
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
@@ -381,81 +381,98 @@ def _shape_has_visible_content(shape: Shape) -> bool:
 
 
 def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
-    for element in root.iter():
-        tag = _local_name(element.tag)
-        if tag == "pic":
-            image = _dml_picture_shape(element)
-            if image is not None:
-                yield image
-            continue
-        if tag not in {"sp", "cxnSp"}:
-            continue
-        sp_pr = element.find(qn(NS_P, "spPr"))
-        if sp_pr is None:
-            sp_pr = element.find(qn(NS_A, "spPr"))
-        if sp_pr is None:
-            continue
-        text = _dml_text(element)
-        if text is not None:
-            xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-            x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
-            left_inset, top_inset, right_inset, bottom_inset = _dml_text_insets(element)
-            x += left_inset
-            y += top_inset
-            width = max(0.0, width - left_inset - right_inset)
-            height = max(0.0, height - top_inset - bottom_inset)
-            yield Shape(
-                "text",
+    yield from _dml_shapes_walk(root, _identity_matrix())
+
+
+def _dml_shapes_walk(
+    element: ET.Element,
+    matrix: tuple[float, float, float, float, float, float],
+) -> Iterable[Shape]:
+    tag = _local_name(element.tag)
+    if tag == "grpSp":
+        matrix = _matrix_multiply(matrix, _dml_group_matrix(element))
+        for child in element:
+            yield from _dml_shapes_walk(child, matrix)
+        return
+    shape = _dml_shape_from_element(element)
+    if shape is not None:
+        yield _transform_dml_shape(shape, matrix)
+        return
+    for child in element:
+        yield from _dml_shapes_walk(child, matrix)
+
+
+def _dml_shape_from_element(element: ET.Element) -> Shape | None:
+    tag = _local_name(element.tag)
+    if tag == "pic":
+        return _dml_picture_shape(element)
+    if tag not in {"sp", "cxnSp"}:
+        return None
+    sp_pr = element.find(qn(NS_P, "spPr"))
+    if sp_pr is None:
+        sp_pr = element.find(qn(NS_A, "spPr"))
+    if sp_pr is None:
+        return None
+    text = _dml_text(element)
+    if text is not None:
+        xfrm = sp_pr.find(qn(NS_A, "xfrm"))
+        x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
+        left_inset, top_inset, right_inset, bottom_inset = _dml_text_insets(element)
+        x += left_inset
+        y += top_inset
+        width = max(0.0, width - left_inset - right_inset)
+        height = max(0.0, height - top_inset - bottom_inset)
+        return Shape(
+            "text",
+            x,
+            y,
+            width,
+            height,
+            _dml_text_paint(element, sp_pr),
+            flip_h,
+            flip_v,
+            text=text,
+            font_size=_dml_font_size(element),
+            font_weight=_dml_font_weight(element),
+            font_style=_dml_font_style(element),
+            font_family=_dml_font_family(element),
+            font_variant=_dml_font_variant(element),
+            text_decoration=_dml_text_decoration(element),
+            text_anchor=_dml_text_anchor(element),
+            text_baseline=_dml_text_baseline(element),
+            letter_spacing=_dml_letter_spacing(element),
+            rotation=rotation,
+        )
+    cust = sp_pr.find(qn(NS_A, "custGeom"))
+    if cust is not None:
+        xfrm = sp_pr.find(qn(NS_A, "xfrm"))
+        x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
+        points, closed = _dml_custom_points(cust, x, y)
+        if points:
+            return Shape(
+                "freeform",
                 x,
                 y,
                 width,
                 height,
-                _dml_text_paint(element, sp_pr),
+                _dml_paint(sp_pr, element),
                 flip_h,
                 flip_v,
-                text=text,
-                font_size=_dml_font_size(element),
-                font_weight=_dml_font_weight(element),
-                font_style=_dml_font_style(element),
-                font_family=_dml_font_family(element),
-                font_variant=_dml_font_variant(element),
-                text_decoration=_dml_text_decoration(element),
-                text_anchor=_dml_text_anchor(element),
-                text_baseline=_dml_text_baseline(element),
-                letter_spacing=_dml_letter_spacing(element),
+                tuple(points),
+                closed,
                 rotation=rotation,
             )
-            continue
-        cust = sp_pr.find(qn(NS_A, "custGeom"))
-        if cust is not None:
-            xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-            x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
-            points, closed = _dml_custom_points(cust, x, y)
-            if points:
-                yield Shape(
-                    "freeform",
-                    x,
-                    y,
-                    width,
-                    height,
-                    _dml_paint(sp_pr, element),
-                    flip_h,
-                    flip_v,
-                    tuple(points),
-                    closed,
-                    rotation=rotation,
-                )
-            continue
-        prst = sp_pr.find(qn(NS_A, "prstGeom"))
-        if prst is None:
-            continue
-        kind = _dml_kind_to_shape(prst.get("prst", ""))
-        if kind is None:
-            continue
-        xfrm = sp_pr.find(qn(NS_A, "xfrm"))
-        x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
-        radius = min(width, height) / 6 if kind == "roundRect" else None
-        yield Shape(kind, x, y, width, height, _dml_paint(sp_pr, element), flip_h, flip_v, rx=radius, ry=radius, rotation=rotation)
+        return None
+    prst = sp_pr.find(qn(NS_A, "prstGeom"))
+    if prst is None:
+        return None
+    kind = _dml_kind_to_shape(prst.get("prst", ""))
+    if kind is None:
+        return None
+    xfrm = sp_pr.find(qn(NS_A, "xfrm"))
+    x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
+    radius = min(width, height) / 6 if kind == "roundRect" else None
+    return Shape(kind, x, y, width, height, _dml_paint(sp_pr, element), flip_h, flip_v, rx=radius, ry=radius, rotation=rotation)
 
 
 def _shape_to_dml(shape: Shape, shape_id: int) -> ET.Element:
@@ -2628,6 +2645,114 @@ def _dml_xfrm(xfrm: ET.Element | None) -> tuple[float, float, float, float, bool
     rotation_value = _dml_float(xfrm.get("rot")) if xfrm.get("rot") is not None else None
     rotation = rotation_value / 60000 if rotation_value is not None else None
     return x, y, width, height, xfrm.get("flipH") in {"1", "true"}, xfrm.get("flipV") in {"1", "true"}, rotation
+
+
+def _dml_group_matrix(element: ET.Element) -> tuple[float, float, float, float, float, float]:
+    grp_sp_pr = element.find(qn(NS_P, "grpSpPr"))
+    if grp_sp_pr is None:
+        grp_sp_pr = element.find(qn(NS_A, "grpSpPr"))
+    xfrm = grp_sp_pr.find(qn(NS_A, "xfrm")) if grp_sp_pr is not None else None
+    if xfrm is None:
+        return _identity_matrix()
+    off = xfrm.find(qn(NS_A, "off"))
+    ext = xfrm.find(qn(NS_A, "ext"))
+    ch_off = xfrm.find(qn(NS_A, "chOff"))
+    ch_ext = xfrm.find(qn(NS_A, "chExt"))
+    x = _px(_dml_int(off.get("x"), 0) or 0) if off is not None else 0.0
+    y = _px(_dml_int(off.get("y"), 0) or 0) if off is not None else 0.0
+    width = _px(_dml_int(ext.get("cx"), 0) or 0) if ext is not None else 0.0
+    height = _px(_dml_int(ext.get("cy"), 0) or 0) if ext is not None else 0.0
+    child_x = _px(_dml_int(ch_off.get("x"), 0) or 0) if ch_off is not None else 0.0
+    child_y = _px(_dml_int(ch_off.get("y"), 0) or 0) if ch_off is not None else 0.0
+    child_width = _px(_dml_int(ch_ext.get("cx"), 0) or 0) if ch_ext is not None else width
+    child_height = _px(_dml_int(ch_ext.get("cy"), 0) or 0) if ch_ext is not None else height
+    scale_x = width / child_width if child_width else 1.0
+    scale_y = height / child_height if child_height else 1.0
+    matrix = (scale_x, 0.0, 0.0, scale_y, x - child_x * scale_x, y - child_y * scale_y)
+    if xfrm.get("flipH") in {"1", "true"}:
+        matrix = _matrix_multiply(( -1.0, 0.0, 0.0, 1.0, x * 2 + width, 0.0), matrix)
+    if xfrm.get("flipV") in {"1", "true"}:
+        matrix = _matrix_multiply((1.0, 0.0, 0.0, -1.0, 0.0, y * 2 + height), matrix)
+    rotation_value = _dml_float(xfrm.get("rot")) if xfrm.get("rot") is not None else None
+    if rotation_value:
+        angle = math.radians(rotation_value / 60000)
+        center_x = x + width / 2
+        center_y = y + height / 2
+        rotation = (math.cos(angle), math.sin(angle), -math.sin(angle), math.cos(angle), 0.0, 0.0)
+        matrix = _matrix_multiply(
+            _matrix_multiply((1.0, 0.0, 0.0, 1.0, center_x, center_y), rotation),
+            _matrix_multiply((1.0, 0.0, 0.0, 1.0, -center_x, -center_y), matrix),
+        )
+    return matrix
+
+
+def _transform_dml_shape(shape: Shape, matrix: tuple[float, float, float, float, float, float]) -> Shape:
+    if _is_identity_matrix(matrix):
+        return shape
+    if shape.kind == "line":
+        return _transform_dml_line_shape(shape, matrix)
+    if shape.kind == "freeform":
+        return _transform_dml_freeform_shape(shape, matrix)
+    return _transform_dml_box_shape(shape, matrix)
+
+
+def _transform_dml_box_shape(shape: Shape, matrix: tuple[float, float, float, float, float, float]) -> Shape:
+    points = _transform_points(_rect_points(shape.x, shape.y, shape.width, shape.height), matrix)
+    p0, p1, _, p3 = points
+    ux = (p1[0] - p0[0], p1[1] - p0[1])
+    vy = (p3[0] - p0[0], p3[1] - p0[1])
+    width = math.hypot(*ux)
+    height = math.hypot(*vy)
+    if width <= 0 or height <= 0:
+        return shape
+    center_x = sum(px for px, _ in points) / 4
+    center_y = sum(py for _, py in points) / 4
+    rotation = math.degrees(math.atan2(ux[1], ux[0])) % 360
+    if abs(rotation) < 1e-9 or abs(rotation - 360) < 1e-9:
+        rotation = 0.0
+    if shape.rotation is not None:
+        rotation = (rotation + shape.rotation) % 360
+    scale = _matrix_scale(matrix)
+    return replace(
+        shape,
+        x=center_x - width / 2,
+        y=center_y - height / 2,
+        width=width,
+        height=height,
+        paint=_scale_paint(shape.paint, scale),
+        font_size=shape.font_size * scale if shape.font_size is not None else None,
+        letter_spacing=shape.letter_spacing * scale if shape.letter_spacing is not None else None,
+        rx=min(shape.rx * scale, width / 2) if shape.rx is not None else None,
+        ry=min(shape.ry * scale, height / 2) if shape.ry is not None else None,
+        rotation=rotation or None,
+    )
+
+
+def _transform_dml_line_shape(shape: Shape, matrix: tuple[float, float, float, float, float, float]) -> Shape:
+    points = _transform_points(
+        [
+            (shape.x + shape.width if shape.flip_h else shape.x, shape.y + shape.height if shape.flip_v else shape.y),
+            (shape.x if shape.flip_h else shape.x + shape.width, shape.y if shape.flip_v else shape.y + shape.height),
+        ],
+        matrix,
+    )
+    (x1, y1), (x2, y2) = points
+    return replace(
+        shape,
+        x=min(x1, x2),
+        y=min(y1, y2),
+        width=abs(x2 - x1),
+        height=abs(y2 - y1),
+        paint=_scale_paint(shape.paint, _matrix_scale(matrix)),
+        flip_h=x1 > x2,
+        flip_v=y1 > y2,
+    )
+
+
+def _transform_dml_freeform_shape(shape: Shape, matrix: tuple[float, float, float, float, float, float]) -> Shape:
+    points = _transform_points(shape.points, matrix)
+    transformed = _freeform_shape(points, _scale_paint(shape.paint, _matrix_scale(matrix)), shape.closed)
+    return replace(transformed, rotation=shape.rotation)
 
 
 def _dml_text_insets(element: ET.Element) -> tuple[float, float, float, float]:
