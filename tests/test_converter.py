@@ -1567,6 +1567,35 @@ def test_foreign_object_html_table_dashed_and_dotted_borders_convert() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_double_borders_convert() -> None:
+    svg = """<svg width="150" height="50">
+      <foreignObject x="10" y="8" width="120" height="24">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="border:4px double #2563eb">Double</td>
+              <td>Other</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    root = ET.fromstring(dml)
+    ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+    left_border = root.find(".//a:tcPr/a:lnL", ns)
+
+    assert "<a:tbl>" in dml
+    assert left_border.get("w") == "38100"
+    assert left_border.get("cmpd") == "dbl"
+    assert left_border.find("a:solidFill/a:srgbClr", ns).get("val") == "2563EB"
+    assert left_border.find("a:custDash", ns) is None
+    assert "<a:t>Double</a:t>" in dml
+    assert "<a:t>Other</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_css_selectors_apply_to_cells() -> None:
     svg = """<svg width="140" height="50">
       <style>

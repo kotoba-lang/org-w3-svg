@@ -42,6 +42,7 @@ class Paint:
     stroke_linejoin: str | None = None
     stroke_dasharray: str | None = None
     stroke_miterlimit: float | None = None
+    stroke_compound: str | None = None
     marker_start: str | None = None
     marker_end: str | None = None
 
@@ -478,6 +479,7 @@ def _svg_foreign_object_table_shapes(
                         fill_alpha=fill_alpha,
                         stroke_alpha=stroke_alpha,
                         stroke_dasharray=_html_border_dasharray(cell_style),
+                        stroke_compound=_html_border_compound(cell_style),
                     ),
                 )
             )
@@ -1031,17 +1033,26 @@ def _html_border_width(style: dict[str, str]) -> float:
 
 
 def _html_border_dasharray(style: dict[str, str]) -> str | None:
-    tokens = [
-        token.strip(",").lower()
-        for value in (style.get("border-style"), style.get("border"))
-        if value
-        for token in _css_value_tokens(value)
-    ]
+    tokens = _html_border_style_tokens(style)
     if "dotted" in tokens:
         return "1 1"
     if "dashed" in tokens:
         return "3 3"
     return None
+
+
+def _html_border_compound(style: dict[str, str]) -> str | None:
+    tokens = _html_border_style_tokens(style)
+    return "dbl" if "double" in tokens else None
+
+
+def _html_border_style_tokens(style: dict[str, str]) -> list[str]:
+    return [
+        token.strip(",").lower()
+        for value in (style.get("border-style"), style.get("border"))
+        if value
+        for token in _css_value_tokens(value)
+    ]
 
 
 def _html_padding_insets(
@@ -2541,6 +2552,8 @@ def _append_svg_table_cell_borders(parent: ET.Element, cell: SvgTableCell) -> No
         attrs = {"w": str(_emu(paint.stroke_width or 1.0))}
         if paint.stroke_linecap:
             attrs["cap"] = _svg_linecap_to_dml(paint.stroke_linecap)
+        if paint.stroke_compound:
+            attrs["cmpd"] = paint.stroke_compound
         ln = ET.SubElement(parent, qn(NS_A, tag), attrs)
         if paint.stroke == "none":
             ET.SubElement(ln, qn(NS_A, "noFill"))
@@ -2624,15 +2637,16 @@ def _svg_paint(
 
 def _paint_without_markers(paint: Paint) -> Paint:
     return Paint(
-        paint.fill,
-        paint.stroke,
-        paint.stroke_width,
-        paint.fill_alpha,
-        paint.stroke_alpha,
-        paint.stroke_linecap,
-        paint.stroke_linejoin,
-        paint.stroke_dasharray,
-        paint.stroke_miterlimit,
+        fill=paint.fill,
+        stroke=paint.stroke,
+        stroke_width=paint.stroke_width,
+        fill_alpha=paint.fill_alpha,
+        stroke_alpha=paint.stroke_alpha,
+        stroke_linecap=paint.stroke_linecap,
+        stroke_linejoin=paint.stroke_linejoin,
+        stroke_dasharray=paint.stroke_dasharray,
+        stroke_miterlimit=paint.stroke_miterlimit,
+        stroke_compound=paint.stroke_compound,
     )
 
 
@@ -2649,6 +2663,7 @@ def _scale_paint(paint: Paint, scale: float) -> Paint:
         stroke_linejoin=paint.stroke_linejoin,
         stroke_dasharray=_scale_dasharray(paint.stroke_dasharray, scale),
         stroke_miterlimit=paint.stroke_miterlimit,
+        stroke_compound=paint.stroke_compound,
         marker_start=paint.marker_start,
         marker_end=paint.marker_end,
     )
@@ -2883,6 +2898,8 @@ def _append_dml_paint(parent: ET.Element, paint: Paint) -> None:
             attrs["w"] = str(_emu(paint.stroke_width))
         if paint.stroke_linecap:
             attrs["cap"] = _svg_linecap_to_dml(paint.stroke_linecap)
+        if paint.stroke_compound:
+            attrs["cmpd"] = paint.stroke_compound
         ln = ET.SubElement(parent, qn(NS_A, "ln"), attrs)
         if paint.stroke:
             solid = ET.SubElement(ln, qn(NS_A, "solidFill"))
@@ -2996,6 +3013,8 @@ def _append_text_run_properties(r_pr: ET.Element, text_run: TextRun) -> None:
             attrs["w"] = str(_emu(paint.stroke_width))
         if paint.stroke_linecap:
             attrs["cap"] = _svg_linecap_to_dml(paint.stroke_linecap)
+        if paint.stroke_compound:
+            attrs["cmpd"] = paint.stroke_compound
         ln = ET.SubElement(r_pr, qn(NS_A, "ln"), attrs)
         solid = ET.SubElement(ln, qn(NS_A, "solidFill"))
         color = ET.SubElement(solid, qn(NS_A, "srgbClr"), {"val": paint.stroke.removeprefix("#").upper()})
@@ -3820,6 +3839,7 @@ def _text_run_style_key(run: TextRun) -> tuple[object, ...]:
         paint.stroke_linejoin,
         paint.stroke_dasharray,
         paint.stroke_miterlimit,
+        paint.stroke_compound,
         run.font_size,
         run.font_weight,
         run.font_style,
