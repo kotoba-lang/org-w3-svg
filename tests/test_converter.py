@@ -2689,6 +2689,30 @@ def test_analyze_svg_reports_gradient_attributes_without_color_fallback() -> Non
     }
 
 
+def test_analyze_svg_ignores_unreferenced_gradient_attributes_without_color_fallback() -> None:
+    svg = """<svg>
+      <defs>
+        <linearGradient id="empty" spreadMethod="repeat" gradientUnits="userSpaceOnUse" gradientTransform="rotate(15)"/>
+      </defs>
+      <rect width="10" height="8" fill="#111111"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_ignores_gradient_attributes_on_invisible_channels() -> None:
+    svg = f"""<svg>
+      <defs>
+        <linearGradient id="empty" spreadMethod="repeat" gradientUnits="userSpaceOnUse" gradientTransform="rotate(15)"/>
+      </defs>
+      <rect width="10" height="8" fill="url(#empty)" fill-opacity="0"/>
+      <line x1="0" y1="0" x2="10" y2="0" fill="url(#empty)"/>
+      <image href="{PNG_DATA_URI}" width="10" height="8" fill="url(#empty)" stroke="url(#empty)"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_analyze_svg_accepts_data_image_preserve_aspect_ratio_when_dimensions_are_known() -> None:
     svg = f"""<svg viewBox="0 0 100 50" width="200" height="200" preserveAspectRatio="xMaxYMax slice">
       <svg x="0" y="0" width="20" height="20" viewBox="0 0 10 5" preserveAspectRatio="none">

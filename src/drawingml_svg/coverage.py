@@ -388,8 +388,9 @@ def _inspect_attributes(
             continue
         if attr == "kerning" and _kerning_has_no_effect(element, specified_style):
             continue
-        if attr in {"gradientTransform", "gradientUnits", "spreadMethod"} and _gradient_fallback_is_supported(
-            element, refs, css
+        if attr in {"gradientTransform", "gradientUnits", "spreadMethod"} and (
+            _gradient_fallback_is_supported(element, refs, css)
+            or not _paint_server_is_referenced(element, css, refs, ancestors, viewport)
         ):
             continue
         if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css, ancestors, viewport):
