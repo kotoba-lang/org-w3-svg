@@ -17,6 +17,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added complex SVG fixture PPTX smoke coverage to CI and the release checklist.
 - Added DrawingML native table extraction from `p:graphicFrame`/`a:tbl` to editable SVG cell rectangles and text.
 - Added DrawingML table `gridSpan`/`rowSpan` handling for simple merged cell SVG bounds.
+- Added DrawingML table cell border extraction for individual `lnL`/`lnR`/`lnT`/`lnB` edges, including `noFill` edges.
 - Added text-level SVG `baseline-shift` `super`/`sub` conversion to DrawingML run baseline values.
 - Added run-level `tspan` fill/font/outline/decoration/letter-spacing/baseline conversion to separate DrawingML text runs.
 - Added run-level `tspan` word-spacing conversion using DrawingML character spacing approximation.

@@ -463,7 +463,6 @@ def _dml_table_shapes(element: ET.Element) -> Iterable[Shape]:
             cell_width = sum(grid_widths[column_index:end_column]) * scale_x
             cell_height = sum(row_heights[row_index:end_row]) * scale_y or row_height * scale_y
             cell_fill, fill_alpha = _dml_table_cell_fill(cell)
-            stroke, stroke_width = _dml_table_cell_stroke(cell)
             shapes.append(
                 Shape(
                     "rect",
@@ -471,9 +470,10 @@ def _dml_table_shapes(element: ET.Element) -> Iterable[Shape]:
                     top,
                     cell_width,
                     cell_height,
-                    Paint(fill=cell_fill, stroke=stroke, stroke_width=stroke_width, fill_alpha=fill_alpha),
+                    Paint(fill=cell_fill, stroke="none", fill_alpha=fill_alpha),
                 )
             )
+            shapes.extend(_dml_table_cell_border_shapes(cell, left, top, cell_width, cell_height))
             text = _dml_table_cell_text(cell)
             if text:
                 inset = min(cell_width, cell_height, 4.0)
@@ -530,15 +530,51 @@ def _dml_table_cell_fill(cell: ET.Element) -> tuple[str | None, float | None]:
     return _dml_color(fill), _dml_alpha(fill)
 
 
-def _dml_table_cell_stroke(cell: ET.Element) -> tuple[str | None, float | None]:
+def _dml_table_cell_border_shapes(
+    cell: ET.Element,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+) -> tuple[Shape, ...]:
+    border_specs = (
+        ("lnL", left, top, left, top + height),
+        ("lnR", left + width, top, left + width, top + height),
+        ("lnT", left, top, left + width, top),
+        ("lnB", left, top + height, left + width, top + height),
+    )
+    return tuple(
+        Shape(
+            "line",
+            min(x1, x2),
+            min(y1, y2),
+            abs(x2 - x1),
+            abs(y2 - y1),
+            paint,
+            flip_h=x2 < x1,
+            flip_v=y2 < y1,
+        )
+        for tag, x1, y1, x2, y2 in border_specs
+        if (paint := _dml_table_cell_border_paint(cell, tag)) is not None
+    )
+
+
+def _dml_table_cell_border_paint(cell: ET.Element, tag: str) -> Paint | None:
     tc_pr = cell.find(qn(NS_A, "tcPr"))
     if tc_pr is None:
-        return "#000000", 1.0
-    for tag in ("lnL", "lnR", "lnT", "lnB"):
-        line = tc_pr.find(qn(NS_A, tag))
-        if line is not None:
-            return _dml_line_color(line) or "#000000", _dml_line_width(line) or 1.0
-    return "#000000", 1.0
+        return Paint(fill="none", stroke="#000000", stroke_width=1.0)
+    line = tc_pr.find(qn(NS_A, tag))
+    if line is None:
+        return Paint(fill="none", stroke="#000000", stroke_width=1.0)
+    color = _dml_line_color(line)
+    if color == "none":
+        return None
+    return Paint(
+        fill="none",
+        stroke=color or "#000000",
+        stroke_width=_dml_line_width(line) or 1.0,
+        stroke_alpha=_dml_line_alpha(line),
+    )
 
 
 def _dml_table_cell_text_paint(cell: ET.Element) -> Paint:

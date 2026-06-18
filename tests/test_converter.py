@@ -7439,9 +7439,10 @@ def test_drawingml_native_table_converts_to_svg_cells_and_text() -> None:
     svg = drawingml_to_svg(dml)
 
     assert svg.count("<rect") == 4
+    assert svg.count("<line") == 16
     assert svg.count("<text") == 4
     assert 'fill="#e0f2fe"' in svg
-    assert 'stroke="#0284c7"' in svg
+    assert '<line fill="none" stroke="#0284c7" stroke-width="1" x1="10" y1="20" x2="10" y2="40"/>' in svg
     assert 'text-anchor="middle"' in svg
     assert 'dominant-baseline="middle"' in svg
     assert "Metric" in svg
@@ -7486,11 +7487,45 @@ def test_drawingml_native_table_merged_cells_expand_to_svg_cell_bounds() -> None
 
     svg = drawingml_to_svg(dml)
 
-    assert '<rect fill="#dbeafe" stroke="#000000" stroke-width="1" x="0" y="0" width="40" height="20"/>' in svg
-    assert '<rect fill="#dcfce7" stroke="#000000" stroke-width="1" x="40" y="0" width="20" height="40"/>' in svg
+    assert '<rect fill="#dbeafe" stroke="none" x="0" y="0" width="40" height="20"/>' in svg
+    assert '<rect fill="#dcfce7" stroke="none" x="40" y="0" width="20" height="40"/>' in svg
     assert svg.count("<rect") == 4
+    assert svg.count("<line") == 16
     assert svg.count("<text") == 4
     assert "Wide" in svg
     assert "Tall" in svg
     assert "A" in svg
     assert "B" in svg
+
+
+def test_drawingml_native_table_preserves_individual_cell_borders() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:graphicFrame>
+        <p:xfrm><a:off x="0" y="0"/><a:ext cx="381000" cy="190500"/></p:xfrm>
+        <a:graphic><a:graphicData>
+          <a:tbl>
+            <a:tblGrid><a:gridCol w="381000"/></a:tblGrid>
+            <a:tr h="190500">
+              <a:tc>
+                <a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr sz="1000"/><a:t>Border</a:t></a:r></a:p></a:txBody>
+                <a:tcPr>
+                  <a:lnL w="19050"><a:solidFill><a:srgbClr val="DC2626"/></a:solidFill></a:lnL>
+                  <a:lnR><a:noFill/></a:lnR>
+                  <a:lnT w="9525"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:lnT>
+                  <a:lnB w="28575"><a:solidFill><a:srgbClr val="16A34A"/></a:solidFill></a:lnB>
+                </a:tcPr>
+              </a:tc>
+            </a:tr>
+          </a:tbl>
+        </a:graphicData></a:graphic>
+      </p:graphicFrame>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert svg.count("<line") == 3
+    assert '<line fill="none" stroke="#dc2626" stroke-width="2" x1="0" y1="0" x2="0" y2="20"/>' in svg
+    assert '<line fill="none" stroke="#2563eb" stroke-width="1" x1="0" y1="0" x2="40" y2="0"/>' in svg
+    assert '<line fill="none" stroke="#16a34a" stroke-width="3" x1="0" y1="20" x2="40" y2="20"/>' in svg
+    assert 'x1="40" y1="0" x2="40" y2="20"' not in svg
