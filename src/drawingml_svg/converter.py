@@ -111,6 +111,10 @@ class SvgTableCell:
     row_span: int = 1
     h_merge: bool = False
     v_merge: bool = False
+    border_left: Paint | None = None
+    border_right: Paint | None = None
+    border_top: Paint | None = None
+    border_bottom: Paint | None = None
 
 
 CssDeclaration = tuple[str, bool]
@@ -1195,7 +1199,7 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
         consumed_texts.add(index)
 
     grid_lines = _svg_table_rect_grid_lines(shapes, x_edges, y_edges, origins)
-    border_paint = _svg_table_line_grid_paint(grid_lines) if grid_lines else None
+    border_paints = _svg_table_grid_border_paints(grid_lines, x_edges, y_edges) if grid_lines else None
     table_rows: list[tuple[SvgTableCell, ...]] = []
     for row in range(row_count):
         table_cells = []
@@ -1205,14 +1209,19 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
                 return None, shapes
             if origin == (row, column):
                 rect, column_span, row_span = origins[origin]
-                if border_paint is not None:
-                    rect = _svg_table_rect_with_border_paint(rect, border_paint)
+                borders = _svg_table_cell_grid_borders(border_paints, row, column) if border_paints is not None else ()
+                if borders:
+                    rect = _svg_table_rect_with_border_paint(rect, borders[0])
                 table_cells.append(
                     SvgTableCell(
                         rect,
                         text_map.get(origin),
                         column_span=column_span,
                         row_span=row_span,
+                        border_left=borders[0] if borders else None,
+                        border_right=borders[1] if borders else None,
+                        border_top=borders[2] if borders else None,
+                        border_bottom=borders[3] if borders else None,
                     )
                 )
             else:
@@ -1292,6 +1301,55 @@ def _svg_table_rect_with_border_paint(rect: Shape, border: Paint) -> Shape:
     return replace(rect, paint=paint)
 
 
+def _svg_table_grid_border_paints(
+    lines: Iterable[Shape],
+    x_edges: tuple[float, ...],
+    y_edges: tuple[float, ...],
+) -> tuple[dict[int, Paint], dict[int, Paint]] | None:
+    verticals: dict[int, Paint] = {}
+    horizontals: dict[int, Paint] = {}
+    for line in lines:
+        if _svg_table_vertical_line(line):
+            index = _svg_table_edge_index(x_edges, line.x)
+            if index is None:
+                return None
+            verticals[index] = _svg_table_line_border_paint(line)
+        elif _svg_table_horizontal_line(line):
+            index = _svg_table_edge_index(y_edges, line.y)
+            if index is None:
+                return None
+            horizontals[index] = _svg_table_line_border_paint(line)
+        else:
+            return None
+    if any(index not in verticals for index in range(len(x_edges))):
+        return None
+    if any(index not in horizontals for index in range(len(y_edges))):
+        return None
+    return verticals, horizontals
+
+
+def _svg_table_cell_grid_borders(
+    border_paints: tuple[dict[int, Paint], dict[int, Paint]],
+    row: int,
+    column: int,
+) -> tuple[Paint, Paint, Paint, Paint]:
+    verticals, horizontals = border_paints
+    return verticals[column], verticals[column + 1], horizontals[row], horizontals[row + 1]
+
+
+def _svg_table_line_border_paint(line: Shape) -> Paint:
+    return Paint(
+        fill="none",
+        stroke=line.paint.stroke,
+        stroke_width=line.paint.stroke_width,
+        stroke_alpha=line.paint.stroke_alpha,
+        stroke_linecap=line.paint.stroke_linecap,
+        stroke_linejoin=line.paint.stroke_linejoin,
+        stroke_dasharray=line.paint.stroke_dasharray,
+        stroke_miterlimit=line.paint.stroke_miterlimit,
+    )
+
+
 def _extract_svg_line_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape]]:
     if any(shape.kind not in {"line", "text"} for shape in shapes):
         return None, shapes
@@ -1319,6 +1377,9 @@ def _extract_svg_line_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[
     if any(size <= 0 for size in columns + rows):
         return None, shapes
 
+    border_paints = _svg_table_grid_border_paints(lines, x_edges, y_edges)
+    if border_paints is None:
+        return None, shapes
     paint = _svg_table_line_grid_paint(lines)
     text_map: dict[tuple[int, int], Shape] = {}
     consumed_texts: set[int] = set()
@@ -1337,23 +1398,32 @@ def _extract_svg_line_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[
         text_map[key] = shape
         consumed_texts.add(index)
 
-    cells = tuple(
-        tuple(
-            SvgTableCell(
-                Shape(
-                    "rect",
-                    x_edges[column],
-                    y_edges[row],
-                    columns[column],
-                    rows[row],
-                    paint,
-                ),
-                text_map.get((row, column)),
+    rows_out: list[tuple[SvgTableCell, ...]] = []
+    for row in range(len(rows)):
+        cells_out = []
+        for column in range(len(columns)):
+            left_border, right_border, top_border, bottom_border = _svg_table_cell_grid_borders(
+                border_paints, row, column
             )
-            for column in range(len(columns))
-        )
-        for row in range(len(rows))
-    )
+            cells_out.append(
+                SvgTableCell(
+                    Shape(
+                        "rect",
+                        x_edges[column],
+                        y_edges[row],
+                        columns[column],
+                        rows[row],
+                        paint,
+                    ),
+                    text_map.get((row, column)),
+                    border_left=left_border,
+                    border_right=right_border,
+                    border_top=top_border,
+                    border_bottom=bottom_border,
+                )
+            )
+        rows_out.append(tuple(cells_out))
+    cells = tuple(rows_out)
     table = SvgTable(x_min, y_min, columns, rows, cells)
     consumed_lines = {id(line) for line in lines}
     remaining = [shape for index, shape in enumerate(shapes) if id(shape) not in consumed_lines and index not in consumed_texts]
@@ -1481,7 +1551,7 @@ def _append_svg_table_cell(parent: ET.Element, cell: SvgTableCell) -> None:
     tc_pr = ET.SubElement(tc, qn(NS_A, "tcPr"))
     if cell.rect is not None:
         _append_svg_table_cell_fill(tc_pr, cell.rect.paint)
-        _append_svg_table_cell_borders(tc_pr, cell.rect.paint)
+        _append_svg_table_cell_borders(tc_pr, cell)
 
 
 def _append_svg_table_cell_text_body(parent: ET.Element, rect: Shape | None, text: Shape | None) -> None:
@@ -1548,8 +1618,14 @@ def _append_svg_table_cell_fill(parent: ET.Element, paint: Paint) -> None:
         _append_alpha(color, paint.fill_alpha)
 
 
-def _append_svg_table_cell_borders(parent: ET.Element, paint: Paint) -> None:
-    for tag in ("lnL", "lnR", "lnT", "lnB"):
+def _append_svg_table_cell_borders(parent: ET.Element, cell: SvgTableCell) -> None:
+    fallback = cell.rect.paint if cell.rect is not None else Paint(stroke="none")
+    for tag, paint in (
+        ("lnL", cell.border_left or fallback),
+        ("lnR", cell.border_right or fallback),
+        ("lnT", cell.border_top or fallback),
+        ("lnB", cell.border_bottom or fallback),
+    ):
         ln = ET.SubElement(parent, qn(NS_A, tag), {"w": str(_emu(paint.stroke_width or 1.0))})
         if paint.stroke == "none":
             ET.SubElement(ln, qn(NS_A, "noFill"))

@@ -7492,9 +7492,9 @@ def test_svg_rect_grid_spans_convert_to_native_table_merges() -> None:
 
 def test_svg_line_text_grid_converts_to_native_drawingml_table() -> None:
     svg = """<svg>
-      <line x1="0" y1="0" x2="40" y2="0" stroke="#0f172a" stroke-width="1"/>
-      <line x1="0" y1="20" x2="40" y2="20" stroke="#0f172a" stroke-width="1"/>
-      <line x1="0" y1="40" x2="40" y2="40" stroke="#0f172a" stroke-width="1"/>
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#dc2626" stroke-width="2"/>
+      <line x1="0" y1="20" x2="40" y2="20" stroke="#16a34a" stroke-width="3"/>
+      <line x1="0" y1="40" x2="40" y2="40" stroke="#2563eb" stroke-width="1"/>
       <line x1="0" y1="0" x2="0" y2="40" stroke="#0f172a" stroke-width="1"/>
       <line x1="20" y1="0" x2="20" y2="40" stroke="#0f172a" stroke-width="1"/>
       <line x1="40" y1="0" x2="40" y2="40" stroke="#0f172a" stroke-width="1"/>
@@ -7513,6 +7513,11 @@ def test_svg_line_text_grid_converts_to_native_drawingml_table() -> None:
     assert dml.count("<a:tc>") == 4
     assert dml.count("<p:sp>") == 0
     assert 'w="9525"' in dml
+    assert 'w="19050"' in dml
+    assert 'w="28575"' in dml
+    assert "DC2626" in dml
+    assert "16A34A" in dml
+    assert "2563EB" in dml
     assert "A" in dml
     assert "D" in dml
 
@@ -7520,6 +7525,10 @@ def test_svg_line_text_grid_converts_to_native_drawingml_table() -> None:
     assert round_trip.count("<rect") == 4
     assert round_trip.count("<text") == 4
     assert 'stroke="#0f172a"' in round_trip
+    assert 'stroke="#dc2626"' in round_trip
+    assert 'stroke="#16a34a"' in round_trip
+    assert 'stroke="#2563eb"' in round_trip
+    assert 'stroke-width="3"' in round_trip
     assert "A" in round_trip
     assert "D" in round_trip
 
