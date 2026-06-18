@@ -1449,6 +1449,33 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
     }
 
 
+def test_analyze_svg_ignores_inherited_text_decoration_without_visible_text() -> None:
+    svg = """<svg>
+      <g text-decoration-line="overline"/>
+      <g text-decoration-line="overline"><text/></g>
+      <g text-decoration-line="overline"><text display="none">Hidden</text></g>
+      <g text-decoration-line="overline"><text><tspan display="none">Hidden</tspan></text></g>
+      <g text-decoration-line="underline" text-decoration-color="#dc2626"/>
+      <g text-decoration-line="underline" text-decoration-thickness="2px"><text visibility="hidden">Hidden</text></g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_inherited_text_decoration_with_visible_text() -> None:
+    svg = """<svg>
+      <g text-decoration-line="overline"><text>Over</text></g>
+      <g text-decoration-line="underline" text-decoration-color="#dc2626"><text fill="#111111">Color</text></g>
+      <g text-decoration-line="underline" text-decoration-thickness="2px"><text>Thick</text></g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "text-decoration-color": 1,
+        "text-decoration-line": 1,
+        "text-decoration-thickness": 1,
+    }
+
+
 def test_text_decoration_thickness_is_reported_when_visible() -> None:
     svg = """<svg>
       <style>.thick { text-decoration-thickness: from-font; }</style>

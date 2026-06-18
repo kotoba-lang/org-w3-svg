@@ -464,6 +464,16 @@ def _inspect_attributes(
             viewport,
         ):
             continue
+        if attr in {
+            "text-decoration",
+            "text-decoration-color",
+            "text-decoration-line",
+            "text-decoration-skip-ink",
+            "text-decoration-style",
+            "text-decoration-thickness",
+            "text-underline-offset",
+        } and not _subtree_has_visible_text(element, css, style, ancestors):
+            continue
         if attr == "text-decoration-line" and _text_decoration_line_is_supported_or_noop(specified_style):
             continue
         if attr == "text-decoration-skip-ink" and _text_decoration_skip_ink_has_no_effect(specified_style):
@@ -806,6 +816,44 @@ def _subtree_has_visible_fill(
             return True
         previous_children.append(child)
     return False
+
+
+def _subtree_has_visible_text(
+    element: ET.Element,
+    css: list[CssRule],
+    style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+) -> bool:
+    if _is_display_none(style) or _is_visibility_hidden(style):
+        return False
+    tag = _local_name(element.tag)
+    if tag in {"text", "tspan"} and _element_has_own_text(element):
+        return True
+    if tag == "switch":
+        selected = _switch_selected_child(element)
+        if selected is None:
+            return False
+        selected_style = _computed_style(
+            selected,
+            css,
+            style,
+            ancestors + (element,),
+            _previous_element_siblings(element, selected),
+        )
+        return _subtree_has_visible_text(selected, css, selected_style, ancestors + (element,))
+    previous_children: list[ET.Element] = []
+    for child in element:
+        child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
+        if _subtree_has_visible_text(child, css, child_style, ancestors + (element,)):
+            return True
+        previous_children.append(child)
+    return False
+
+
+def _element_has_own_text(element: ET.Element) -> bool:
+    if element.text and element.text.strip():
+        return True
+    return any(child.tail and child.tail.strip() for child in element)
 
 
 def _subtree_marker_is_supported(
