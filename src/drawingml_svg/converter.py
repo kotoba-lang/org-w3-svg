@@ -610,6 +610,7 @@ def _dml_table_cell_border_paint(cell: ET.Element, tag: str) -> Paint | None:
         stroke=color or "#000000",
         stroke_width=_dml_line_width(line) or 1.0,
         stroke_alpha=_dml_line_alpha(line),
+        stroke_linecap=_dml_linecap(line.get("cap")),
         stroke_linejoin=_dml_linejoin(line),
         stroke_dasharray=_dml_dasharray(line),
         stroke_miterlimit=_dml_miterlimit(line),
@@ -1629,7 +1630,10 @@ def _append_svg_table_cell_borders(parent: ET.Element, cell: SvgTableCell) -> No
         ("lnT", cell.border_top or fallback),
         ("lnB", cell.border_bottom or fallback),
     ):
-        ln = ET.SubElement(parent, qn(NS_A, tag), {"w": str(_emu(paint.stroke_width or 1.0))})
+        attrs = {"w": str(_emu(paint.stroke_width or 1.0))}
+        if paint.stroke_linecap:
+            attrs["cap"] = _svg_linecap_to_dml(paint.stroke_linecap)
+        ln = ET.SubElement(parent, qn(NS_A, tag), attrs)
         if paint.stroke == "none":
             ET.SubElement(ln, qn(NS_A, "noFill"))
         elif paint.stroke:

@@ -7587,25 +7587,27 @@ def test_svg_cell_background_rects_and_line_grid_convert_to_one_native_table() -
     assert "A" in round_trip
 
 
-def test_svg_table_grid_line_dash_and_join_preserve_on_cell_borders() -> None:
+def test_svg_table_grid_line_cap_dash_and_join_preserve_on_cell_borders() -> None:
     svg = """<svg>
-      <line x1="0" y1="0" x2="40" y2="0" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
-      <line x1="0" y1="20" x2="40" y2="20" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
-      <line x1="0" y1="40" x2="40" y2="40" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
-      <line x1="0" y1="0" x2="0" y2="40" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
-      <line x1="20" y1="0" x2="20" y2="40" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
-      <line x1="40" y1="0" x2="40" y2="40" stroke="#0f172a" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="0" y1="0" x2="40" y2="0" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="0" y1="20" x2="40" y2="20" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="0" y1="40" x2="40" y2="40" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="0" y1="0" x2="0" y2="40" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="20" y1="0" x2="20" y2="40" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
+      <line x1="40" y1="0" x2="40" y2="40" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 2" stroke-linejoin="round"/>
       <text x="4" y="14" font-size="10" fill="#111111">A</text>
     </svg>"""
 
     dml = svg_to_drawingml(svg)
 
     assert "<a:tbl>" in dml
+    assert 'cap="rnd"' in dml
     assert dml.count("<a:custDash>") >= 4
     assert 'd="200000" sp="100000"' in dml
     assert "<a:round/>" in dml
 
     round_trip = drawingml_to_svg(dml)
+    assert 'stroke-linecap="round"' in round_trip
     assert 'stroke-dasharray="4 2"' in round_trip
     assert 'stroke-linejoin="round"' in round_trip
 
