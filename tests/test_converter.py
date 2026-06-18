@@ -1203,6 +1203,31 @@ def test_foreign_object_html_table_cell_alignment_converts() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_cell_line_breaks_convert() -> None:
+    svg = """<svg width="120" height="70">
+      <foreignObject x="10" y="8" width="90" height="45">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="background-color:#ffffff;color:#111827;border:1px solid #94a3b8">First<br/>Second<div>Third</div></td>
+              <td style="background-color:#f8fafc;color:#111827;border:1px solid #94a3b8">Other</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert "<a:t>First</a:t>" in dml
+    assert "<a:t>Second</a:t>" in dml
+    assert "<a:t>Third</a:t>" in dml
+    assert "<a:t>Other</a:t>" in dml
+    assert dml.count("<a:br/>") == 2
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_spans_convert_to_native_table_merges() -> None:
     svg = """<svg width="120" height="60">
       <foreignObject x="10" y="8" width="100" height="40">

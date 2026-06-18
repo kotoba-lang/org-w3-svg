@@ -452,7 +452,7 @@ def _svg_foreign_object_table_shapes(
                     Paint(fill=fill, stroke=stroke, stroke_width=_html_border_width(cell_style)),
                 )
             )
-            text = " ".join("".join(cell.itertext()).split())
+            text = _html_table_cell_text(cell)
             if text:
                 inset = min(4.0 * max(scale_x, scale_y), cell_width / 4, cell_height / 4)
                 font_size = _svg_font_size(cell_style.get("font-size")) * max(scale_x, scale_y)
@@ -501,6 +501,29 @@ def _html_table_cell_style(
             _previous_element_siblings(parent, node),
         )
     return style
+
+
+def _html_table_cell_text(cell: ET.Element) -> str:
+    raw = _html_text_with_breaks(cell)
+    lines = [" ".join(line.split()) for line in raw.split("\n")]
+    lines = [line for line in lines if line]
+    return "\n".join(lines)
+
+
+def _html_text_with_breaks(element: ET.Element) -> str:
+    parts = [element.text or ""]
+    for child in element:
+        child_tag = _local_name(child.tag)
+        if child_tag == "br":
+            parts.append("\n")
+        else:
+            if child_tag in {"div", "p", "li"} and "".join(parts).strip() and not "".join(parts).endswith("\n"):
+                parts.append("\n")
+            parts.append(_html_text_with_breaks(child))
+            if child_tag in {"div", "p", "li"}:
+                parts.append("\n")
+        parts.append(child.tail or "")
+    return "".join(parts)
 
 
 def _element_path(root: ET.Element, target: ET.Element) -> tuple[ET.Element, ...]:
