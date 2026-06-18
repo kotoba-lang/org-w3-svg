@@ -7,6 +7,8 @@ This project follows a simple, human-readable changelog. Until the project reach
 ## Unreleased
 
 - Added OSS project guidance, including contributing, security, code of conduct, issue templates, PR template, and README status links.
+- Added Dependabot configuration for GitHub Actions and Python dependency update pull requests.
+- Added a release checklist covering changelog, version, local checks, PPTX smoke verification, wheel smoke checks, and GitHub release notes.
 - Expanded DrawingML preset coverage for common polygons, arrows, symbols, flowchart shapes, ribbons, callouts, and action buttons.
 - Added CLI `--version` support for the main command and console-script aliases.
 - Strengthened CI with Python 3.11 through 3.14, analyzer fixtures, PPTX smoke generation, wheel smoke tests, and sdist metadata checks.

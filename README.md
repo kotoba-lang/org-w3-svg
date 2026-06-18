@@ -29,6 +29,7 @@ The converter accepts fragments, not complete `.pptx` or `.docx` packages. It is
 
 - Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Release checklist: [RELEASE.md](RELEASE.md)
 - Security policy: [SECURITY.md](SECURITY.md)
 - Code of conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 - Issue tracker: <https://github.com/com-junkawasaki/drawingml-svg/issues>
