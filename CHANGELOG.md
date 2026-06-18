@@ -32,6 +32,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for inherited group markers when visible descendants convert to DrawingML line arrows.
 - Refined analyzer handling for inherited `marker-mid` values without visible interior vertices.
 - Refined analyzer handling for inherited SVG `fill-rule` values when descendants have no visible fill.
+- Added analyzer reporting for inherited unsupported SVG `stroke-linecap` and `stroke-linejoin` values on visible stroked descendants.
 - Refined analyzer handling for default SVG `isolation="auto"` values.
 - Refined analyzer handling for group-level clipping and effect attributes when the subtree has no visible rendering.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.

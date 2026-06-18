@@ -423,9 +423,33 @@ def _inspect_attributes(
             _stroke_dashoffset_has_no_effect(style, viewport) or _svg_dashoffset_is_supported(style, viewport)
         ):
             continue
-        if attr == "stroke-linecap" and _stroke_linecap_is_supported_or_noop(element, style, refs, css, viewport):
+        if (
+            attr == "stroke-linecap"
+            and _stroke_linecap_is_supported_or_noop(element, style, refs, css, viewport)
+            and not _subtree_has_unsupported_stroke_line_enum(
+                element,
+                css,
+                refs,
+                style,
+                ancestors,
+                viewport,
+                "stroke-linecap",
+            )
+        ):
             continue
-        if attr == "stroke-linejoin" and _stroke_linejoin_is_supported_or_noop(element, style, refs, css, viewport):
+        if (
+            attr == "stroke-linejoin"
+            and _stroke_linejoin_is_supported_or_noop(element, style, refs, css, viewport)
+            and not _subtree_has_unsupported_stroke_line_enum(
+                element,
+                css,
+                refs,
+                style,
+                ancestors,
+                viewport,
+                "stroke-linejoin",
+            )
+        ):
             continue
         if (
             attr == "text-decoration"
@@ -1600,6 +1624,78 @@ def _stroke_linejoin_is_supported_or_noop(
     if value is None:
         return False
     return _stroke_has_no_effect(element, style, refs, css, viewport) or _svg_linejoin(value) is not None
+
+
+def _subtree_has_unsupported_stroke_line_enum(
+    element: ET.Element,
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
+    style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
+    attr: str,
+) -> bool:
+    if _is_display_none(style):
+        return False
+    tag = _local_name(element.tag)
+    if (
+        not _is_visibility_hidden(style)
+        and tag in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}
+        and not _has_non_rendering_geometry(element, style, viewport)
+        and not _stroke_has_no_effect(element, style, refs, css, viewport)
+        and _stroke_line_enum_is_unsupported(attr, style.get(attr))
+    ):
+        return True
+    child_viewport = viewport
+    if tag == "svg" and ancestors:
+        child_viewport = _viewport_size(
+            element,
+            _optional_length(element.get("width"), "x", viewport),
+            _optional_length(element.get("height"), "y", viewport),
+        )
+    if tag == "switch":
+        selected = _switch_selected_child(element)
+        if selected is None:
+            return False
+        selected_style = _computed_style(
+            selected,
+            css,
+            style,
+            ancestors + (element,),
+            _previous_element_siblings(element, selected),
+        )
+        return _subtree_has_unsupported_stroke_line_enum(
+            selected,
+            css,
+            refs,
+            selected_style,
+            ancestors + (element,),
+            child_viewport,
+            attr,
+        )
+    previous_children: list[ET.Element] = []
+    for child in element:
+        child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
+        if _subtree_has_unsupported_stroke_line_enum(
+            child,
+            css,
+            refs,
+            child_style,
+            ancestors + (element,),
+            child_viewport,
+            attr,
+        ):
+            return True
+        previous_children.append(child)
+    return False
+
+
+def _stroke_line_enum_is_unsupported(attr: str, value: str | None) -> bool:
+    if value is None:
+        return False
+    if attr == "stroke-linecap":
+        return _svg_linecap(value) is None
+    return _svg_linejoin(value) is None
 
 
 def _stroke_has_no_effect(

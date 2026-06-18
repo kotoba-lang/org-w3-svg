@@ -5419,6 +5419,41 @@ def test_analyze_svg_reports_unconverted_stroke_line_enums_when_visible() -> Non
     }
 
 
+def test_analyze_svg_reports_inherited_unconverted_stroke_line_enums_when_visible() -> None:
+    svg = """<svg>
+      <g stroke-linecap="triangle">
+        <line x1="0" y1="0" x2="10" y2="0" stroke="#111111"/>
+      </g>
+      <g stroke-linejoin="arcs">
+        <path d="M0 12 L10 12 L10 22" fill="none" stroke="#111111"/>
+      </g>
+      <g stroke-linejoin="arcs">
+        <path d="M0 26 L10 26 L10 36" fill="none" stroke="#111111" stroke-linejoin="round"/>
+      </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "stroke-linecap": 1,
+        "stroke-linejoin": 1,
+    }
+
+
+def test_analyze_svg_ignores_inherited_stroke_line_enums_without_visible_stroke() -> None:
+    svg = """<svg>
+      <g stroke-linecap="triangle">
+        <path d="M0 0 L10 0" fill="#111111" stroke="none"/>
+      </g>
+      <g stroke-linejoin="arcs">
+        <path d="M0 12 L10 12 L10 22" fill="none" stroke="#111111" stroke-opacity="0"/>
+      </g>
+      <g stroke-linejoin="arcs" display="none">
+        <path d="M0 26 L10 26 L10 36" fill="none" stroke="#111111"/>
+      </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_dash_offset_inside_dash_is_approximated_with_shifted_custom_dash() -> None:
     source = '<svg><line x1="0" y1="0" x2="40" y2="0" stroke="#111111" stroke-width="2" stroke-dasharray="8 4" stroke-dashoffset="2"/></svg>'
     dml = svg_to_drawingml(source)
