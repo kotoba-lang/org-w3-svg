@@ -23,6 +23,8 @@ ET.register_namespace("r", NS_R)
 ET.register_namespace("", NS_SVG)
 
 NUMBER_RE = r"[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[eE][-+]?\d+)?"
+TEXT_DECORATION_LINE_TOKENS = {"none", "underline", "line-through", "overline", "blink"}
+TEXT_DECORATION_STYLE_TOKENS = {"solid", "dashed", "dotted", "double", "wavy"}
 
 
 def qn(namespace: str, tag: str) -> str:
@@ -336,7 +338,10 @@ def _svg_shape_from_element(
                 font_family=_font_family(style.get("font-family")),
                 font_variant=_font_variant(style.get("font-variant")),
                 text_decoration=style.get("text-decoration"),
-                text_decoration_style=_text_decoration_style(style.get("text-decoration-style")),
+                text_decoration_style=_text_decoration_style(
+                    style.get("text-decoration-style"),
+                    style.get("text-decoration"),
+                ),
                 text_anchor=anchor,
                 text_baseline=baseline,
                 text_baseline_shift=_baseline_shift(style.get("baseline-shift")),
@@ -2670,7 +2675,7 @@ def _svg_text_run(
         font_family=_font_family(style.get("font-family")),
         font_variant=_font_variant(style.get("font-variant")),
         text_decoration=style.get("text-decoration"),
-        text_decoration_style=_text_decoration_style(style.get("text-decoration-style")),
+        text_decoration_style=_text_decoration_style(style.get("text-decoration-style"), style.get("text-decoration")),
         text_baseline_shift=_baseline_shift(style.get("baseline-shift")),
         letter_spacing=_svg_text_effective_letter_spacing(style, text, font_size, viewport),
     )
@@ -2990,14 +2995,26 @@ def _is_italic(value: str | None) -> bool:
 def _has_text_decoration(value: str | None, decoration: str) -> bool:
     if value is None:
         return False
-    return decoration in {part.lower() for part in re.split(r"\s+", value.strip())}
+    return decoration in _text_decoration_line_tokens(value)
 
 
-def _text_decoration_style(value: str | None) -> str | None:
-    if value is None:
-        return None
-    normalized = value.strip().lower()
+def _text_decoration_style(value: str | None, text_decoration: str | None = None) -> str | None:
+    normalized = value.strip().lower() if value is not None else ""
+    if not normalized and text_decoration is not None:
+        normalized = _text_decoration_style_token(text_decoration) or ""
     return normalized if normalized in {"dashed", "dotted", "double", "solid", "wavy"} else None
+
+
+def _text_decoration_line_tokens(value: str) -> set[str]:
+    return {part.lower() for part in re.split(r"\s+", value.strip()) if part.lower() in TEXT_DECORATION_LINE_TOKENS}
+
+
+def _text_decoration_style_token(value: str) -> str | None:
+    for part in re.split(r"\s+", value.strip()):
+        normalized = part.lower()
+        if normalized in TEXT_DECORATION_STYLE_TOKENS:
+            return normalized
+    return None
 
 
 def _dml_underline_value(text_decoration: str | None, text_decoration_style: str | None = None) -> str | None:

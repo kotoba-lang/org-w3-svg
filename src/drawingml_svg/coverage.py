@@ -68,6 +68,9 @@ SUPPORTED_ELEMENTS = {
 }
 
 IGNORED_ELEMENTS = {"defs", "desc", "linearGradient", "metadata", "pattern", "radialGradient", "stop", "title"}
+TEXT_DECORATION_LINE_TOKENS = {"none", "underline", "line-through", "overline", "blink"}
+TEXT_DECORATION_STYLE_TOKENS = {"solid", "dashed", "dotted", "double", "wavy"}
+SUPPORTED_TEXT_DECORATION_LINE_TOKENS = {"underline", "line-through"}
 GRADIENT_ELEMENTS = {"linearGradient", "radialGradient", "stop"}
 
 UNSUPPORTED_ATTRIBUTES = {
@@ -372,7 +375,7 @@ def _inspect_attributes(
             and specified_style.get("text-decoration") == specified_style.get("text-decoration-line")
         ):
             continue
-        if attr == "text-decoration" and _text_decoration_line_is_supported_or_noop(specified_style):
+        if attr == "text-decoration" and _text_decoration_shorthand_is_supported_or_noop(specified_style):
             continue
         if attr == "text-decoration-line" and _text_decoration_line_is_supported_or_noop(specified_style):
             continue
@@ -845,6 +848,10 @@ def _text_decoration_color_has_no_effect(
 
 def _text_decoration_style_is_supported_or_noop(style: dict[str, str]) -> bool:
     value = style.get("text-decoration-style")
+    shorthand = False
+    if value is None:
+        value = _text_decoration_shorthand_style(style.get("text-decoration"))
+        shorthand = value is not None
     if value is None:
         return False
     if not _has_visible_text_decoration(style):
@@ -852,24 +859,61 @@ def _text_decoration_style_is_supported_or_noop(style: dict[str, str]) -> bool:
     normalized = value.strip().lower()
     if normalized in {"", "solid"}:
         return True
-    return normalized in {"dashed", "dotted", "double", "wavy"} and _has_only_visible_underline(style)
+    if shorthand and not _text_decoration_shorthand_line_is_supported_or_noop(style.get("text-decoration")):
+        return False
+    return normalized in (TEXT_DECORATION_STYLE_TOKENS - {"solid"}) and _has_only_visible_underline(style)
+
+
+def _text_decoration_shorthand_is_supported_or_noop(style: dict[str, str]) -> bool:
+    value = style.get("text-decoration")
+    if value is None:
+        return False
+    if not _text_decoration_shorthand_line_is_supported_or_noop(value):
+        return False
+    style_value = _text_decoration_shorthand_style(value)
+    if style_value is None or style_value == "solid" or not _has_visible_text_decoration(style):
+        return True
+    return style_value in (TEXT_DECORATION_STYLE_TOKENS - {"solid"}) and _has_only_visible_underline(style)
+
+
+def _text_decoration_shorthand_line_is_supported_or_noop(value: str | None) -> bool:
+    if value is None:
+        return False
+    tokens = [part.lower() for part in value.strip().split()]
+    known = TEXT_DECORATION_LINE_TOKENS | TEXT_DECORATION_STYLE_TOKENS
+    if any(token not in known for token in tokens):
+        return False
+    line_tokens = {token for token in tokens if token in TEXT_DECORATION_LINE_TOKENS}
+    if not line_tokens or line_tokens <= {"none"}:
+        return True
+    return line_tokens <= SUPPORTED_TEXT_DECORATION_LINE_TOKENS
+
+
+def _text_decoration_shorthand_style(value: str | None) -> str | None:
+    if value is None:
+        return None
+    for part in value.strip().split():
+        normalized = part.lower()
+        if normalized in TEXT_DECORATION_STYLE_TOKENS:
+            return normalized
+    return None
 
 
 def _text_decoration_line_is_supported_or_noop(style: dict[str, str]) -> bool:
     value = style.get("text-decoration-line", style.get("text-decoration"))
     if value is None:
         return False
-    tokens = set(value.strip().lower().split())
+    tokens = {part.lower() for part in value.strip().split() if part.lower() in TEXT_DECORATION_LINE_TOKENS}
     if not tokens or tokens <= {"none"}:
         return True
-    return tokens <= {"underline", "line-through"}
+    return tokens <= SUPPORTED_TEXT_DECORATION_LINE_TOKENS
 
 
 def _has_visible_text_decoration(style: dict[str, str]) -> bool:
     value = style.get("text-decoration-line", style.get("text-decoration"))
     if value is None:
         return False
-    tokens = set(value.strip().lower().split())
+    tokens = {part.lower() for part in value.strip().split() if part.lower() in TEXT_DECORATION_LINE_TOKENS - {"none"}}
     return bool(tokens & {"underline", "line-through"})
 
 
@@ -877,7 +921,7 @@ def _has_only_visible_underline(style: dict[str, str]) -> bool:
     value = style.get("text-decoration-line", style.get("text-decoration"))
     if value is None:
         return False
-    tokens = set(value.strip().lower().split())
+    tokens = {part.lower() for part in value.strip().split() if part.lower() in TEXT_DECORATION_LINE_TOKENS - {"none"}}
     return "underline" in tokens and "line-through" not in tokens
 
 

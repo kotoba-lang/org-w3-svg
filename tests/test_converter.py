@@ -1369,6 +1369,7 @@ def test_supported_underline_styles_map_to_drawingml_underline_values() -> None:
       <text x="0" y="40" font-size="10" fill="#111111" text-decoration-line="underline" text-decoration-style="dotted">Dot</text>
       <text x="0" y="60" font-size="10" fill="#111111" text-decoration-line="underline" text-decoration-style="double">Double</text>
       <text x="0" y="80" font-size="10" fill="#111111" text-decoration-line="underline" text-decoration-style="wavy">Wavy</text>
+      <text x="0" y="100" font-size="10" fill="#111111" text-decoration="underline wavy">Shorthand</text>
     </svg>"""
     dml = svg_to_drawingml(svg)
 
@@ -1378,6 +1379,7 @@ def test_supported_underline_styles_map_to_drawingml_underline_values() -> None:
     assert run_prs[1].get("u") == "dotted"
     assert run_prs[2].get("u") == "dbl"
     assert run_prs[3].get("u") == "wavy"
+    assert run_prs[4].get("u") == "wavy"
     assert analyze_svg(svg).unsupported_attributes == {}
 
     round_trip = drawingml_to_svg(dml)
@@ -1392,6 +1394,7 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
       <text x="0" y="20" text-decoration-line="underline" text-decoration-color="#dc2626">Color</text>
       <text x="0" y="40" text-decoration="line-through" text-decoration-style="dashed">Style</text>
       <text x="0" y="50" text-decoration="underline line-through" text-decoration-style="wavy">Mixed style</text>
+      <text x="0" y="55" text-decoration="line-through dashed">Shorthand style</text>
       <text x="0" y="60" text-decoration-style="dotted">No decoration</text>
       <text x="0" y="80" text-decoration-line="underline" text-decoration-style="solid">Solid</text>
       <text x="0" y="100" fill="#111111" text-decoration-line="underline" text-decoration-color="#111111">Same</text>
@@ -1405,6 +1408,7 @@ def test_text_decoration_color_and_non_solid_style_are_reported_when_visible() -
 
     assert analyze_svg(svg).unsupported_attributes == {
         "text-decoration-color": 1,
+        "text-decoration": 1,
         "text-decoration-style": 2,
     }
 
@@ -1422,6 +1426,7 @@ def test_unsupported_text_decoration_tokens_are_reported() -> None:
       <text x="0" y="60" text-decoration-line="blink">Blink</text>
       <text x="0" y="80" text-decoration-line="underline line-through">Supported</text>
       <text x="0" y="100" text-decoration="none">None</text>
+      <text x="0" y="120" text-decoration="underline dotted">Styled underline</text>
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {
