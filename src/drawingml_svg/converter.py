@@ -477,6 +477,7 @@ def _svg_foreign_object_table_shapes(
                     cell_height,
                 )
                 font_size = _svg_font_size(cell_style.get("font-size")) * max(scale_x, scale_y)
+                text_fill, text_fill_alpha = _html_text_fill(cell_style)
                 shapes.append(
                     Shape(
                         "text",
@@ -484,7 +485,7 @@ def _svg_foreign_object_table_shapes(
                         cell_y + top_inset,
                         max(0.0, cell_width - left_inset - right_inset),
                         max(0.0, cell_height - top_inset - bottom_inset),
-                        Paint(fill=_html_text_color(cell_style) or "#000000", stroke="none"),
+                        Paint(fill=text_fill or "#000000", stroke="none", fill_alpha=text_fill_alpha),
                         text=text,
                         font_size=font_size,
                         font_weight=cell_style.get("font-weight") or ("bold" if _local_name(cell.tag) == "th" else None),
@@ -634,9 +635,10 @@ def _add_html_text_decoration(style: dict[str, str], decoration: str) -> None:
 
 
 def _html_text_run(text: str, style: dict[str, str], scale: float, break_before: bool) -> TextRun:
+    fill, fill_alpha = _html_text_fill(style)
     return TextRun(
         text=text,
-        paint=Paint(fill=_html_text_color(style) or "#000000", stroke="none"),
+        paint=Paint(fill=fill or "#000000", stroke="none", fill_alpha=fill_alpha),
         break_before=break_before,
         font_size=_svg_font_size(style.get("font-size")) * scale,
         font_weight=style.get("font-weight"),
@@ -883,6 +885,10 @@ def _html_padding_side(value: str | None, default: float) -> float:
 
 def _html_text_color(style: dict[str, str]) -> str | None:
     return _html_color(style.get("color"))
+
+
+def _html_text_fill(style: dict[str, str]) -> tuple[str | None, float | None]:
+    return _html_color_value(style.get("color"))
 
 
 def _html_text_anchor(style: dict[str, str]) -> str | None:
