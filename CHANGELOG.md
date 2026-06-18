@@ -25,6 +25,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added simple SVG `foreignObject` HTML table `colgroup` column width conversion.
 - Added simple SVG `foreignObject` HTML table row height conversion.
 - Added simple SVG `foreignObject` HTML table `align`/`valign`/`bgcolor` presentation attribute conversion.
+- Added simple SVG `foreignObject` HTML table `border`/`cellpadding` presentation attribute conversion.
 - Fixed DrawingML native table vertical merge continuation cell placement.
 - Added simple SVG text `direction="rtl"` conversion to DrawingML paragraph direction.
 - Added simple SVG `foreignObject` HTML table cell RTL text direction conversion.

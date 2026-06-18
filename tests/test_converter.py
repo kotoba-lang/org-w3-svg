@@ -1294,6 +1294,32 @@ def test_foreign_object_html_table_cell_presentation_attributes_convert() -> Non
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_spacing_presentation_attributes_convert() -> None:
+    svg = """<svg width="150" height="60">
+      <foreignObject x="10" y="8" width="120" height="30">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table border="2" cellpadding="6">
+            <tr>
+              <td>Pad</td>
+              <td style="border:none; padding:1px">Thin</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert '<a:lnL w="19050">' in dml
+    assert '<a:bodyPr lIns="57150" rIns="57150" tIns="57150" bIns="57150" anchor="ctr"/>' in dml
+    assert "<a:noFill/>" in dml
+    assert '<a:bodyPr lIns="9525" rIns="9525" tIns="9525" bIns="9525" anchor="ctr"/>' in dml
+    assert "<a:t>Pad</a:t>" in dml
+    assert "<a:t>Thin</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_cell_rtl_direction_converts() -> None:
     svg = """<svg width="150" height="50">
       <foreignObject x="10" y="8" width="120" height="24">
