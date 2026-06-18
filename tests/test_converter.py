@@ -2526,12 +2526,14 @@ def test_analyze_svg_ignores_default_isolation_auto() -> None:
 
 def test_analyze_svg_ignores_group_effects_without_visible_rendering() -> None:
     svg = """<svg>
+      <g clip-path="url(#crop)"/>
       <g filter="url(#blur)"/>
       <g mask="url(#fade)"><rect width="10" height="8" fill="none" stroke="none"/></g>
       <g mix-blend-mode="multiply"><rect width="10" height="8" opacity="0"/></g>
       <g isolation="isolate"><text x="0" y="20"></text></g>
     </svg>"""
     visible = """<svg>
+      <g clip-path="url(#crop)"><rect width="10" height="8"/></g>
       <g filter="url(#blur)"><rect width="10" height="8"/></g>
       <g mask="url(#fade)"><rect x="12" width="10" height="8"/></g>
       <g mix-blend-mode="multiply"><rect x="24" width="10" height="8"/></g>
@@ -2540,6 +2542,7 @@ def test_analyze_svg_ignores_group_effects_without_visible_rendering() -> None:
 
     assert analyze_svg(svg).unsupported_attributes == {}
     assert analyze_svg(visible).unsupported_attributes == {
+        "clip-path": 1,
         "filter": 1,
         "isolation": 1,
         "mask": 1,

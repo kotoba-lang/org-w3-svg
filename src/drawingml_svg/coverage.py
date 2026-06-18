@@ -386,7 +386,7 @@ def _inspect_attributes(
             continue
         if attr == "fill-rule" and _fill_rule_has_no_effect(element, style, refs, css, viewport):
             continue
-        if attr in {"filter", "isolation", "mask", "mix-blend-mode"} and not _subtree_has_visible_rendering(
+        if attr in {"clip-path", "filter", "isolation", "mask", "mix-blend-mode"} and not _subtree_has_visible_rendering(
             element,
             css,
             refs,
