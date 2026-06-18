@@ -1034,12 +1034,26 @@ def test_visibility_visible_descendant_renders_inside_hidden_parent() -> None:
 
 
 def test_text_position_can_come_from_first_tspan() -> None:
-    dml = svg_to_drawingml('<svg><text font-size="10" fill="#111"><tspan x="20" y="40" dx="5" dy="7">From tspan</tspan></text></svg>')
+    source = '<svg><text font-size="10" fill="#111"><tspan x="20" y="40" dx="5" dy="7">From tspan</tspan></text></svg>'
+    dml = svg_to_drawingml(source)
 
     root = ET.fromstring(dml)
     shape_off = root.findall(".//{http://schemas.openxmlformats.org/drawingml/2006/main}off")[1]
     assert shape_off.attrib == {"x": "238125", "y": "352425"}
     assert "<a:t>From tspan</a:t>" in dml
+    assert analyze_svg(source).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_unconverted_tspan_positioning() -> None:
+    relative = '<svg><text x="0" y="20" fill="#111111">A<tspan dx="20" dy="5">B</tspan></text></svg>'
+    absolute = '<svg><text x="0" y="20" fill="#111111"><tspan>Lead</tspan><tspan x="50" y="30">Move</tspan></text></svg>'
+    zero_offset = '<svg><text x="0" y="20" fill="#111111">A<tspan dx="0 0" dy="0px">B</tspan></text></svg>'
+    invisible = '<svg><text x="0" y="20" fill="none">A<tspan dx="20" dy="5">B</tspan></text></svg>'
+
+    assert analyze_svg(relative).unsupported_attributes == {"dx": 1, "dy": 1}
+    assert analyze_svg(absolute).unsupported_attributes == {"x": 1, "y": 1}
+    assert analyze_svg(zero_offset).unsupported_attributes == {}
+    assert analyze_svg(invisible).unsupported_attributes == {}
 
 
 def test_text_anchor_can_come_from_first_positioned_tspan() -> None:
@@ -7162,7 +7176,7 @@ def test_tspan_run_level_styling_converts_to_separate_drawingml_runs() -> None:
 def test_positioned_tspan_text_anchor_is_reported_when_not_first_text_chunk() -> None:
     svg = '<svg><text x="0" y="20">Lead<tspan x="50" y="20" text-anchor="middle">Chunk</tspan></text></svg>'
 
-    assert analyze_svg(svg).unsupported_attributes == {"text-anchor": 1}
+    assert analyze_svg(svg).unsupported_attributes == {"text-anchor": 1, "x": 1, "y": 1}
 
 
 def test_font_weight_and_style_values_are_normalized() -> None:

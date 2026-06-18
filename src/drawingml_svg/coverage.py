@@ -576,7 +576,17 @@ def _inspect_attributes(
             continue
         if specified_style.get(attr) is not None:
             stats.add_unsupported_attribute(attr)
-    _inspect_tspan_run_attributes(element, specified_style, stats, ancestors, previous_siblings)
+    _inspect_tspan_run_attributes(
+        element,
+        style,
+        specified_style,
+        css,
+        refs,
+        stats,
+        ancestors,
+        viewport,
+        previous_siblings,
+    )
     href = _href(element)
     if _local_name(element.tag) == "image":
         if not href or not _supported_data_image(href):
@@ -905,13 +915,21 @@ def _subtree_references_paint_server(
 
 def _inspect_tspan_run_attributes(
     element: ET.Element,
+    style: dict[str, str],
     specified_style: dict[str, str],
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
     stats: _CoverageStats,
     ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
     previous_siblings: tuple[ET.Element, ...],
 ) -> None:
     if _local_name(element.tag) != "tspan":
         return
+    if not _tspan_position_is_supported_or_noop(element, style, css, refs, ancestors, viewport, previous_siblings):
+        for attr in ("x", "y", "dx", "dy"):
+            if element.get(attr) is not None and not _tspan_position_attr_has_no_effect(attr, element.get(attr, ""), viewport):
+                stats.add_unsupported_attribute(attr)
     if (
         specified_style.get("text-anchor") is not None
         and not _first_positioned_tspan_text_anchor_is_supported(
@@ -923,6 +941,66 @@ def _inspect_tspan_run_attributes(
         and not _tspan_text_anchor_has_no_effect(element, specified_style)
     ):
         stats.add_unsupported_attribute("text-anchor")
+
+
+def _tspan_position_is_supported_or_noop(
+    element: ET.Element,
+    style: dict[str, str],
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
+    ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
+    previous_siblings: tuple[ET.Element, ...],
+) -> bool:
+    if not any(element.get(attr) is not None for attr in ("x", "y", "dx", "dy")):
+        return True
+    if not _subtree_has_visible_text(element, css, refs, style, ancestors, viewport):
+        return True
+    if all(
+        element.get(attr) is None or _tspan_position_attr_has_no_effect(attr, element.get(attr, ""), viewport)
+        for attr in ("x", "y", "dx", "dy")
+    ):
+        return True
+    return _first_positioned_tspan_position_is_supported(
+        element, ancestors, previous_siblings
+    ) or _line_break_tspan_position_is_supported(element)
+
+
+def _first_positioned_tspan_position_is_supported(
+    element: ET.Element,
+    ancestors: tuple[ET.Element, ...],
+    previous_siblings: tuple[ET.Element, ...],
+) -> bool:
+    parent = ancestors[-1] if ancestors else None
+    if parent is None or _local_name(parent.tag) != "text":
+        return False
+    if parent.get("x") is not None or parent.get("y") is not None:
+        return False
+    if (parent.text or "").strip():
+        return False
+    if element.get("x") is None or element.get("y") is None:
+        return False
+    return not any(_local_name(sibling.tag) == "tspan" and "".join(sibling.itertext()).strip() for sibling in previous_siblings)
+
+
+def _line_break_tspan_position_is_supported(element: ET.Element) -> bool:
+    return (
+        element.get("x") is not None
+        and element.get("dy") is not None
+        and element.get("y") is None
+        and element.get("dx") is None
+    )
+
+
+def _tspan_position_attr_has_no_effect(attr: str, value: str, viewport: tuple[float, float]) -> bool:
+    if attr in {"x", "y"}:
+        return False
+    tokens = _css_value_tokens(value)
+    if not tokens:
+        return True
+    axis = "x" if attr == "dx" else "y"
+    return all((_optional_length(token, axis, viewport) or 0.0) == 0 for token in tokens)
+
 
 def _first_positioned_tspan_text_anchor_is_supported(
     element: ET.Element,

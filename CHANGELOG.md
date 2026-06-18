@@ -18,6 +18,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added text-level SVG `baseline-shift` `super`/`sub` conversion to DrawingML run baseline values.
 - Added run-level `tspan` fill/font/outline/decoration/letter-spacing/baseline conversion to separate DrawingML text runs.
 - Added run-level `tspan` word-spacing conversion using DrawingML character spacing approximation.
+- Added analyzer reporting for run-level `tspan` `x`/`y`/`dx`/`dy` positioning that is not represented in DrawingML text runs.
 - Added DrawingML rich text run extraction to SVG `tspan` styles for fill/font/outline/decoration/letter-spacing/baseline round trips.
 - Added first-positioned SVG `tspan` `text-anchor` fallback conversion and analyzer support.
 - Added first-positioned SVG `tspan` baseline fallback conversion and analyzer support.
