@@ -307,7 +307,7 @@ def _svg_shape_from_element(
             text_length = _svg_text_length(style, text, viewport)
             natural_width = max(font_size * max(len(line) for line in text.split("\n")) * 0.9, font_size * 2)
             width = text_length or natural_width + _svg_word_spacing_extra(style, text, viewport)
-            anchor = _text_anchor(style.get("text-anchor"))
+            anchor = _svg_text_anchor(element, style, css, ancestors)
             if anchor == "middle":
                 x -= width / 2
             elif anchor == "end":
@@ -2706,6 +2706,34 @@ def _svg_text_position(element: ET.Element, viewport: tuple[float, float] = (0.0
         if x is not None and y is not None:
             break
     return (x or 0.0) + (dx or 0.0), (y or 0.0) + (dy or 0.0)
+
+
+def _svg_text_anchor(
+    element: ET.Element,
+    style: dict[str, str],
+    css: list[CssRule],
+    ancestors: tuple[ET.Element, ...],
+) -> str | None:
+    anchor = _text_anchor(style.get("text-anchor"))
+    if anchor is not None:
+        return anchor
+    if element.get("x") is not None or element.get("y") is not None:
+        return None
+    if (element.text or "").strip():
+        return None
+    previous_children: list[ET.Element] = []
+    for child in element:
+        if _local_name(child.tag) != "tspan":
+            previous_children.append(child)
+            continue
+        if not "".join(child.itertext()).strip():
+            previous_children.append(child)
+            continue
+        if child.get("x") is None or child.get("y") is None:
+            return None
+        child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
+        return _text_anchor(child_style.get("text-anchor"))
+    return None
 
 
 def _first_optional_length(value: str | None, axis: str, viewport: tuple[float, float]) -> float | None:

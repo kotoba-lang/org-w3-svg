@@ -100,6 +100,7 @@ jobs:
           assert 'baseline="30000"' in slide, "text baseline-shift super was not written to DrawingML"
           assert 'baseline="-25000"' in slide, "tspan baseline-shift sub was not written to DrawingML"
           assert 'val="DC2626"' in slide and 'alpha val="85000"' in slide, "tspan fill color/opacity was not written to DrawingML"
+          assert "<a:t>tspan anchor</a:t>" in slide, "first-positioned tspan text-anchor fallback was not converted"
           assert "<a:t>WORD GAP</a:t>" in slide, "text-transform uppercase was not applied"
           assert "<a:t>FIXTURE</a:t>" in slide, "tspan text-transform uppercase was not applied"
           assert "<a:t>MiXeD</a:t>" in slide, "normal text-transform should preserve literal text"

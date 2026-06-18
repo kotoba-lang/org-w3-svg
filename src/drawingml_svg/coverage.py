@@ -241,7 +241,18 @@ def _walk(
             _optional_length(element.get("height"), "y", viewport),
         )
     if not visibility_hidden:
-        _inspect_attributes(element, style, specified_style, refs, css, matrix, stats, ancestors, viewport)
+        _inspect_attributes(
+            element,
+            style,
+            specified_style,
+            refs,
+            css,
+            matrix,
+            stats,
+            ancestors,
+            viewport,
+            previous_siblings,
+        )
 
     if tag == "path" and not visibility_hidden:
         _inspect_path(element.get("d", ""), stats)
@@ -274,6 +285,7 @@ def _inspect_attributes(
     stats: _CoverageStats,
     ancestors: tuple[ET.Element, ...],
     viewport: tuple[float, float],
+    previous_siblings: tuple[ET.Element, ...],
 ) -> None:
     no_effect_attrs = {
         "clip-path",
@@ -392,7 +404,7 @@ def _inspect_attributes(
             continue
         if specified_style.get(attr) is not None:
             stats.add_unsupported_attribute(attr)
-    _inspect_tspan_run_attributes(element, specified_style, stats)
+    _inspect_tspan_run_attributes(element, specified_style, stats, ancestors, previous_siblings)
     href = _href(element)
     if _local_name(element.tag) == "image":
         if not href or not _supported_data_image(href):
@@ -425,13 +437,43 @@ def _inspect_tspan_run_attributes(
     element: ET.Element,
     specified_style: dict[str, str],
     stats: _CoverageStats,
+    ancestors: tuple[ET.Element, ...],
+    previous_siblings: tuple[ET.Element, ...],
 ) -> None:
     if _local_name(element.tag) != "tspan":
         return
-    if specified_style.get("text-anchor") is not None:
+    if specified_style.get("text-anchor") is not None and not _first_positioned_tspan_text_anchor_is_supported(
+        element,
+        specified_style,
+        ancestors,
+        previous_siblings,
+    ):
         stats.add_unsupported_attribute("text-anchor")
     if _word_spacing_is_supported(element, specified_style):
         stats.add_unsupported_attribute("word-spacing")
+
+
+def _first_positioned_tspan_text_anchor_is_supported(
+    element: ET.Element,
+    specified_style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+    previous_siblings: tuple[ET.Element, ...],
+) -> bool:
+    if _local_name(element.tag) != "tspan":
+        return False
+    value = specified_style.get("text-anchor")
+    if value is None or value.strip().lower() not in {"start", "middle", "end"}:
+        return False
+    parent = ancestors[-1] if ancestors else None
+    if parent is None or _local_name(parent.tag) != "text":
+        return False
+    if parent.get("x") is not None or parent.get("y") is not None:
+        return False
+    if (parent.text or "").strip():
+        return False
+    if element.get("x") is None or element.get("y") is None:
+        return False
+    return not any(_local_name(sibling.tag) == "tspan" and "".join(sibling.itertext()).strip() for sibling in previous_siblings)
 
 
 def _inspect_path(path_data: str, stats: _CoverageStats) -> None:
