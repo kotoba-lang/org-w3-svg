@@ -5444,6 +5444,34 @@ def test_analyze_svg_ignores_missing_paint_server_on_invisible_channels() -> Non
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
+def test_analyze_svg_ignores_missing_paint_server_on_non_rendered_channels() -> None:
+    svg = f"""<svg>
+      <line x1="0" y1="0" x2="10" y2="0" fill="url(#missing)"/>
+      <image href="{PNG_DATA_URI}" width="10" height="8" fill="url(#missing)" stroke="url(#missing)"/>
+      <g fill="url(#missing-fill)" stroke="url(#missing-stroke)">
+        <rect width="10" height="8" stroke="none"/>
+        <line x1="0" y1="2" x2="10" y2="2"/>
+      </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "fill:paint-server": 1,
+        "stroke:paint-server": 1,
+    }
+
+
+def test_analyze_svg_ignores_gradient_href_on_non_rendered_channels() -> None:
+    svg = f"""<svg>
+      <defs>
+        <linearGradient id="missing" href="#missing-base"/>
+      </defs>
+      <line x1="0" y1="0" x2="10" y2="0" fill="url(#missing)"/>
+      <image href="{PNG_DATA_URI}" width="10" height="8" fill="url(#missing)" stroke="url(#missing)"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_pattern_paint_server_falls_back_to_representative_color() -> None:
     svg = """<svg>
       <style>.dot { fill: currentcolor; }</style>

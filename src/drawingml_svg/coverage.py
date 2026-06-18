@@ -566,7 +566,7 @@ def _inspect_attributes(
         if value:
             ref = _url_ref(value)
             if ref is not None and not ref[1].strip():
-                if not _paint_channel_is_visible(style, viewport, attr):
+                if not _paint_channel_is_visible(element, style, viewport, attr):
                     continue
                 paint_server_tag = _local_name(refs.get(ref[0], ET.Element("")).tag)
                 if paint_server_tag == "pattern":
@@ -582,12 +582,18 @@ def _inspect_attributes(
 
 
 def _paint_channel_is_visible(
+    element: ET.Element,
     style: dict[str, str],
     viewport: tuple[float, float],
     attr: str,
 ) -> bool:
+    tag = _local_name(element.tag)
     if attr == "fill":
+        if tag not in {"circle", "ellipse", "path", "polygon", "polyline", "rect", "text", "tspan", "use"}:
+            return False
         return not _alpha_is_zero(style.get("opacity")) and not _alpha_is_zero(style.get("fill-opacity"))
+    if tag not in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan", "use"}:
+        return False
     stroke_width = _optional_length(style.get("stroke-width"), "diag", viewport)
     return (
         not _alpha_is_zero(style.get("opacity"))
@@ -643,7 +649,7 @@ def _subtree_references_paint_server(
                 ref is not None
                 and ref[0] == paint_server_id
                 and not ref[1].strip()
-                and _paint_channel_is_visible(style, viewport, attr)
+                and _paint_channel_is_visible(element, style, viewport, attr)
             ):
                 return True
     previous_children: list[ET.Element] = []
