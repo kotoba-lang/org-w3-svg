@@ -1217,8 +1217,16 @@ def _apply_dml_luminance_modifiers(color: str, element: ET.Element) -> str | Non
     if parsed is None:
         return None
     rgb = list(parsed)
+    shade = element.find(qn(NS_A, "shade"))
+    tint = element.find(qn(NS_A, "tint"))
     lum_mod = element.find(qn(NS_A, "lumMod"))
     lum_off = element.find(qn(NS_A, "lumOff"))
+    if shade is not None and shade.get("val") is not None:
+        factor = _dml_percentage(shade.get("val"), 100000)
+        rgb = [round(channel * factor) for channel in rgb]
+    if tint is not None and tint.get("val") is not None:
+        factor = _dml_percentage(tint.get("val"), 100000)
+        rgb = [round(channel + (255 - channel) * factor) for channel in rgb]
     if lum_mod is not None and lum_mod.get("val") is not None:
         factor = _dml_percentage(lum_mod.get("val"), 100000)
         rgb = [round(channel * factor) for channel in rgb]
