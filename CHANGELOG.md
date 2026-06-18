@@ -17,6 +17,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added complex SVG fixture PPTX smoke coverage to CI and the release checklist.
 - Added text-level SVG `baseline-shift` `super`/`sub` conversion to DrawingML run baseline values.
 - Added run-level `tspan` fill/font/outline/decoration/letter-spacing/baseline conversion to separate DrawingML text runs.
+- Added DrawingML rich text run extraction to SVG `tspan` styles for fill/font/outline/decoration/letter-spacing/baseline round trips.
 
 ## 0.1.0
 

@@ -2352,6 +2352,52 @@ def test_drawingml_text_outline_style_round_trips_to_svg() -> None:
     assert 'stroke-miterlimit="6"' in svg
 
 
+def test_drawingml_rich_text_runs_round_trip_to_svg_tspans() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1524000" cy="381000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle/>
+          <a:p>
+            <a:r>
+              <a:rPr sz="1200"><a:solidFill><a:srgbClr val="111111"/></a:solidFill></a:rPr>
+              <a:t>Plain </a:t>
+            </a:r>
+            <a:r>
+              <a:rPr sz="1800" b="1" i="1" cap="small" u="sng" baseline="30000" spc="150">
+                <a:solidFill><a:srgbClr val="DC2626"><a:alpha val="85000"/></a:srgbClr></a:solidFill>
+                <a:ln w="9525" cap="flat"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:ln>
+                <a:latin typeface="Aptos Display"/>
+              </a:rPr>
+              <a:t>Rich</a:t>
+            </a:r>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "<tspan" in svg
+    assert ">Plain </tspan>" in svg
+    assert ">Rich</tspan>" in svg
+    assert 'fill="#dc2626"' in svg
+    assert 'fill-opacity="0.85"' in svg
+    assert 'stroke="#2563eb"' in svg
+    assert 'stroke-width="1"' in svg
+    assert 'font-size="18"' in svg
+    assert 'font-weight="bold"' in svg
+    assert 'font-style="italic"' in svg
+    assert 'font-family="Aptos Display"' in svg
+    assert 'font-variant="small-caps"' in svg
+    assert 'text-decoration="underline"' in svg
+    assert 'baseline-shift="super"' in svg
+    assert 'letter-spacing="2"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_drawingml_text_run_no_fill_overrides_shape_fill() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">

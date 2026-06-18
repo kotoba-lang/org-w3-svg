@@ -463,6 +463,7 @@ def _dml_shape_from_element(element: ET.Element) -> Shape | None:
             text_baseline_shift=_dml_text_baseline_shift(element),
             letter_spacing=_dml_letter_spacing(element),
             rotation=rotation,
+            text_runs=_dml_text_runs(element, sp_pr),
         )
     cust = sp_pr.find(qn(NS_A, "custGeom"))
     if cust is not None:
@@ -643,17 +644,47 @@ def _shape_to_svg(shape: Shape) -> ET.Element:
         elif shape.rotation is not None:
             attrs["rotate"] = _fmt(shape.rotation)
         element = ET.Element(qn(NS_SVG, "text"), attrs)
-        lines = (shape.text or "").split("\n")
-        element.text = lines[0] if lines else ""
-        for index, line in enumerate(lines[1:], start=1):
-            tspan = ET.SubElement(
-                element,
-                qn(NS_SVG, "tspan"),
-                {"x": attrs["x"], "dy": _fmt(shape.font_size or shape.height / max(len(lines), 1) / 1.4)},
-            )
-            tspan.text = line
+        if shape.text_runs:
+            for text_run in shape.text_runs:
+                tspan_attrs = _svg_tspan_attrs(text_run)
+                if text_run.break_before:
+                    tspan_attrs["x"] = attrs["x"]
+                    tspan_attrs["dy"] = _fmt(text_run.font_size or shape.font_size or shape.height / 1.4)
+                tspan = ET.SubElement(element, qn(NS_SVG, "tspan"), tspan_attrs)
+                tspan.text = text_run.text
+        else:
+            lines = (shape.text or "").split("\n")
+            element.text = lines[0] if lines else ""
+            for index, line in enumerate(lines[1:], start=1):
+                tspan = ET.SubElement(
+                    element,
+                    qn(NS_SVG, "tspan"),
+                    {"x": attrs["x"], "dy": _fmt(shape.font_size or shape.height / max(len(lines), 1) / 1.4)},
+                )
+                tspan.text = line
         return element
     raise ValueError(f"unsupported shape kind: {shape.kind}")
+
+
+def _svg_tspan_attrs(text_run: TextRun) -> dict[str, str]:
+    attrs = _svg_paint_attrs(text_run.paint)
+    if text_run.font_size:
+        attrs["font-size"] = _fmt(text_run.font_size)
+    if text_run.font_weight:
+        attrs["font-weight"] = text_run.font_weight
+    if text_run.font_style:
+        attrs["font-style"] = text_run.font_style
+    if text_run.font_family:
+        attrs["font-family"] = text_run.font_family
+    if text_run.font_variant:
+        attrs["font-variant"] = text_run.font_variant
+    if text_run.text_decoration:
+        attrs["text-decoration"] = text_run.text_decoration
+    if text_run.text_baseline_shift:
+        attrs["baseline-shift"] = text_run.text_baseline_shift
+    if text_run.letter_spacing is not None:
+        attrs["letter-spacing"] = _fmt(text_run.letter_spacing)
+    return attrs
 
 
 def _image_to_dml(shape: Shape, shape_id: int) -> ET.Element:
@@ -2010,6 +2041,158 @@ def _dml_paragraph_text(tx_body: ET.Element, paragraph: ET.Element, number: int)
     return "".join(parts)
 
 
+def _dml_text_runs(element: ET.Element, sp_pr: ET.Element) -> tuple[TextRun, ...]:
+    tx_body = element.find(qn(NS_P, "txBody"))
+    if tx_body is None:
+        return ()
+    paragraphs = tx_body.findall(qn(NS_A, "p"))
+    if not paragraphs:
+        return ()
+    shape_paint = _dml_paint(sp_pr, element)
+    runs: list[TextRun] = []
+    for paragraph_index, paragraph in enumerate(paragraphs):
+        p_pr = paragraph.find(qn(NS_A, "pPr"))
+        def_r_pr = _dml_paragraph_default_run_properties(tx_body, p_pr)
+        end_para_r_pr = paragraph.find(qn(NS_A, "endParaRPr"))
+        paragraph_first_r_pr = _dml_first_paragraph_run_properties(paragraph)
+        previous_r_pr = paragraph_first_r_pr
+        pending_break = paragraph_index > 0
+        bullet = _dml_paragraph_bullet(tx_body, paragraph, paragraph_index + 1)
+        if bullet is not None:
+            runs.append(
+                _dml_text_run_from_properties(
+                    element,
+                    f"{bullet} ",
+                    pending_break,
+                    paragraph_first_r_pr,
+                    def_r_pr,
+                    end_para_r_pr,
+                    shape_paint,
+                )
+            )
+            pending_break = False
+        for node in paragraph:
+            if node.tag == qn(NS_A, "br"):
+                pending_break = True
+                continue
+            if node.tag == qn(NS_A, "tab"):
+                runs.append(
+                    _dml_text_run_from_properties(
+                        element,
+                        "\t",
+                        pending_break,
+                        previous_r_pr,
+                        def_r_pr,
+                        end_para_r_pr,
+                        shape_paint,
+                    )
+                )
+                pending_break = False
+                continue
+            if _local_name(node.tag) not in {"r", "fld"}:
+                continue
+            text_node = node.find(qn(NS_A, "t"))
+            if text_node is None:
+                continue
+            text = text_node.text or ""
+            if not text:
+                continue
+            r_pr = node.find(qn(NS_A, "rPr"))
+            runs.append(
+                _dml_text_run_from_properties(
+                    element,
+                    text,
+                    pending_break,
+                    r_pr,
+                    def_r_pr,
+                    end_para_r_pr,
+                    shape_paint,
+                )
+            )
+            previous_r_pr = r_pr
+            pending_break = False
+    if len(runs) <= 1 or len({_text_run_style_key(run) for run in runs}) <= 1:
+        return ()
+    return tuple(runs)
+
+
+def _dml_first_paragraph_run_properties(paragraph: ET.Element) -> ET.Element | None:
+    for node in paragraph:
+        if _local_name(node.tag) in {"r", "fld"}:
+            r_pr = node.find(qn(NS_A, "rPr"))
+            if r_pr is not None:
+                return r_pr
+    return None
+
+
+def _dml_text_run_from_properties(
+    element: ET.Element,
+    text: str,
+    break_before: bool,
+    r_pr: ET.Element | None,
+    def_r_pr: ET.Element | None,
+    end_para_r_pr: ET.Element | None,
+    shape_paint: Paint,
+) -> TextRun:
+    candidates = (r_pr, def_r_pr, end_para_r_pr)
+    ln = _dml_text_line_properties(r_pr, def_r_pr, end_para_r_pr)
+    fill, fill_alpha = _dml_text_fill(element, r_pr, def_r_pr, end_para_r_pr, shape_paint)
+    return TextRun(
+        text=text,
+        paint=Paint(
+            fill=fill,
+            stroke=_dml_line_color(ln) if ln is not None else shape_paint.stroke,
+            stroke_width=_dml_line_width(ln) if ln is not None else shape_paint.stroke_width,
+            fill_alpha=fill_alpha,
+            stroke_alpha=_dml_line_alpha(ln) if ln is not None else shape_paint.stroke_alpha,
+            stroke_linecap=_dml_linecap(ln.get("cap")) if ln is not None else shape_paint.stroke_linecap,
+            stroke_linejoin=_dml_linejoin(ln) if ln is not None else shape_paint.stroke_linejoin,
+            stroke_dasharray=_dml_dasharray(ln) if ln is not None else shape_paint.stroke_dasharray,
+            stroke_miterlimit=_dml_miterlimit(ln) if ln is not None else shape_paint.stroke_miterlimit,
+        ),
+        break_before=break_before,
+        font_size=_dml_font_size_from_properties(candidates),
+        font_weight=_dml_font_weight_from_properties(candidates),
+        font_style=_dml_font_style_from_properties(candidates),
+        font_family=_dml_font_family_from_properties(candidates),
+        font_variant=_dml_font_variant_from_properties(candidates),
+        text_decoration=_dml_text_decoration_from_properties(candidates),
+        text_baseline_shift=_dml_text_baseline_shift_from_properties(candidates),
+        letter_spacing=_dml_letter_spacing_from_properties(candidates),
+    )
+
+
+def _dml_paragraph_default_run_properties(tx_body: ET.Element, p_pr: ET.Element | None) -> ET.Element | None:
+    def_r_pr = p_pr.find(qn(NS_A, "defRPr")) if p_pr is not None else None
+    if def_r_pr is not None:
+        return def_r_pr
+    list_p_pr = _dml_list_style_paragraph_properties(tx_body, p_pr)
+    return list_p_pr.find(qn(NS_A, "defRPr")) if list_p_pr is not None else None
+
+
+def _text_run_style_key(run: TextRun) -> tuple[object, ...]:
+    paint = run.paint
+    return (
+        paint.fill,
+        paint.stroke,
+        paint.stroke_width,
+        paint.fill_alpha,
+        paint.stroke_alpha,
+        paint.stroke_linecap,
+        paint.stroke_linejoin,
+        paint.stroke_dasharray,
+        paint.stroke_miterlimit,
+        run.font_size,
+        run.font_weight,
+        run.font_style,
+        run.font_family,
+        run.font_variant,
+        run.text_decoration,
+        run.text_baseline_shift,
+        run.letter_spacing,
+    )
+
+
 def _dml_paragraph_bullet(tx_body: ET.Element, paragraph: ET.Element, number: int) -> str | None:
     p_pr = paragraph.find(qn(NS_A, "pPr"))
     if p_pr is not None and p_pr.find(qn(NS_A, "buNone")) is not None:
@@ -2122,8 +2305,27 @@ def _dml_text_property(
     return None
 
 
+def _dml_text_property_from_candidates(
+    candidates: Iterable[ET.Element | None],
+    predicate: Callable[[ET.Element], bool],
+) -> ET.Element | None:
+    for candidate in candidates:
+        if candidate is not None and predicate(candidate):
+            return candidate
+    return None
+
+
 def _dml_font_weight(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, lambda item: item.get("b") is not None)
+    return _dml_font_weight_value(r_pr)
+
+
+def _dml_font_weight_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("b") is not None)
+    return _dml_font_weight_value(r_pr)
+
+
+def _dml_font_weight_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is not None and r_pr.get("b") in {"1", "true"}:
         return "bold"
     return None
@@ -2131,6 +2333,15 @@ def _dml_font_weight(element: ET.Element) -> str | None:
 
 def _dml_font_size(element: ET.Element) -> float | None:
     r_pr = _dml_text_property(element, lambda item: item.get("sz") is not None)
+    return _dml_font_size_value(r_pr)
+
+
+def _dml_font_size_from_properties(candidates: Iterable[ET.Element | None]) -> float | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("sz") is not None)
+    return _dml_font_size_value(r_pr)
+
+
+def _dml_font_size_value(r_pr: ET.Element | None) -> float | None:
     if r_pr is not None and r_pr.get("sz"):
         try:
             return int(r_pr.get("sz", "0")) / 100
@@ -2141,6 +2352,15 @@ def _dml_font_size(element: ET.Element) -> float | None:
 
 def _dml_font_style(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, lambda item: item.get("i") is not None)
+    return _dml_font_style_value(r_pr)
+
+
+def _dml_font_style_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("i") is not None)
+    return _dml_font_style_value(r_pr)
+
+
+def _dml_font_style_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is not None and r_pr.get("i") in {"1", "true"}:
         return "italic"
     return None
@@ -2148,6 +2368,15 @@ def _dml_font_style(element: ET.Element) -> str | None:
 
 def _dml_font_family(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, _dml_has_typeface)
+    return _dml_font_family_value(r_pr)
+
+
+def _dml_font_family_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(candidates, _dml_has_typeface)
+    return _dml_font_family_value(r_pr)
+
+
+def _dml_font_family_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is not None:
         return _dml_typeface(r_pr)
     return None
@@ -2167,6 +2396,15 @@ def _dml_typeface(element: ET.Element) -> str | None:
 
 def _dml_font_variant(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, lambda item: item.get("cap") is not None)
+    return _dml_font_variant_value(r_pr)
+
+
+def _dml_font_variant_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("cap") is not None)
+    return _dml_font_variant_value(r_pr)
+
+
+def _dml_font_variant_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is not None:
         if r_pr.get("cap") == "small":
             return "small-caps"
@@ -2177,6 +2415,15 @@ def _dml_font_variant(element: ET.Element) -> str | None:
 
 def _dml_text_baseline_shift(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, lambda item: item.get("baseline") is not None)
+    return _dml_text_baseline_shift_value(r_pr)
+
+
+def _dml_text_baseline_shift_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("baseline") is not None)
+    return _dml_text_baseline_shift_value(r_pr)
+
+
+def _dml_text_baseline_shift_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is None or r_pr.get("baseline") is None:
         return None
     try:
@@ -2192,6 +2439,15 @@ def _dml_text_baseline_shift(element: ET.Element) -> str | None:
 
 def _dml_letter_spacing(element: ET.Element) -> float | None:
     r_pr = _dml_text_property(element, lambda item: item.get("spc") is not None)
+    return _dml_letter_spacing_value(r_pr)
+
+
+def _dml_letter_spacing_from_properties(candidates: Iterable[ET.Element | None]) -> float | None:
+    r_pr = _dml_text_property_from_candidates(candidates, lambda item: item.get("spc") is not None)
+    return _dml_letter_spacing_value(r_pr)
+
+
+def _dml_letter_spacing_value(r_pr: ET.Element | None) -> float | None:
     if r_pr is None or r_pr.get("spc") is None:
         return None
     try:
@@ -2202,6 +2458,18 @@ def _dml_letter_spacing(element: ET.Element) -> float | None:
 
 def _dml_text_decoration(element: ET.Element) -> str | None:
     r_pr = _dml_text_property(element, lambda item: item.get("u") is not None or item.get("strike") is not None)
+    return _dml_text_decoration_value(r_pr)
+
+
+def _dml_text_decoration_from_properties(candidates: Iterable[ET.Element | None]) -> str | None:
+    r_pr = _dml_text_property_from_candidates(
+        candidates,
+        lambda item: item.get("u") is not None or item.get("strike") is not None,
+    )
+    return _dml_text_decoration_value(r_pr)
+
+
+def _dml_text_decoration_value(r_pr: ET.Element | None) -> str | None:
     if r_pr is None:
         return None
     values = []
