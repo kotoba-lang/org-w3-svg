@@ -42,6 +42,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for SVG `pathLength` values when the dash pattern has no visible dash.
 - Refined analyzer handling for SVG `marker-mid` values on shapes without interior marker vertices.
 - Refined analyzer handling for SVG `transform-origin` values without a local transform.
+- Refined analyzer handling for text layout attributes on non-text SVG graphics elements.
 - Refined analyzer handling for normal-equivalent SVG `font-size-adjust` values.
 - Refined analyzer handling for no-op SVG `font-variant="none"` values.
 - Refined analyzer handling for SVG kerning attributes on single-character text.

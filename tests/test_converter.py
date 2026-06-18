@@ -1594,6 +1594,18 @@ def test_unconverted_text_direction_and_typography_attributes_are_reported() -> 
     }
 
 
+def test_text_layout_attributes_on_graphic_elements_are_noop() -> None:
+    svg = """<svg>
+      <rect width="10" height="8" writing-mode="vertical-rl" direction="rtl" unicode-bidi="bidi-override"
+        font-stretch="condensed" baseline-shift="super" word-spacing="4"/>
+      <line x1="0" y1="10" x2="10" y2="10" stroke="#111111" rotate="10 20" textLength="20"
+        text-orientation="upright" glyph-orientation-vertical="90deg"/>
+      <text x="0" y="20" writing-mode="vertical-rl">Vertical</text>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {"writing-mode": 1}
+
+
 def test_xml_space_preserve_keeps_text_whitespace() -> None:
     dml = svg_to_drawingml(
         '<svg><text x="0" y="20" xml:space="preserve" fill="#111111">  padded  <tspan> kept </tspan></text></svg>'

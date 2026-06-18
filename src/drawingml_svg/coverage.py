@@ -75,6 +75,37 @@ TEXT_DECORATION_STYLE_TOKENS = {"solid", "dashed", "dotted", "double", "wavy"}
 TEXT_DECORATION_NOOP_THICKNESS_TOKENS = {"auto"}
 SUPPORTED_TEXT_DECORATION_LINE_TOKENS = {"underline", "line-through"}
 GRADIENT_ELEMENTS = {"linearGradient", "radialGradient", "stop"}
+GRAPHIC_ELEMENTS_WITHOUT_TEXT_LAYOUT = {"circle", "ellipse", "image", "line", "path", "polygon", "polyline", "rect"}
+TEXT_LAYOUT_ATTRIBUTES = {
+    "alignment-baseline",
+    "baseline-shift",
+    "direction",
+    "font-feature-settings",
+    "font-kerning",
+    "font-size-adjust",
+    "font-stretch",
+    "font-variant",
+    "font-variation-settings",
+    "glyph-orientation-horizontal",
+    "glyph-orientation-vertical",
+    "kerning",
+    "letter-spacing",
+    "lengthAdjust",
+    "rotate",
+    "text-decoration",
+    "text-decoration-color",
+    "text-decoration-line",
+    "text-decoration-skip-ink",
+    "text-decoration-style",
+    "text-decoration-thickness",
+    "text-orientation",
+    "text-transform",
+    "text-underline-offset",
+    "textLength",
+    "unicode-bidi",
+    "word-spacing",
+    "writing-mode",
+}
 
 UNSUPPORTED_ATTRIBUTES = {
     "alignment-baseline",
@@ -318,6 +349,8 @@ def _inspect_attributes(
     }
     for attr in UNSUPPORTED_ATTRIBUTES:
         if attr in no_effect_attrs and _attribute_has_no_effect(attr, specified_style):
+            continue
+        if attr in TEXT_LAYOUT_ATTRIBUTES and _text_layout_attribute_has_no_effect(element, specified_style, attr):
             continue
         if attr == "clip-path" and _clip_path_is_supported(element, style, refs, matrix):
             continue
@@ -674,6 +707,12 @@ def _text_rotate_is_supported(element: ET.Element, style: dict[str, str]) -> boo
 def _text_transform_is_supported(element: ET.Element, style: dict[str, str]) -> bool:
     value = style.get("text-transform")
     return value is not None and value.strip().lower() in {"normal", "none", "uppercase", "lowercase", "capitalize"}
+
+
+def _text_layout_attribute_has_no_effect(element: ET.Element, style: dict[str, str], attr: str) -> bool:
+    if style.get(attr) is None:
+        return False
+    return _local_name(element.tag) in GRAPHIC_ELEMENTS_WITHOUT_TEXT_LAYOUT
 
 
 def _css_none_or_normal_has_no_effect(style: dict[str, str], attr: str) -> bool:
