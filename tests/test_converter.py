@@ -1207,6 +1207,37 @@ def test_foreign_object_html_table_shorthand_styles_convert() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_cell_background_alpha_converts() -> None:
+    svg = """<svg width="150" height="50">
+      <foreignObject x="10" y="8" width="120" height="24">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table>
+            <tr>
+              <td style="background-color:rgba(37, 99, 235, 0.5)">RGBA</td>
+              <td style="background:#dc262680">Hex</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+    root = ET.fromstring(dml)
+    ns = {"a": "http://schemas.openxmlformats.org/drawingml/2006/main"}
+    fills = {
+        color.get("val"): color.find("a:alpha", ns).get("val")
+        for color in root.findall(".//a:tcPr/a:solidFill/a:srgbClr", ns)
+        if color.find("a:alpha", ns) is not None
+    }
+
+    assert "<a:tbl>" in dml
+    assert fills["2563EB"] == "50000"
+    assert fills["DC2626"] == "50196"
+    assert "<a:t>RGBA</a:t>" in dml
+    assert "<a:t>Hex</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_css_selectors_apply_to_cells() -> None:
     svg = """<svg width="140" height="50">
       <style>

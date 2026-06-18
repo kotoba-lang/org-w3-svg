@@ -450,7 +450,7 @@ def _svg_foreign_object_table_shapes(
             cell_width = (column_edges[end_column] - column_edges[column_index]) * scale_x
             cell_height = (row_edges[end_row] - row_edges[row_index]) * scale_y
             cell_style = _html_table_cell_style(element, cell, css, style)
-            fill = _html_background_color(cell_style) or "#ffffff"
+            fill, fill_alpha = _html_background_fill(cell_style)
             stroke = _html_border_color(cell_style) or "#000000"
             shapes.append(
                 Shape(
@@ -459,7 +459,12 @@ def _svg_foreign_object_table_shapes(
                     cell_y,
                     cell_width,
                     cell_height,
-                    Paint(fill=fill, stroke=stroke, stroke_width=_html_border_width(cell_style)),
+                    Paint(
+                        fill=fill or "#ffffff",
+                        stroke=stroke,
+                        stroke_width=_html_border_width(cell_style),
+                        fill_alpha=fill_alpha,
+                    ),
                 )
             )
             text = _html_table_cell_text(cell)
@@ -794,6 +799,13 @@ def _html_background_color(style: dict[str, str]) -> str | None:
     return _html_color(style.get("background-color")) or _html_first_color(style.get("background"))
 
 
+def _html_background_fill(style: dict[str, str]) -> tuple[str | None, float | None]:
+    color, alpha = _html_color_value(style.get("background-color"))
+    if color is not None:
+        return color, alpha
+    return _html_first_color_value(style.get("background"))
+
+
 def _html_border_color(style: dict[str, str]) -> str | None:
     if _html_border_is_none(style):
         return "none"
@@ -908,14 +920,24 @@ def _html_color(value: str | None) -> str | None:
     return color
 
 
+def _html_color_value(value: str | None) -> tuple[str | None, float | None]:
+    return _parse_color(value)
+
+
 def _html_first_color(value: str | None) -> str | None:
+    color, _ = _html_first_color_value(value)
+    return color
+
+
+def _html_first_color_value(value: str | None) -> tuple[str | None, float | None]:
     if not value:
-        return None
+        return None, None
     for token in _css_value_tokens(value):
-        color = _html_color(token.strip(","))
+        color, alpha = _html_color_value(token.strip(","))
         if color is not None:
-            return color
-    return None
+            return color, alpha
+    return None, None
+
 
 
 def _html_first_length(value: str) -> float | None:
