@@ -105,8 +105,12 @@ class SvgTable:
 
 @dataclass(frozen=True)
 class SvgTableCell:
-    rect: Shape
+    rect: Shape | None
     text: Shape | None = None
+    column_span: int = 1
+    row_span: int = 1
+    h_merge: bool = False
+    v_merge: bool = False
 
 
 CssDeclaration = tuple[str, bool]
@@ -1144,7 +1148,10 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
     if any(size <= 0 for size in columns + rows):
         return None, shapes
 
-    rect_map: dict[tuple[int, int], Shape] = {}
+    row_count = len(rows)
+    column_count = len(columns)
+    origins: dict[tuple[int, int], tuple[Shape, int, int]] = {}
+    occupancy: list[list[tuple[int, int] | None]] = [[None for _ in range(column_count)] for _ in range(row_count)]
     for rect in rects:
         column = _svg_table_edge_index(x_edges, rect.x)
         row = _svg_table_edge_index(y_edges, rect.y)
@@ -1152,16 +1159,18 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
         bottom = _svg_table_edge_index(y_edges, rect.y + rect.height)
         if column is None or row is None or right is None or bottom is None:
             return None, shapes
-        if right != column + 1 or bottom != row + 1:
+        if right <= column or bottom <= row:
             return None, shapes
-        key = (row, column)
-        if key in rect_map:
+        origin = (row, column)
+        if origin in origins:
             return None, shapes
-        rect_map[key] = rect
-
-    row_count = len(rows)
-    column_count = len(columns)
-    if len(rect_map) != row_count * column_count:
+        origins[origin] = (rect, right - column, bottom - row)
+        for occupied_row in range(row, bottom):
+            for occupied_column in range(column, right):
+                if occupancy[occupied_row][occupied_column] is not None:
+                    return None, shapes
+                occupancy[occupied_row][occupied_column] = origin
+    if any(origin is None for row in occupancy for origin in row):
         return None, shapes
 
     text_map: dict[tuple[int, int], Shape] = {}
@@ -1175,18 +1184,43 @@ def _extract_svg_table(shapes: list[Shape]) -> tuple[SvgTable | None, list[Shape
         row = _svg_table_interval_index(y_edges, center_y)
         if row is None or column is None:
             continue
-        key = (row, column)
+        key = occupancy[row][column]
+        if key is None:
+            continue
         if key in text_map:
             return None, shapes
         text_map[key] = shape
         consumed_texts.add(index)
 
-    cells = tuple(
-        tuple(SvgTableCell(rect_map[(row, column)], text_map.get((row, column))) for column in range(column_count))
-        for row in range(row_count)
-    )
+    table_rows: list[tuple[SvgTableCell, ...]] = []
+    for row in range(row_count):
+        table_cells = []
+        for column in range(column_count):
+            origin = occupancy[row][column]
+            if origin is None:
+                return None, shapes
+            if origin == (row, column):
+                rect, column_span, row_span = origins[origin]
+                table_cells.append(
+                    SvgTableCell(
+                        rect,
+                        text_map.get(origin),
+                        column_span=column_span,
+                        row_span=row_span,
+                    )
+                )
+            else:
+                table_cells.append(
+                    SvgTableCell(
+                        None,
+                        h_merge=column > origin[1],
+                        v_merge=row > origin[0],
+                    )
+                )
+        table_rows.append(tuple(table_cells))
+    cells = tuple(table_rows)
     table = SvgTable(x_edges[0], y_edges[0], columns, rows, cells)
-    consumed_rects = {id(rect) for rect in rect_map.values()}
+    consumed_rects = {id(rect) for rect, _, _ in origins.values()}
     remaining = [shape for index, shape in enumerate(shapes) if id(shape) not in consumed_rects and index not in consumed_texts]
     return table, remaining
 
@@ -1258,14 +1292,24 @@ def _svg_table_to_dml(table: SvgTable, shape_id: int) -> ET.Element:
 
 
 def _append_svg_table_cell(parent: ET.Element, cell: SvgTableCell) -> None:
-    tc = ET.SubElement(parent, qn(NS_A, "tc"))
+    attrs = {}
+    if cell.column_span > 1:
+        attrs["gridSpan"] = str(cell.column_span)
+    if cell.row_span > 1:
+        attrs["rowSpan"] = str(cell.row_span)
+    if cell.h_merge:
+        attrs["hMerge"] = "1"
+    if cell.v_merge:
+        attrs["vMerge"] = "1"
+    tc = ET.SubElement(parent, qn(NS_A, "tc"), attrs)
     _append_svg_table_cell_text_body(tc, cell.rect, cell.text)
     tc_pr = ET.SubElement(tc, qn(NS_A, "tcPr"))
-    _append_svg_table_cell_fill(tc_pr, cell.rect.paint)
-    _append_svg_table_cell_borders(tc_pr, cell.rect.paint)
+    if cell.rect is not None:
+        _append_svg_table_cell_fill(tc_pr, cell.rect.paint)
+        _append_svg_table_cell_borders(tc_pr, cell.rect.paint)
 
 
-def _append_svg_table_cell_text_body(parent: ET.Element, rect: Shape, text: Shape | None) -> None:
+def _append_svg_table_cell_text_body(parent: ET.Element, rect: Shape | None, text: Shape | None) -> None:
     tx_body = ET.SubElement(parent, qn(NS_A, "txBody"))
     attrs = _svg_table_cell_text_inset_attrs(rect, text)
     body_anchor = _text_baseline_to_dml(text.text_baseline if text is not None else None)
@@ -1282,9 +1326,9 @@ def _append_svg_table_cell_text_body(parent: ET.Element, rect: Shape, text: Shap
     ET.SubElement(paragraph, qn(NS_A, "endParaRPr"))
 
 
-def _svg_table_cell_text_inset_attrs(rect: Shape, text: Shape | None) -> dict[str, str]:
+def _svg_table_cell_text_inset_attrs(rect: Shape | None, text: Shape | None) -> dict[str, str]:
     attrs = {"lIns": "0", "rIns": "0", "tIns": "0", "bIns": "0"}
-    if text is None:
+    if rect is None or text is None:
         return attrs
     attrs["lIns"] = str(_emu(max(0.0, text.x - rect.x)))
     attrs["rIns"] = str(_emu(max(0.0, rect.x + rect.width - text.x - text.width)))

@@ -19,7 +19,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added DrawingML table `gridSpan`/`rowSpan` handling for simple merged cell SVG bounds.
 - Added DrawingML table cell border extraction for individual `lnL`/`lnR`/`lnT`/`lnB` edges, including `noFill` edges.
 - Added DrawingML table cell text inset handling from `bodyPr` `lIns`/`rIns`/`tIns`/`bIns`.
-- Added conservative SVG rect/text grid detection that exports complete simple grids as native DrawingML tables.
+- Added conservative SVG rect/text grid detection that exports complete simple grids and merged cells as native DrawingML tables.
 - Added text-level SVG `baseline-shift` `super`/`sub` conversion to DrawingML run baseline values.
 - Added run-level `tspan` fill/font/outline/decoration/letter-spacing/baseline conversion to separate DrawingML text runs.
 - Added run-level `tspan` word-spacing conversion using DrawingML character spacing approximation.

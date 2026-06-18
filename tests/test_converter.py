@@ -7458,6 +7458,38 @@ def test_svg_rect_text_grid_converts_to_native_drawingml_table() -> None:
     assert "Metric" in round_trip
 
 
+def test_svg_rect_grid_spans_convert_to_native_table_merges() -> None:
+    svg = """<svg>
+      <rect x="0" y="0" width="40" height="20" fill="#dbeafe" stroke="#2563eb"/>
+      <rect x="40" y="0" width="20" height="40" fill="#dcfce7" stroke="#16a34a"/>
+      <rect x="0" y="20" width="20" height="20" fill="#ffffff" stroke="#94a3b8"/>
+      <rect x="20" y="20" width="20" height="20" fill="#ffffff" stroke="#94a3b8"/>
+      <text x="4" y="14" font-size="10" fill="#111111">Wide</text>
+      <text x="42" y="24" font-size="8" fill="#111111">Tall</text>
+      <text x="4" y="34" font-size="10" fill="#111111">A</text>
+      <text x="24" y="34" font-size="10" fill="#111111">B</text>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert dml.count("<a:gridCol") == 3
+    assert 'gridSpan="2"' in dml
+    assert 'rowSpan="2"' in dml
+    assert 'hMerge="1"' in dml
+    assert 'vMerge="1"' in dml
+    assert dml.count("<a:txBody>") == 6
+    assert dml.count("<p:sp>") == 0
+
+    round_trip = drawingml_to_svg(dml)
+    assert '<rect fill="#dbeafe" stroke="none" x="0" y="0" width="40" height="20"/>' in round_trip
+    assert '<rect fill="#dcfce7" stroke="none" x="40" y="0" width="20" height="40"/>' in round_trip
+    assert round_trip.count("<rect") == 4
+    assert round_trip.count("<text") == 4
+    assert "Wide" in round_trip
+    assert "Tall" in round_trip
+
+
 def test_svg_rect_grid_with_non_cell_text_keeps_text_as_shape() -> None:
     svg = """<svg>
       <rect x="0" y="0" width="20" height="20" fill="#ffffff" stroke="#111111"/>
