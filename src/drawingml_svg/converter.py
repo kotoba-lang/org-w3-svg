@@ -2835,6 +2835,34 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind == "hexagon":
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
+    if kind == "plus":
+        return [
+            (x + width * 0.35, top),
+            (x + width * 0.65, top),
+            (x + width * 0.65, y + height * 0.35),
+            (right, y + height * 0.35),
+            (right, y + height * 0.65),
+            (x + width * 0.65, y + height * 0.65),
+            (x + width * 0.65, bottom),
+            (x + width * 0.35, bottom),
+            (x + width * 0.35, y + height * 0.65),
+            (left, y + height * 0.65),
+            (left, y + height * 0.35),
+            (x + width * 0.35, y + height * 0.35),
+        ]
+    if kind == "star5":
+        return [
+            (center_x, top),
+            (x + width * 0.62, y + height * 0.38),
+            (right, y + height * 0.38),
+            (x + width * 0.69, y + height * 0.59),
+            (x + width * 0.81, bottom),
+            (center_x, y + height * 0.72),
+            (x + width * 0.19, bottom),
+            (x + width * 0.31, y + height * 0.59),
+            (left, y + height * 0.38),
+            (x + width * 0.38, y + height * 0.38),
+        ]
     if kind == "rightArrow":
         return [(left, quarter_y), (arrow_head_x, quarter_y), (arrow_head_x, top), (right, center_y), (arrow_head_x, bottom), (arrow_head_x, three_quarter_y), (left, three_quarter_y)]
     if kind == "leftArrow":
