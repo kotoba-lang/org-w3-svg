@@ -692,12 +692,7 @@ def _font_stretch_has_no_effect(style: dict[str, str]) -> bool:
     normalized = value.strip().lower()
     if normalized in {"", "normal"}:
         return True
-    if normalized.endswith("%"):
-        try:
-            return float(normalized[:-1].strip()) == 100.0
-        except ValueError:
-            return False
-    return False
+    return _optional_length(value, "x", (100.0, 100.0)) == 100.0
 
 
 def _text_orientation_has_no_effect(style: dict[str, str]) -> bool:

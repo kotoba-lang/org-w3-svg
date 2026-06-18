@@ -1518,12 +1518,15 @@ def test_unconverted_text_layout_attributes_are_reported() -> None:
       <text x="0" y="160" baseline-shift="-0.0em">Zero em noop</text>
       <text x="0" y="180" baseline-shift="10%">Percent shift</text>
       <text x="0" y="200" font-size-adjust="normal">Normal adjust noop</text>
+      <text x="0" y="220" font-stretch="calc(50% + 50%)">Calc stretch noop</text>
+      <text x="0" y="240" font-stretch="clamp(75%, 100%, 125%)">Clamp stretch noop</text>
+      <text x="0" y="260" font-stretch="max(75%, 80%)">Function stretch</text>
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {
         "baseline-shift": 1,
         "font-size-adjust": 1,
-        "font-stretch": 1,
+        "font-stretch": 2,
         "text-orientation": 1,
     }
 

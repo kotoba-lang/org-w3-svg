@@ -41,6 +41,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for SVG kerning attributes on single-character text.
 - Refined analyzer handling for run-level `tspan` `text-anchor` values that do not create a positioned text chunk.
 - Refined analyzer handling for normal-equivalent percentage SVG `font-stretch` values.
+- Refined analyzer handling for normal-equivalent CSS math SVG `font-stretch` values.
 - Refined analyzer handling for zero-equivalent SVG glyph orientation angles.
 - Refined analyzer handling for zero-equivalent SVG `baseline-shift` length and percentage values.
 
