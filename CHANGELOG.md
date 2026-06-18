@@ -21,6 +21,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added first-positioned SVG `tspan` `text-anchor` fallback conversion and analyzer support.
 - Added first-positioned SVG `tspan` baseline fallback conversion and analyzer support.
 - Added percentage SVG `transform-origin` conversion and analyzer support for elements with a resolvable reference box.
+- Added keyword SVG `transform-origin` conversion and analyzer support for elements with a resolvable reference box.
 - Refined analyzer handling for marker-only `paint-order` changes that have no visible effect without markers.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.
 - Refined analyzer handling for zero-valued SVG `kerning` attributes.

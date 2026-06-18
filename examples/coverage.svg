@@ -50,7 +50,7 @@
     <path display=" NONE " d="M0 0 R10 20" filter="url(#hidden-filter)"/>
     <g visibility="hidden"><rect x="4" y="134" width="16" height="10" fill="#dcfce7" visibility="visible"/></g>
     <rect x="24" y="134" width="16" height="10" fill="#bfdbfe" style="transform: translate(4px, 0)"/>
-    <rect x="44" y="134" width="12" height="10" fill="#e9d5ff" style="transform-origin: 50% 50%; transform: rotate(10deg)"/>
+    <rect x="44" y="134" width="12" height="10" fill="#e9d5ff" style="transform-origin: center; transform: rotate(10deg)"/>
     <text class="title" x="160" y="46">
       <tspan>Coverage</tspan>
       <tspan x="160" dy="24" text-transform="uppercase" fill="#dc2626" fill-opacity=".85" font-weight="700" font-style="italic" text-decoration-line="underline" baseline-shift="sub">fixture</tspan>

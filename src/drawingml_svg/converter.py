@@ -5615,7 +5615,8 @@ def _transform_origin(
     if value is None:
         return None
     parts = _css_value_tokens(value)
-    if len(parts) not in {2, 3}:
+    parts = _transform_origin_parts(parts)
+    if parts is None:
         return None
     reference_box = _element_reference_box(element, style or {}, viewport) if element is not None else None
     x = _origin_length(parts[0], "x", viewport, reference_box)
@@ -5627,6 +5628,55 @@ def _transform_origin(
         if z is None or not _close(z, 0):
             return None
     return x, y
+
+
+def _transform_origin_parts(parts: list[str]) -> tuple[str, str] | tuple[str, str, str] | None:
+    if len(parts) not in {1, 2, 3}:
+        return None
+    normalized = [part.strip().lower() for part in parts]
+    z_part = parts[2] if len(parts) == 3 else None
+    xy_parts = normalized[:2]
+    if len(xy_parts) == 1:
+        value = xy_parts[0]
+        if value in {"left", "right"}:
+            resolved = (_origin_keyword_to_percentage(value), "50%")
+        elif value in {"top", "bottom"}:
+            resolved = ("50%", _origin_keyword_to_percentage(value))
+        elif value == "center":
+            resolved = ("50%", "50%")
+        else:
+            resolved = (parts[0], "50%")
+    else:
+        first, second = xy_parts
+        first_axis = _origin_keyword_axis(first)
+        second_axis = _origin_keyword_axis(second)
+        if first_axis is not None and first_axis == second_axis:
+            return None
+        if first_axis == "y" or second_axis == "x":
+            resolved = (_origin_keyword_to_percentage(second), _origin_keyword_to_percentage(first))
+        else:
+            resolved = (_origin_keyword_to_percentage(first), _origin_keyword_to_percentage(second))
+    if z_part is not None:
+        return resolved[0], resolved[1], z_part
+    return resolved
+
+
+def _origin_keyword_axis(value: str) -> str | None:
+    if value in {"left", "right"}:
+        return "x"
+    if value in {"top", "bottom"}:
+        return "y"
+    return None
+
+
+def _origin_keyword_to_percentage(value: str) -> str:
+    return {
+        "left": "0%",
+        "top": "0%",
+        "center": "50%",
+        "right": "100%",
+        "bottom": "100%",
+    }.get(value, value)
 
 
 def _origin_length(
