@@ -2983,6 +2983,33 @@ def test_drawingml_quad_arrow_preset_round_trip_to_svg_polygon() -> None:
     assert '<polygon fill="#ede9fe" points="30,20 40,30 34,30 34,36 40,36 50,40 40,44 34,44 34,50 40,50 30,60 20,50 26,50 26,44 20,44 10,40 20,36 26,36 26,30 20,30"/>' in svg
 
 
+def test_drawingml_bent_arrow_presets_round_trip_to_svg_polygons() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="left right up arrow"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="381000"/></a:xfrm>
+          <a:prstGeom prst="leftRightUpArrow"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DBEAFE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="3" name="bent up arrow"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="571500" y="190500"/><a:ext cx="381000" cy="381000"/></a:xfrm>
+          <a:prstGeom prst="bentUpArrow"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DCFCE7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert '<polygon fill="#dbeafe" points="30,20 50,30 40,30 40,36 50,36 50,44 40,44 40,60 20,60 20,44 10,44 10,36 20,36 20,30 10,30"/>' in svg
+    assert '<polygon fill="#dcfce7" points="82,60 82,30 74,30 88,20 100,30 92,30 92,60"/>' in svg
+
+
 def test_drawingml_symbol_presets_round_trip_to_svg_polygons() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">

@@ -2937,6 +2937,34 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (x + width * 0.4, quarter_y),
             (quarter_x, quarter_y),
         ]
+    if kind == "leftRightUpArrow":
+        return [
+            (center_x, top),
+            (right, quarter_y),
+            (three_quarter_x, quarter_y),
+            (three_quarter_x, arrow_shaft_top),
+            (right, arrow_shaft_top),
+            (right, arrow_shaft_bottom),
+            (three_quarter_x, arrow_shaft_bottom),
+            (three_quarter_x, bottom),
+            (quarter_x, bottom),
+            (quarter_x, arrow_shaft_bottom),
+            (left, arrow_shaft_bottom),
+            (left, arrow_shaft_top),
+            (quarter_x, arrow_shaft_top),
+            (quarter_x, quarter_y),
+            (left, quarter_y),
+        ]
+    if kind == "bentUpArrow":
+        return [
+            (x + width * 0.55, bottom),
+            (x + width * 0.55, quarter_y),
+            (x + width * 0.35, quarter_y),
+            (x + width * 0.7, top),
+            (right, quarter_y),
+            (x + width * 0.8, quarter_y),
+            (x + width * 0.8, bottom),
+        ]
     return []
 
 
