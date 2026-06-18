@@ -4142,3 +4142,26 @@ def test_drawingml_multiple_text_paragraphs_round_trip_to_svg_lines() -> None:
 
     assert (text.text or "").strip() == "First"
     assert [tspan.text for tspan in tspans] == ["Break", "Second"]
+
+
+def test_drawingml_field_and_tab_text_round_trip_to_svg_text() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="285750"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle/>
+          <a:p>
+            <a:r><a:rPr sz="1200"/><a:t>Slide</a:t></a:r>
+            <a:tab/>
+            <a:fld id="{00000000-0000-0000-0000-000000000000}" type="slidenum"><a:rPr sz="1200"/><a:t>12</a:t></a:fld>
+          </a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "Slide\t12" in svg
+    assert analyze_svg(svg).unsupported_attributes == {}

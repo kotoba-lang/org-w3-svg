@@ -1870,6 +1870,9 @@ def _dml_paragraph_text(tx_body: ET.Element, paragraph: ET.Element, number: int)
         if node.tag == qn(NS_A, "br"):
             parts.append("\n")
             continue
+        if node.tag == qn(NS_A, "tab"):
+            parts.append("\t")
+            continue
         text_node = node.find(qn(NS_A, "t"))
         if text_node is not None:
             parts.append(text_node.text or "")
