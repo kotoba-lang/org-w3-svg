@@ -682,7 +682,7 @@ def _css_auto_or_normal_has_no_effect(style: dict[str, str], attr: str) -> bool:
 
 def _font_size_adjust_has_no_effect(style: dict[str, str]) -> bool:
     value = style.get("font-size-adjust")
-    return value is not None and value.strip().lower() in {"", "none"}
+    return value is not None and value.strip().lower() in {"", "none", "normal"}
 
 
 def _font_stretch_has_no_effect(style: dict[str, str]) -> bool:
