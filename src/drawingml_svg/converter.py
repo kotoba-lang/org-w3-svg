@@ -508,6 +508,7 @@ def _dml_table_shapes(element: ET.Element) -> Iterable[Shape]:
                 left_inset, top_inset, right_inset, bottom_inset = _dml_table_cell_text_insets(
                     cell, scale_x, scale_y
                 )
+                text_properties = _dml_table_cell_text_run_property_candidates(cell)
                 shapes.append(
                     Shape(
                         "text",
@@ -517,10 +518,10 @@ def _dml_table_shapes(element: ET.Element) -> Iterable[Shape]:
                         max(0.0, cell_height - top_inset - bottom_inset),
                         _dml_table_cell_text_paint(cell),
                         text=text,
-                        font_size=_dml_font_size(cell),
-                        font_weight=_dml_font_weight(cell),
-                        font_style=_dml_font_style(cell),
-                        font_family=_dml_font_family(cell),
+                        font_size=_dml_font_size_from_properties(text_properties),
+                        font_weight=_dml_font_weight_from_properties(text_properties),
+                        font_style=_dml_font_style_from_properties(text_properties),
+                        font_family=_dml_font_family_from_properties(text_properties),
                         text_anchor=_dml_table_cell_text_anchor(cell),
                         text_baseline=_dml_table_cell_text_baseline(cell) or "middle",
                 )
@@ -618,9 +619,34 @@ def _dml_table_cell_border_paint(cell: ET.Element, tag: str) -> Paint | None:
 
 
 def _dml_table_cell_text_paint(cell: ET.Element) -> Paint:
-    fill_element = cell.find(f".//{qn(NS_A, 'rPr')}/{qn(NS_A, 'solidFill')}")
-    fill = _dml_color(fill_element) if fill_element is not None else None
-    return Paint(fill=fill or "#000000", stroke="none")
+    r_pr, def_r_pr, end_para_r_pr = _dml_table_cell_text_run_property_candidates(cell)
+    fill, fill_alpha = _dml_text_fill(cell, r_pr, def_r_pr, end_para_r_pr, Paint(fill="#000000", stroke="none"))
+    return Paint(fill=fill or "#000000", fill_alpha=fill_alpha, stroke="none")
+
+
+def _dml_table_cell_text_run_property_candidates(
+    cell: ET.Element,
+) -> tuple[ET.Element | None, ET.Element | None, ET.Element | None]:
+    p_pr = cell.find(f"{qn(NS_A, 'txBody')}/{qn(NS_A, 'p')}/{qn(NS_A, 'pPr')}")
+    return (
+        cell.find(f".//{qn(NS_A, 'rPr')}"),
+        _dml_table_cell_default_text_run_properties(cell, p_pr),
+        cell.find(f".//{qn(NS_A, 'endParaRPr')}"),
+    )
+
+
+def _dml_table_cell_default_text_run_properties(
+    cell: ET.Element,
+    p_pr: ET.Element | None,
+) -> ET.Element | None:
+    def_r_pr = p_pr.find(qn(NS_A, "defRPr")) if p_pr is not None else None
+    if def_r_pr is not None:
+        return def_r_pr
+    tx_body = cell.find(qn(NS_A, "txBody"))
+    if tx_body is None:
+        return None
+    list_p_pr = _dml_list_style_paragraph_properties(tx_body, p_pr)
+    return list_p_pr.find(qn(NS_A, "defRPr")) if list_p_pr is not None else None
 
 
 def _dml_table_cell_text_anchor(cell: ET.Element) -> str | None:

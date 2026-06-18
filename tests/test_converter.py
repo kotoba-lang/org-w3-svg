@@ -7889,3 +7889,44 @@ def test_drawingml_native_table_cell_list_style_alignment_maps_to_svg_text_ancho
 
     assert '<text fill="#000000" stroke="none" x="20" y="10" font-size="10" text-anchor="middle" dominant-baseline="middle">Center</text>' in svg
     assert '<text fill="#000000" stroke="none" x="80" y="10" font-size="10" text-anchor="end" dominant-baseline="middle">Right</text>' in svg
+
+
+def test_drawingml_native_table_cell_list_style_default_run_styles_apply_to_text() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:graphicFrame>
+        <p:xfrm><a:off x="0" y="0"/><a:ext cx="381000" cy="190500"/></p:xfrm>
+        <a:graphic><a:graphicData>
+          <a:tbl>
+            <a:tblGrid><a:gridCol w="381000"/></a:tblGrid>
+            <a:tr h="190500">
+              <a:tc>
+                <a:txBody>
+                  <a:bodyPr/>
+                  <a:lstStyle>
+                    <a:lvl2pPr>
+                      <a:defRPr sz="1400" b="1" i="1">
+                        <a:solidFill><a:srgbClr val="2563EB"><a:alpha val="50000"/></a:srgbClr></a:solidFill>
+                        <a:latin typeface="Aptos Display"/>
+                      </a:defRPr>
+                    </a:lvl2pPr>
+                  </a:lstStyle>
+                  <a:p><a:pPr lvl="1"/><a:r><a:rPr/><a:t>Styled</a:t></a:r></a:p>
+                </a:txBody>
+                <a:tcPr/>
+              </a:tc>
+            </a:tr>
+          </a:tbl>
+        </a:graphicData></a:graphic>
+      </p:graphicFrame>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'fill="#2563eb"' in svg
+    assert 'fill-opacity="0.5"' in svg
+    assert 'font-size="14"' in svg
+    assert 'font-weight="bold"' in svg
+    assert 'font-style="italic"' in svg
+    assert 'font-family="Aptos Display"' in svg
+    assert ">Styled</text>" in svg
