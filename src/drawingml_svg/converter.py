@@ -2821,6 +2821,20 @@ def _regular_polygon_points(sides: int, x: float, y: float, width: float, height
     ]
 
 
+def _regular_star_points(points: int, x: float, y: float, width: float, height: float, inner_scale: float = 0.55) -> list[tuple[float, float]]:
+    center_x = x + width / 2
+    center_y = y + height / 2
+    radius_x = width / 2
+    radius_y = height / 2
+    return [
+        (
+            center_x + math.cos(-math.pi / 2 + math.pi * index / points) * radius_x * (inner_scale if index % 2 else 1),
+            center_y + math.sin(-math.pi / 2 + math.pi * index / points) * radius_y * (inner_scale if index % 2 else 1),
+        )
+        for index in range(points * 2)
+    ]
+
+
 def _dml_preset_points(kind: str, x: float, y: float, width: float, height: float) -> list[tuple[float, float]]:
     if width <= 0 or height <= 0:
         return []
@@ -3104,6 +3118,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (x + width * 0.21, y + height * 0.1),
             (x + width * 0.44, y + height * 0.36),
         ]
+    if kind == "star12":
+        return _regular_star_points(12, x, y, width, height)
+    if kind == "star16":
+        return _regular_star_points(16, x, y, width, height)
     if kind == "rightArrow":
         return [(left, quarter_y), (arrow_head_x, quarter_y), (arrow_head_x, top), (right, center_y), (arrow_head_x, bottom), (arrow_head_x, three_quarter_y), (left, three_quarter_y)]
     if kind == "notchedRightArrow":

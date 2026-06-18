@@ -3252,6 +3252,22 @@ def test_drawingml_additional_star_presets_round_trip_to_svg_polygons() -> None:
           <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="6" name="twelve point star"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1238250" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="star12"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="E0F2FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="7" name="sixteen point star"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1524000" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="star16"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FCE7F3"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
@@ -3260,6 +3276,8 @@ def test_drawingml_additional_star_presets_round_trip_to_svg_polygons() -> None:
     assert '<polygon fill="#fee2e2" points="50,20 51.6,26.4 57,23 53.6,28.4 60,30 53.6,31.6 57,37 51.6,33.6 50,40 48.4,33.6 43,37 46.4,31.6 40,30 46.4,28.4 43,23 48.4,26.4"/>' in svg
     assert '<polygon fill="#dcfce7" points="80,20 82,26.6 88.6,25 84,30 88.6,35 82,33.4 80,40 78,33.4 71.4,35 76,30 71.4,25 78,26.6"/>' in svg
     assert '<polygon fill="#fef3c7" points="110,20 111.2,27.2 115.8,22 113.6,28.6 120,27 114,31 119.6,33 112.8,32.6 113,39 110,34 107,39 107.2,32.6 100.4,33 106,31 100,27 106.4,28.6 104.2,22 108.8,27.2"/>' in svg
+    assert '<polygon fill="#e0f2fe" points="140,20 141.4235,24.6874 145,21.3397 143.8891,26.1109 148.6603,25 145.3126,28.5765 150,30 145.3126,31.4235 148.6603,35 143.8891,33.8891 145,38.6603 141.4235,35.3126 140,40 138.5765,35.3126 135,38.6603 136.1109,33.8891 131.3397,35 134.6874,31.4235 130,30 134.6874,28.5765 131.3397,25 136.1109,26.1109 135,21.3397 138.5765,24.6874"/>' in svg
+    assert '<polygon fill="#fce7f3" points="170,20 171.073,24.6057 173.8268,20.7612 173.0556,25.4269 177.0711,22.9289 174.5731,26.9444 179.2388,26.1732 175.3943,28.927 180,30 175.3943,31.073 179.2388,33.8268 174.5731,33.0556 177.0711,37.0711 173.0556,34.5731 173.8268,39.2388 171.073,35.3943 170,40 168.927,35.3943 166.1732,39.2388 166.9444,34.5731 162.9289,37.0711 165.4269,33.0556 160.7612,33.8268 164.6057,31.073 160,30 164.6057,28.927 160.7612,26.1732 165.4269,26.9444 162.9289,22.9289 166.9444,25.4269 166.1732,20.7612 168.927,24.6057"/>' in svg
 
 
 def test_drawingml_math_symbol_presets_round_trip_to_svg_polygons() -> None:
