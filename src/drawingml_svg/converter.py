@@ -2565,7 +2565,14 @@ def _shape_kind_to_dml(kind: str) -> str:
 
 
 def _dml_kind_to_shape(kind: str) -> str | None:
-    return {"rect": "rect", "roundRect": "roundRect", "ellipse": "ellipse", "line": "line"}.get(kind)
+    return {
+        "rect": "rect",
+        "roundRect": "roundRect",
+        "ellipse": "ellipse",
+        "oval": "ellipse",
+        "line": "line",
+        "straightConnector1": "line",
+    }.get(kind)
 
 
 def _freeform_shape(points: list[tuple[float, float]], paint: Paint, closed: bool) -> Shape:

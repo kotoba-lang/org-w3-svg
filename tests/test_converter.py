@@ -2492,6 +2492,57 @@ def test_drawingml_invalid_numeric_paint_and_transform_values_do_not_crash() -> 
     assert "transform=" not in svg
 
 
+def test_drawingml_oval_preset_round_trips_to_svg_ellipse() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="oval"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="oval"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="DBEAFE"/></a:solidFill>
+          <a:ln w="19050"><a:solidFill><a:srgbClr val="2563EB"/></a:solidFill></a:ln>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "<ellipse" in svg
+    assert 'cx="30"' in svg
+    assert 'cy="30"' in svg
+    assert 'rx="20"' in svg
+    assert 'ry="10"' in svg
+    assert 'fill="#dbeafe"' in svg
+    assert 'stroke="#2563eb"' in svg
+    assert 'stroke-width="2"' in svg
+
+
+def test_drawingml_straight_connector_preset_round_trips_to_svg_line() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="straight connector"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="95250"/></a:xfrm>
+          <a:prstGeom prst="straightConnector1"><a:avLst/></a:prstGeom>
+          <a:ln w="9525"><a:solidFill><a:srgbClr val="111827"/></a:solidFill></a:ln>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "<line" in svg
+    assert 'x1="10"' in svg
+    assert 'y1="20"' in svg
+    assert 'x2="50"' in svg
+    assert 'y2="30"' in svg
+    assert 'stroke="#111827"' in svg
+    assert 'stroke-width="1"' in svg
+    assert 'fill="none"' in svg
+
+
 def test_drawingml_invalid_srgb_colors_do_not_crash() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
