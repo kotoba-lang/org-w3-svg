@@ -992,6 +992,26 @@ def test_analyze_svg_skips_hidden_unsupported_details() -> None:
     assert report.unsupported_path_commands == {}
 
 
+def test_analyze_svg_treats_foreign_object_as_single_unsupported_island() -> None:
+    svg = """<svg>
+      <foreignObject x="0" y="0" width="100" height="40">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table><tr><td>A</td><td>B</td></tr></table>
+        </body>
+      </foreignObject>
+      <foreignObject x="0" y="50" width="0" height="20">
+        <body xmlns="http://www.w3.org/1999/xhtml"><p>Hidden</p></body>
+      </foreignObject>
+    </svg>"""
+
+    report = analyze_svg(svg)
+
+    assert report.total_elements == 3
+    assert report.convertible_elements == 1
+    assert report.ignored_elements == 1
+    assert report.unsupported_elements == {"foreignObject": 1}
+
+
 def test_hidden_display_and_visibility_values_are_normalized() -> None:
     svg = """<svg>
       <path display=" NONE " d="M0 0 R10 20" filter="url(#blur)"/>

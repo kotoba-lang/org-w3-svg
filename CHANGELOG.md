@@ -43,6 +43,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Refined analyzer handling for SVG paint servers on element channels that do not render.
 - Refined analyzer handling for unreferenced or invisible SVG gradient geometry attributes.
 - Refined analyzer handling for unsupported SVG `vector-effect` values without visible strokes.
+- Refined analyzer handling for SVG `foreignObject` content, including embedded HTML tables, as a single unsupported rendering island.
 - Added analyzer reporting for inherited SVG `paint-order` values that change visible fill/stroke order.
 - Refined analyzer handling for group-level rectangular SVG `clipPath` values that can be applied to visible descendants.
 - Refined analyzer handling for group-level rectangular SVG `clipPath` values applied through `use` references.

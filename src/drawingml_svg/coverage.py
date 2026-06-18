@@ -312,6 +312,9 @@ def _walk(
     if tag == "path" and not visibility_hidden:
         _inspect_path(element.get("d", ""), stats)
 
+    if tag == "foreignObject":
+        return
+
     if tag == "switch":
         selected = _switch_selected_child(element)
         if selected is not None:
@@ -1071,7 +1074,7 @@ def _inspect_path(path_data: str, stats: _CoverageStats) -> None:
 
 def _has_non_rendering_geometry(element: ET.Element, style: dict[str, str], viewport: tuple[float, float]) -> bool:
     tag = _local_name(element.tag)
-    if tag in {"rect", "image"}:
+    if tag in {"foreignObject", "rect", "image"}:
         return _geometry_length(element, style, "width", "x", viewport) <= 0 or _geometry_length(
             element, style, "height", "y", viewport
         ) <= 0
