@@ -2229,6 +2229,31 @@ def test_unsupported_transform_origin_values_are_reported() -> None:
     assert analyze_svg(svg).unsupported_attributes == {"transform-origin": 2}
 
 
+def test_analyze_svg_ignores_transform_origin_without_visible_rendering() -> None:
+    svg = """<svg>
+      <g transform="rotate(10)" transform-origin="left right"/>
+      <g transform="rotate(10)" transform-origin="left right">
+        <rect width="10" height="8" display="none"/>
+      </g>
+      <g transform="rotate(10)" transform-origin="left right">
+        <rect width="10" height="8" fill="none" stroke="none"/>
+      </g>
+      <rect width="10" height="8" display="none" transform="rotate(10)" transform-origin="left right"/>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_analyze_svg_reports_transform_origin_with_visible_group_rendering() -> None:
+    svg = """<svg>
+      <g transform="rotate(10)" transform-origin="left right">
+        <rect width="10" height="8"/>
+      </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {"transform-origin": 1}
+
+
 def test_reflected_rect_stays_as_editable_rect() -> None:
     svg = '<svg><rect x="10" y="12" width="20" height="16" fill="#f97316" transform="scale(-1 1)"/></svg>'
     dml = svg_to_drawingml(svg)

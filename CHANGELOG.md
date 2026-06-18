@@ -35,6 +35,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added analyzer reporting for inherited unsupported SVG `stroke-linecap` and `stroke-linejoin` values on visible stroked descendants.
 - Refined analyzer handling for inherited SVG text decoration attributes without visible text descendants.
 - Refined analyzer handling for inherited SVG text layout attributes without visible text descendants.
+- Refined analyzer handling for SVG `transform-origin` values without visible rendering.
 - Refined analyzer handling for default SVG `isolation="auto"` values.
 - Refined analyzer handling for group-level clipping and effect attributes when the subtree has no visible rendering.
 - Refined analyzer handling for `text-decoration-color` values that match the visible text fill.

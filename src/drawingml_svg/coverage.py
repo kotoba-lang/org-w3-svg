@@ -494,6 +494,15 @@ def _inspect_attributes(
             continue
         if attr == "text-underline-offset" and _text_underline_offset_has_no_effect(specified_style):
             continue
+        if attr == "transform-origin" and not _subtree_has_visible_rendering(
+            element,
+            css,
+            refs,
+            style,
+            ancestors,
+            viewport,
+        ):
+            continue
         if attr == "transform-origin" and (
             _transform_origin_has_no_effect(specified_style)
             or _transform_origin_is_supported(element, specified_style, viewport)
