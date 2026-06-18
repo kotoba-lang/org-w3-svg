@@ -2134,6 +2134,8 @@ def test_unsupported_transform_origin_values_are_reported() -> None:
       <rect x="12" width="10" height="8" style="transform-origin: 50% 50%; transform: rotate(90deg)"/>
       <rect x="24" width="10" height="8" style="transform-origin: 5px 4px 1px; transform: rotate(90deg)"/>
       <rect x="36" width="10" height="8" style="transform-origin: left right; transform: rotate(90deg)"/>
+      <rect x="48" width="10" height="8" style="transform-origin: left right"/>
+      <rect x="60" width="10" height="8" style="transform-origin: left right; transform: none"/>
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {"transform-origin": 2}

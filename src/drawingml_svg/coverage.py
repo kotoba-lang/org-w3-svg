@@ -408,7 +408,10 @@ def _inspect_attributes(
             continue
         if attr == "text-underline-offset" and _text_underline_offset_has_no_effect(specified_style):
             continue
-        if attr == "transform-origin" and _transform_origin_is_supported(element, specified_style, viewport):
+        if attr == "transform-origin" and (
+            _transform_origin_has_no_effect(specified_style)
+            or _transform_origin_is_supported(element, specified_style, viewport)
+        ):
             continue
         if attr == "baseline-shift" and (
             _baseline_shift_has_no_effect(specified_style)
@@ -1045,6 +1048,14 @@ def _transform_origin_is_supported(
     if value is None:
         return False
     return _transform_origin(value, viewport, element, style) is not None
+
+
+def _transform_origin_has_no_effect(style: dict[str, str]) -> bool:
+    value = style.get("transform-origin")
+    if value is None:
+        return False
+    transform = style.get("transform")
+    return transform is None or transform.strip().lower() in {"", "none"}
 
 
 def _letter_spacing_is_supported(style: dict[str, str]) -> bool:
