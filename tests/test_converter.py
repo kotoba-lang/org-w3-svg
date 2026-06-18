@@ -2584,6 +2584,25 @@ def test_analyze_svg_reports_paint_order_when_fill_and_stroke_are_visible() -> N
     assert analyze_svg(svg).unsupported_attributes == {"paint-order": 1}
 
 
+def test_analyze_svg_reports_inherited_paint_order_when_fill_and_stroke_are_visible() -> None:
+    svg = """<svg>
+      <g paint-order="stroke fill">
+        <path d="M0 0 H10 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+      </g>
+      <g paint-order="stroke fill">
+        <path d="M20 0 H30 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2" paint-order="normal"/>
+      </g>
+      <g paint-order="stroke fill">
+        <path d="M40 0 H50 V10 Z" fill="#ffffff" stroke="none"/>
+      </g>
+      <g paint-order="markers fill stroke">
+        <path d="M60 0 H70 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2"/>
+      </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {"paint-order": 1}
+
+
 def test_analyze_svg_ignores_fill_rule_without_visible_fill() -> None:
     svg = """<svg>
       <path d="M0 0 H10 V10 Z" fill="none" stroke="#111111" fill-rule="evenodd"/>

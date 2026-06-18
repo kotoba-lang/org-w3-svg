@@ -414,7 +414,14 @@ def _inspect_attributes(
             continue
         if attr == "mix-blend-mode" and _mix_blend_mode_has_no_effect(element, specified_style, style, refs, css, viewport):
             continue
-        if attr == "paint-order" and _paint_order_has_no_effect(element, style, refs, css, viewport):
+        if attr == "paint-order" and not _subtree_has_unsupported_paint_order(
+            element,
+            css,
+            refs,
+            style,
+            ancestors,
+            viewport,
+        ):
             continue
         if attr == "pathLength" and _path_length_has_no_effect(element, style, refs, css, viewport):
             continue
@@ -1742,12 +1749,14 @@ def _paint_order_has_no_effect(
     value = style.get("paint-order")
     if value is None:
         return False
+    normalized = " ".join(value.strip().lower().split())
+    if normalized in {"normal", "fill", "fill stroke", "fill stroke markers"}:
+        return True
     paint = _svg_paint(style, refs, default_fill=_local_name(element.tag) != "line", css=css, viewport=viewport)
     has_fill = paint.fill not in {None, "none"}
     has_stroke = paint.stroke not in {None, "none"} and (paint.stroke_width or 0) > 0
     if not (has_fill and has_stroke):
         return True
-    normalized = " ".join(value.strip().lower().split())
     if normalized in {"markers fill stroke", "fill markers stroke"}:
         return not _has_visible_marker(style)
     return False
@@ -1758,6 +1767,68 @@ def _has_visible_marker(style: dict[str, str]) -> bool:
         value = style.get(attr)
         if value is not None and value.strip().lower() not in {"", "none"}:
             return True
+    return False
+
+
+def _subtree_has_unsupported_paint_order(
+    element: ET.Element,
+    css: list[CssRule],
+    refs: dict[str, ET.Element],
+    style: dict[str, str],
+    ancestors: tuple[ET.Element, ...],
+    viewport: tuple[float, float],
+) -> bool:
+    if _is_display_none(style):
+        return False
+    tag = _local_name(element.tag)
+    if (
+        not _is_visibility_hidden(style)
+        and tag in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}
+        and not _has_non_rendering_geometry(element, style, viewport)
+        and not _has_no_visible_paint(element, style, refs, css, viewport)
+        and style.get("paint-order") is not None
+        and not _paint_order_has_no_effect(element, style, refs, css, viewport)
+    ):
+        return True
+    child_viewport = viewport
+    if tag == "svg" and ancestors:
+        child_viewport = _viewport_size(
+            element,
+            _optional_length(element.get("width"), "x", viewport),
+            _optional_length(element.get("height"), "y", viewport),
+        )
+    if tag == "switch":
+        selected = _switch_selected_child(element)
+        if selected is None:
+            return False
+        selected_style = _computed_style(
+            selected,
+            css,
+            style,
+            ancestors + (element,),
+            _previous_element_siblings(element, selected),
+        )
+        return _subtree_has_unsupported_paint_order(
+            selected,
+            css,
+            refs,
+            selected_style,
+            ancestors + (element,),
+            child_viewport,
+        )
+    previous_children: list[ET.Element] = []
+    for child in element:
+        child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
+        if _subtree_has_unsupported_paint_order(
+            child,
+            css,
+            refs,
+            child_style,
+            ancestors + (element,),
+            child_viewport,
+        ):
+            return True
+        previous_children.append(child)
     return False
 
 
