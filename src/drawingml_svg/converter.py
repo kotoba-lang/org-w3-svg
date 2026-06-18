@@ -1900,12 +1900,64 @@ def _dml_auto_number_bullet(element: ET.Element | None, number: int) -> str | No
         return None
     start = _dml_int(element.get("startAt"), 1) or 1
     value = start + number - 1
+    lower_alpha = _alpha_number(value)
+    upper_alpha = lower_alpha.upper()
+    lower_roman = _roman_number(value)
+    upper_roman = lower_roman.upper()
     return {
         "arabicPeriod": f"{value}.",
         "arabicParenR": f"{value})",
         "arabicParenBoth": f"({value})",
         "arabicPlain": str(value),
+        "alphaLcPeriod": f"{lower_alpha}.",
+        "alphaUcPeriod": f"{upper_alpha}.",
+        "alphaLcParenR": f"{lower_alpha})",
+        "alphaUcParenR": f"{upper_alpha})",
+        "alphaLcParenBoth": f"({lower_alpha})",
+        "alphaUcParenBoth": f"({upper_alpha})",
+        "romanLcPeriod": f"{lower_roman}.",
+        "romanUcPeriod": f"{upper_roman}.",
+        "romanLcParenR": f"{lower_roman})",
+        "romanUcParenR": f"{upper_roman})",
+        "romanLcParenBoth": f"({lower_roman})",
+        "romanUcParenBoth": f"({upper_roman})",
     }.get(element.get("type", ""), f"{value}.")
+
+
+def _alpha_number(value: int) -> str:
+    if value <= 0:
+        return str(value)
+    letters = []
+    while value > 0:
+        value -= 1
+        letters.append(chr(ord("a") + value % 26))
+        value //= 26
+    return "".join(reversed(letters))
+
+
+def _roman_number(value: int) -> str:
+    if value <= 0 or value > 3999:
+        return str(value)
+    numerals = (
+        (1000, "m"),
+        (900, "cm"),
+        (500, "d"),
+        (400, "cd"),
+        (100, "c"),
+        (90, "xc"),
+        (50, "l"),
+        (40, "xl"),
+        (10, "x"),
+        (9, "ix"),
+        (5, "v"),
+        (4, "iv"),
+        (1, "i"),
+    )
+    parts = []
+    for amount, numeral in numerals:
+        count, value = divmod(value, amount)
+        parts.append(numeral * count)
+    return "".join(parts)
 
 
 def _dml_text_run_properties(element: ET.Element) -> ET.Element | None:

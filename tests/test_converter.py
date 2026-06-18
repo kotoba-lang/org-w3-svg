@@ -3951,6 +3951,31 @@ def test_drawingml_list_style_auto_number_falls_back_to_svg_text() -> None:
     assert "(3) Plain" not in svg
 
 
+def test_drawingml_alpha_and_roman_auto_number_bullets_round_trip_to_svg_text() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="text"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="762000" cy="762000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>
+        <p:txBody>
+          <a:bodyPr/><a:lstStyle/>
+          <a:p><a:pPr><a:buAutoNum type="alphaLcPeriod" startAt="26"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Lower</a:t></a:r></a:p>
+          <a:p><a:pPr><a:buAutoNum type="alphaUcParenR" startAt="26"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Upper</a:t></a:r></a:p>
+          <a:p><a:pPr><a:buAutoNum type="romanLcParenBoth" startAt="4"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Roman lower</a:t></a:r></a:p>
+          <a:p><a:pPr><a:buAutoNum type="romanUcPeriod" startAt="4"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Roman upper</a:t></a:r></a:p>
+        </p:txBody>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert "z. Lower" in svg
+    assert "AA) Upper" in svg
+    assert "(vi) Roman lower" in svg
+    assert "VII. Roman upper" in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
 def test_alignment_baseline_maps_to_text_anchor_when_dominant_baseline_is_absent() -> None:
     source = '<svg><text x="100" y="40" alignment-baseline=" hanging " font-size="20" fill="#111111">Top</text></svg>'
     dml = svg_to_drawingml(source)
