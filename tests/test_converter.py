@@ -3269,6 +3269,22 @@ def test_drawingml_symbol_presets_round_trip_to_svg_polygons() -> None:
           <a:solidFill><a:srgbClr val="E0F2FE"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="7" name="sun"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1524000" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="sun"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="8" name="moon"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1809750" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="moon"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="EDE9FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
@@ -3278,6 +3294,8 @@ def test_drawingml_symbol_presets_round_trip_to_svg_polygons() -> None:
     assert '<polygon fill="#fce7f3" points="80,40 70,29 71.6,23.6 76.4,20 80,24 83.6,20 88.4,23.6 90,29"/>' in svg
     assert '<polygon fill="#fef9c3" points="111.6,20 103.6,31 109.2,31 107.2,40 116.4,28 110.8,28"/>' in svg
     assert '<polygon fill="#e0f2fe" points="140,20 146.4,21.6 150,27.6 147.6,34.4 140,40 133.6,34.4 130,27.6 133.6,22.4"/>' in svg
+    assert '<polygon fill="#fef3c7" points="170,20 171.4047,22.9383 173.8268,20.7612 174.0001,24.0134 177.0711,22.9289 175.9866,25.9999 179.2388,26.1732 177.0617,28.5953 180,30 177.0617,31.4047 179.2388,33.8268 175.9866,34.0001 177.0711,37.0711 174.0001,35.9866 173.8268,39.2388 171.4047,37.0617 170,40 168.5953,37.0617 166.1732,39.2388 165.9999,35.9866 162.9289,37.0711 164.0134,34.0001 160.7612,33.8268 162.9383,31.4047 160,30 162.9383,28.5953 160.7612,26.1732 164.0134,25.9999 162.9289,22.9289 165.9999,24.0134 166.1732,20.7612 168.5953,22.9383"/>' in svg
+    assert '<polygon fill="#ede9fe" points="200,20 203.8268,20.7612 207.0711,22.9289 209.2388,26.1732 210,30 209.2388,33.8268 207.0711,37.0711 203.8268,39.2388 200,40 196.1732,39.2388 192.9289,37.0711 190.7612,33.8268 190,30 190.7612,26.1732 192.9289,22.9289 196.1732,20.7612 200,20 202.4,21.6 199.7978,22.2394 197.5917,24.0603 196.1176,26.7855 195.6,30 196.1176,33.2145 197.5917,35.9397 199.7978,37.7606 202.4,38.4 205.0022,37.7606 207.2083,35.9397 208.6824,33.2145 209.2,30 208.6824,26.7855 207.2083,24.0603 205.0022,22.2394 202.4,21.6"/>' in svg
 
 
 def test_drawingml_additional_star_presets_round_trip_to_svg_polygons() -> None:

@@ -3076,6 +3076,12 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (left, y + height * 0.38),
             (x + width * 0.18, y + height * 0.12),
         ]
+    if kind == "sun":
+        return _regular_star_points(16, x, y, width, height, 0.72)
+    if kind == "moon":
+        outer = _ellipse_arc_points(center_x, center_y, width / 2, height / 2, -90, 270, 16)
+        inner = _ellipse_arc_points(x + width * 0.62, center_y, width * 0.34, height * 0.42, 270, -90, 16)
+        return [*outer, *inner]
     if kind == "star4":
         return [
             (center_x, top),
