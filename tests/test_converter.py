@@ -2275,6 +2275,58 @@ def test_drawingml_scheme_colors_round_trip_to_svg_hex_colors() -> None:
     assert 'fill="#ed7d31"' in svg
 
 
+def test_drawingml_shape_style_refs_fall_back_to_svg_paint() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="style refs"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="95250"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+          <a:ln w="19050"/>
+        </p:spPr>
+        <p:style>
+          <a:lnRef idx="1"><a:schemeClr val="accent2"><a:alpha val="50000"/></a:schemeClr></a:lnRef>
+          <a:fillRef idx="1"><a:schemeClr val="accent1"><a:lumMod val="50000"/></a:schemeClr></a:fillRef>
+        </p:style>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'fill="#223962"' in svg
+    assert 'stroke="#ed7d31"' in svg
+    assert 'stroke-opacity="0.5"' in svg
+    assert 'stroke-width="2"' in svg
+    assert analyze_svg(svg).unsupported_attributes == {}
+
+
+def test_drawingml_explicit_shape_paint_overrides_style_refs() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="explicit paint"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="0" y="0"/><a:ext cx="95250" cy="95250"/></a:xfrm>
+          <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="AA5500"/></a:solidFill>
+          <a:ln><a:solidFill><a:srgbClr val="224466"/></a:solidFill></a:ln>
+        </p:spPr>
+        <p:style>
+          <a:lnRef idx="1"><a:schemeClr val="accent2"/></a:lnRef>
+          <a:fillRef idx="1"><a:schemeClr val="accent1"/></a:fillRef>
+        </p:style>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert 'fill="#aa5500"' in svg
+    assert 'stroke="#224466"' in svg
+    assert 'fill="#4472c4"' not in svg
+    assert 'stroke="#ed7d31"' not in svg
+
+
 def test_drawingml_scheme_color_luminance_modifiers_round_trip_to_svg_hex_colors() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">

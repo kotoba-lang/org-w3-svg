@@ -432,7 +432,19 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
             x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
             points, closed = _dml_custom_points(cust, x, y)
             if points:
-                yield Shape("freeform", x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, tuple(points), closed, rotation=rotation)
+                yield Shape(
+                    "freeform",
+                    x,
+                    y,
+                    width,
+                    height,
+                    _dml_paint(sp_pr, element),
+                    flip_h,
+                    flip_v,
+                    tuple(points),
+                    closed,
+                    rotation=rotation,
+                )
             continue
         prst = sp_pr.find(qn(NS_A, "prstGeom"))
         if prst is None:
@@ -443,7 +455,7 @@ def _dml_shapes(root: ET.Element) -> Iterable[Shape]:
         xfrm = sp_pr.find(qn(NS_A, "xfrm"))
         x, y, width, height, flip_h, flip_v, rotation = _dml_xfrm(xfrm)
         radius = min(width, height) / 6 if kind == "roundRect" else None
-        yield Shape(kind, x, y, width, height, _dml_paint(sp_pr), flip_h, flip_v, rx=radius, ry=radius, rotation=rotation)
+        yield Shape(kind, x, y, width, height, _dml_paint(sp_pr, element), flip_h, flip_v, rx=radius, ry=radius, rotation=rotation)
 
 
 def _shape_to_dml(shape: Shape, shape_id: int) -> ET.Element:
@@ -998,7 +1010,7 @@ def _font_family(value: str | None) -> str | None:
     return first.strip("\"'") or None
 
 
-def _dml_paint(sp_pr: ET.Element) -> Paint:
+def _dml_paint(sp_pr: ET.Element, element: ET.Element | None = None) -> Paint:
     fill = None
     solid_fill = sp_pr.find(qn(NS_A, "solidFill"))
     grad_fill = sp_pr.find(qn(NS_A, "gradFill"))
@@ -1015,11 +1027,17 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
         fill = "none"
         fill_alpha = None
     else:
-        fill_alpha = None
+        fill, fill_alpha = _dml_style_color(element, "fillRef")
+        if fill is None:
+            fill_alpha = None
 
-    stroke = None
+    style_stroke, style_stroke_alpha = _dml_style_color(element, "lnRef")
+
+    stroke = style_stroke
+    stroke_alpha = style_stroke_alpha
+    if style_stroke is None:
+        stroke_alpha = None
     stroke_width = None
-    stroke_alpha = None
     stroke_linecap = None
     stroke_linejoin = None
     stroke_dasharray = None
@@ -1035,8 +1053,10 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
         stroke_miterlimit = _dml_miterlimit(ln)
         marker_start = _dml_line_arrow(ln.find(qn(NS_A, "tailEnd")))
         marker_end = _dml_line_arrow(ln.find(qn(NS_A, "headEnd")))
-        stroke = _dml_line_color(ln)
-        stroke_alpha = _dml_line_alpha(ln)
+        line_color = _dml_line_color(ln)
+        if line_color is not None:
+            stroke = line_color
+            stroke_alpha = _dml_line_alpha(ln)
     return Paint(
         fill=fill,
         stroke=stroke,
@@ -1052,12 +1072,26 @@ def _dml_paint(sp_pr: ET.Element) -> Paint:
     )
 
 
+def _dml_style_color(element: ET.Element | None, tag: str) -> tuple[str | None, float | None]:
+    if element is None:
+        return None, None
+    style = element.find(qn(NS_P, "style"))
+    if style is None:
+        style = element.find(qn(NS_A, "style"))
+    if style is None:
+        return None, None
+    ref = style.find(qn(NS_A, tag))
+    if ref is None:
+        return None, None
+    return _dml_color(ref), _dml_alpha(ref)
+
+
 def _dml_text_paint(element: ET.Element, sp_pr: ET.Element) -> Paint:
     r_pr = _dml_text_run_properties(element)
     def_r_pr = _dml_default_text_run_properties(element)
     end_para_r_pr = _dml_end_paragraph_text_run_properties(element)
     ln = _dml_text_line_properties(r_pr, def_r_pr, end_para_r_pr)
-    shape_paint = _dml_paint(sp_pr)
+    shape_paint = _dml_paint(sp_pr, element)
     fill, fill_alpha = _dml_text_fill(r_pr, def_r_pr, end_para_r_pr, shape_paint)
     return Paint(
         fill=fill,
