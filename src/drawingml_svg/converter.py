@@ -2820,6 +2820,8 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
     three_quarter_x = x + width * 3 / 4
     quarter_y = y + height / 4
     three_quarter_y = y + height * 3 / 4
+    arrow_shaft_top = y + height * 0.4
+    arrow_shaft_bottom = y + height * 0.6
     arrow_head_x = x + width * 0.65
     arrow_head_y = y + height * 0.65
     if kind == "triangle":
@@ -2836,6 +2838,8 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind in {"hexagon", "flowChartPreparation"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
+    if kind == "flowChartOffpageConnector":
+        return [(left, top), (right, top), (right, three_quarter_y), (center_x, bottom), (left, three_quarter_y)]
     if kind == "chevron":
         return [(left, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (left, bottom), (quarter_x, center_y)]
     if kind == "homePlate":
@@ -2909,6 +2913,29 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (quarter_x, three_quarter_y),
             (quarter_x, quarter_y),
             (left, quarter_y),
+        ]
+    if kind == "quadArrow":
+        return [
+            (center_x, top),
+            (three_quarter_x, quarter_y),
+            (x + width * 0.6, quarter_y),
+            (x + width * 0.6, arrow_shaft_top),
+            (three_quarter_x, arrow_shaft_top),
+            (right, center_y),
+            (three_quarter_x, arrow_shaft_bottom),
+            (x + width * 0.6, arrow_shaft_bottom),
+            (x + width * 0.6, three_quarter_y),
+            (three_quarter_x, three_quarter_y),
+            (center_x, bottom),
+            (quarter_x, three_quarter_y),
+            (x + width * 0.4, three_quarter_y),
+            (x + width * 0.4, arrow_shaft_bottom),
+            (quarter_x, arrow_shaft_bottom),
+            (left, center_y),
+            (quarter_x, arrow_shaft_top),
+            (x + width * 0.4, arrow_shaft_top),
+            (x + width * 0.4, quarter_y),
+            (quarter_x, quarter_y),
         ]
     return []
 

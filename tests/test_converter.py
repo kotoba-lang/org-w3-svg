@@ -2965,6 +2965,24 @@ def test_drawingml_bidirectional_arrow_presets_round_trip_to_svg_polygons() -> N
     assert '<polygon fill="#fee2e2" points="70,20 80,30 75,30 75,50 80,50 70,60 60,50 65,50 65,30 60,30"/>' in svg
 
 
+def test_drawingml_quad_arrow_preset_round_trip_to_svg_polygon() -> None:
+    dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
+      xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="2" name="quad arrow"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="381000" cy="381000"/></a:xfrm>
+          <a:prstGeom prst="quadArrow"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="EDE9FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+    </p:spTree>"""
+
+    svg = drawingml_to_svg(dml)
+
+    assert '<polygon fill="#ede9fe" points="30,20 40,30 34,30 34,36 40,36 50,40 40,44 34,44 34,50 40,50 30,60 20,50 26,50 26,44 20,44 10,40 20,36 26,36 26,30 20,30"/>' in svg
+
+
 def test_drawingml_symbol_presets_round_trip_to_svg_polygons() -> None:
     dml = """<p:spTree xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
@@ -3064,6 +3082,14 @@ def test_drawingml_additional_flowchart_presets_round_trip_to_svg_shapes() -> No
           <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="5" name="off-page connector"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1333500" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="flowChartOffpageConnector"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FCE7F3"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
@@ -3071,6 +3097,7 @@ def test_drawingml_additional_flowchart_presets_round_trip_to_svg_shapes() -> No
     assert '<polygon fill="#dbeafe" points="20,20 50,20 40,40 10,40"/>' in svg
     assert '<polygon fill="#dcfce7" points="70,20 90,20 100,30 90,40 70,40 60,30"/>' in svg
     assert '<ellipse fill="#fef3c7" cx="120" cy="30" rx="10" ry="10"/>' in svg
+    assert '<polygon fill="#fce7f3" points="140,20 180,20 180,35 160,40 140,35"/>' in svg
 
 
 def test_drawingml_group_transform_scales_child_shapes_to_svg() -> None:
