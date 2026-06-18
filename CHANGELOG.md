@@ -26,6 +26,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added simple SVG `foreignObject` HTML table conversion to native DrawingML tables.
 - Added simple SVG `foreignObject` HTML table `colspan`/`rowspan` merge conversion.
 - Added simple SVG `foreignObject` HTML table cell color and border shorthand style conversion.
+- Added simple SVG `foreignObject` HTML table inherited and selector-based cell style conversion.
 - Added single-row and single-column SVG rect grid conversion to native DrawingML tables.
 - Added conservative SVG rect/text, line/text, and rect-background/line-border grid detection that exports complete simple grids and merged cells as native DrawingML tables.
 - Added SVG table grid-line paint preservation as individual DrawingML table cell borders.

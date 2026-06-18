@@ -439,7 +439,7 @@ def _svg_foreign_object_table_shapes(
             cell_y = transformed.y + row_index * row_height * scale_y
             cell_width = column_span * column_width * scale_x
             cell_height = row_span * row_height * scale_y
-            cell_style = _computed_style(cell, css, style, (element, table), ())
+            cell_style = _html_table_cell_style(element, cell, css, style)
             fill = _html_background_color(cell_style) or "#ffffff"
             stroke = _html_border_color(cell_style) or "#000000"
             shapes.append(
@@ -478,6 +478,38 @@ def _svg_foreign_object_table_shapes(
 def _foreign_object_table(element: ET.Element) -> ET.Element | None:
     tables = [descendant for descendant in element.iter() if descendant is not element and _local_name(descendant.tag) == "table"]
     return tables[0] if len(tables) == 1 else None
+
+
+def _html_table_cell_style(
+    foreign_object: ET.Element,
+    cell: ET.Element,
+    css: list[CssRule],
+    inherited_style: dict[str, str],
+) -> dict[str, str]:
+    path = _element_path(foreign_object, cell)
+    if not path:
+        return _computed_style(cell, css, inherited_style, (foreign_object,), ())
+    style = inherited_style
+    for index, node in enumerate(path[1:], start=1):
+        parent = path[index - 1]
+        style = _computed_style(
+            node,
+            css,
+            style,
+            tuple(path[:index]),
+            _previous_element_siblings(parent, node),
+        )
+    return style
+
+
+def _element_path(root: ET.Element, target: ET.Element) -> tuple[ET.Element, ...]:
+    if root is target:
+        return (root,)
+    for child in root:
+        child_path = _element_path(child, target)
+        if child_path:
+            return (root, *child_path)
+    return ()
 
 
 def _html_table_grid(table: ET.Element) -> tuple[list[list[tuple[int, ET.Element, int, int]]], int] | None:

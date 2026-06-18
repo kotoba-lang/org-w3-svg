@@ -1143,6 +1143,37 @@ def test_foreign_object_html_table_shorthand_styles_convert() -> None:
     assert analyze_svg(svg).unsupported_elements == {}
 
 
+def test_foreign_object_html_table_css_selectors_apply_to_cells() -> None:
+    svg = """<svg width="140" height="50">
+      <style>
+        table.report tr.total > td { background: #fef3c7; border: 3px solid #d97706; color: #78350f; }
+        table.report td.value { font-weight: 700; font-family: Aptos; }
+      </style>
+      <foreignObject x="10" y="8" width="110" height="24">
+        <body xmlns="http://www.w3.org/1999/xhtml">
+          <table class="report">
+            <tr class="total">
+              <td>Total</td>
+              <td class="value">128</td>
+            </tr>
+          </table>
+        </body>
+      </foreignObject>
+    </svg>"""
+
+    dml = svg_to_drawingml(svg)
+
+    assert "<a:tbl>" in dml
+    assert 'val="FEF3C7"' in dml
+    assert 'val="D97706"' in dml
+    assert 'val="78350F"' in dml
+    assert 'w="28575"' in dml
+    assert '<a:rPr sz="1600" b="1">' in dml
+    assert '<a:latin typeface="Aptos"/>' in dml
+    assert "<a:t>128</a:t>" in dml
+    assert analyze_svg(svg).unsupported_elements == {}
+
+
 def test_foreign_object_html_table_spans_convert_to_native_table_merges() -> None:
     svg = """<svg width="120" height="60">
       <foreignObject x="10" y="8" width="100" height="40">
