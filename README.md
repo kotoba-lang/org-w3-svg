@@ -53,6 +53,19 @@ The repository includes a small example that embeds converted DrawingML shapes i
 PYTHONPATH=src python examples/make_pptx.py examples/sample.svg -o tmp/drawingml-svg-sample.pptx
 ```
 
+## Supported DrawingML presets
+
+`dml2svg` currently preserves these DrawingML preset geometries as editable SVG shapes. Curved presets are converted to editable polygon approximations where SVG does not have a matching primitive:
+
+- Basic primitives: `ellipse`, `line`, `oval`, `rect`, `roundRect`, `straightConnector1`
+- Common polygons and corners: `bevel`, `corner`, `decagon`, `diagStripe`, `diamond`, `dodecagon`, `foldedCorner`, `halfFrame`, `heptagon`, `hexagon`, `homePlate`, `nonIsoscelesTrapezoid`, `octagon`, `parallelogram`, `pentagon`, `plaque`, `rtTriangle`, `snip1Rect`, `snip2DiagRect`, `snip2SameRect`, `trapezoid`, `triangle`
+- Arc-like shapes: `blockArc`, `chord`, `pie`
+- Arrows: `bentArrow`, `bentUpArrow`, `chevron`, `downArrow`, `leftArrow`, `leftRightArrow`, `leftRightUpArrow`, `leftUpArrow`, `notchedRightArrow`, `quadArrow`, `rightArrow`, `upArrow`, `upDownArrow`, `uturnArrow`
+- Ribbons and callouts: `funnel`, `leftRightRibbon`, `ribbon`, `ribbon2`, `wedgeEllipseCallout`, `wedgeRectCallout`, `wedgeRoundRectCallout`
+- Action buttons: `actionButtonBackPrevious`, `actionButtonBeginning`, `actionButtonBlank`, `actionButtonDocument`, `actionButtonEnd`, `actionButtonForwardNext`, `actionButtonHelp`, `actionButtonHome`, `actionButtonInformation`, `actionButtonMovie`, `actionButtonReturn`, `actionButtonSound`
+- Symbols, stars, and math shapes: `cloud`, `heart`, `irregularSeal1`, `irregularSeal2`, `leftBrace`, `leftBracket`, `lightningBolt`, `mathMinus`, `mathMultiply`, `mathPlus`, `moon`, `plus`, `rightBrace`, `rightBracket`, `star4`, `star5`, `star6`, `star8`, `star10`, `star12`, `star16`, `sun`, `teardrop`
+- Flowchart shapes: `flowChartAlternateProcess`, `flowChartCollate`, `flowChartConnector`, `flowChartData`, `flowChartDecision`, `flowChartDelay`, `flowChartDisplay`, `flowChartDocument`, `flowChartExtract`, `flowChartInputOutput`, `flowChartManualInput`, `flowChartManualOperation`, `flowChartMerge`, `flowChartOffpageConnector`, `flowChartOr`, `flowChartPreparation`, `flowChartProcess`, `flowChartPunchedCard`, `flowChartPunchedTape`, `flowChartSort`, `flowChartStoredData`, `flowChartSummingJunction`, `flowChartTerminator`
+
 ## Python API
 
 ```python

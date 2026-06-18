@@ -1,5 +1,7 @@
 import base64
+import ast
 import io
+import re
 import tomllib
 import zipfile
 from importlib import resources
@@ -14,6 +16,45 @@ from drawingml_svg.cli import main as cli_main
 from examples.make_pptx import build_slide_xml, main as make_pptx_main, prepare_slide_media, write_pptx
 
 PNG_DATA_URI = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="
+
+
+def _documented_drawingml_preset_names() -> set[str]:
+    root = Path(__file__).resolve().parents[1]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    section = readme.split("## Supported DrawingML presets\n", 1)[1].split("\n## ", 1)[0]
+    return {
+        preset
+        for line in section.splitlines()
+        if line.startswith("- ")
+        for preset in re.findall(r"`([A-Za-z][A-Za-z0-9]*)`", line)
+    }
+
+
+def _implemented_drawingml_preset_names() -> set[str]:
+    root = Path(__file__).resolve().parents[1]
+    tree = ast.parse((root / "src" / "drawingml_svg" / "converter.py").read_text(encoding="utf-8"))
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.FunctionDef) or node.name not in {"_dml_kind_to_shape", "_dml_preset_points"}:
+            continue
+        for subnode in ast.walk(node):
+            if isinstance(subnode, ast.Dict):
+                names.update(
+                    key.value
+                    for key in subnode.keys
+                    if isinstance(key, ast.Constant) and isinstance(key.value, str)
+                )
+            if isinstance(subnode, ast.Compare) and isinstance(subnode.left, ast.Name) and subnode.left.id == "kind":
+                for comparator in subnode.comparators:
+                    if isinstance(comparator, ast.Constant) and isinstance(comparator.value, str):
+                        names.add(comparator.value)
+                    elif isinstance(comparator, ast.Set):
+                        names.update(
+                            item.value
+                            for item in comparator.elts
+                            if isinstance(item, ast.Constant) and isinstance(item.value, str)
+                        )
+    return names
 
 
 def _webp_data_uri(width: int, height: int) -> str:
@@ -36,6 +77,10 @@ def test_project_metadata_exposes_public_repository_links() -> None:
         "Repository": "https://github.com/com-junkawasaki/drawingml-svg",
         "Issues": "https://github.com/com-junkawasaki/drawingml-svg/issues",
     }
+
+
+def test_readme_documents_supported_drawingml_presets() -> None:
+    assert _documented_drawingml_preset_names() == _implemented_drawingml_preset_names()
 
 
 def test_cli_analyze_writes_json_to_stdout(tmp_path, capsys) -> None:
