@@ -2784,6 +2784,30 @@ def test_drawingml_common_polygon_presets_round_trip_to_svg_polygons() -> None:
           <a:solidFill><a:srgbClr val="FEF3C7"/></a:solidFill>
         </p:spPr>
       </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="6" name="heptagon"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1428750" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="heptagon"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="EDE9FE"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="7" name="decagon"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="1714500" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="decagon"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="FCE7F3"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
+      <p:sp>
+        <p:nvSpPr><p:cNvPr id="8" name="dodecagon"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+        <p:spPr>
+          <a:xfrm><a:off x="2000250" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+          <a:prstGeom prst="dodecagon"><a:avLst/></a:prstGeom>
+          <a:solidFill><a:srgbClr val="CCFBF1"/></a:solidFill>
+        </p:spPr>
+      </p:sp>
     </p:spTree>"""
 
     svg = drawingml_to_svg(dml)
@@ -2792,6 +2816,9 @@ def test_drawingml_common_polygon_presets_round_trip_to_svg_polygons() -> None:
     assert '<polygon fill="#dbeafe" points="70,20 80,30 70,40 60,30"/>' in svg
     assert '<polygon fill="#dcfce7" points="100,20 110,27.6 106.2,40 93.8,40 90,27.6"/>' in svg
     assert '<polygon fill="#fef3c7" points="125,20 135,20 140,30 135,40 125,40 120,30"/>' in svg
+    assert '<polygon fill="#ede9fe" points="160,20 167.8183,23.7651 169.7493,32.2252 164.3388,39.0097 155.6612,39.0097 150.2507,32.2252 152.1817,23.7651"/>' in svg
+    assert '<polygon fill="#fce7f3" points="190,20 195.8779,21.9098 199.5106,26.9098 199.5106,33.0902 195.8779,38.0902 190,40 184.1221,38.0902 180.4894,33.0902 180.4894,26.9098 184.1221,21.9098"/>' in svg
+    assert '<polygon fill="#ccfbf1" points="220,20 225,21.3397 228.6603,25 230,30 228.6603,35 225,38.6603 220,40 215,38.6603 211.3397,35 210,30 211.3397,25 215,21.3397"/>' in svg
 
 
 def test_drawingml_cut_corner_presets_round_trip_to_svg_polygons() -> None:

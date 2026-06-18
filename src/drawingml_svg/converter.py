@@ -2807,6 +2807,20 @@ def _dml_kind_to_shape(kind: str) -> str | None:
     }.get(kind)
 
 
+def _regular_polygon_points(sides: int, x: float, y: float, width: float, height: float) -> list[tuple[float, float]]:
+    center_x = x + width / 2
+    center_y = y + height / 2
+    radius_x = width / 2
+    radius_y = height / 2
+    return [
+        (
+            center_x + math.cos(-math.pi / 2 + 2 * math.pi * index / sides) * radius_x,
+            center_y + math.sin(-math.pi / 2 + 2 * math.pi * index / sides) * radius_y,
+        )
+        for index in range(sides)
+    ]
+
+
 def _dml_preset_points(kind: str, x: float, y: float, width: float, height: float) -> list[tuple[float, float]]:
     if width <= 0 or height <= 0:
         return []
@@ -2838,6 +2852,8 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
         return [(center_x, top), (right, y + height * 0.38), (x + width * 0.81, bottom), (x + width * 0.19, bottom), (left, y + height * 0.38)]
     if kind in {"hexagon", "flowChartPreparation"}:
         return [(quarter_x, top), (three_quarter_x, top), (right, center_y), (three_quarter_x, bottom), (quarter_x, bottom), (left, center_y)]
+    if kind == "heptagon":
+        return _regular_polygon_points(7, x, y, width, height)
     if kind == "octagon":
         return [
             (quarter_x, top),
@@ -2849,6 +2865,10 @@ def _dml_preset_points(kind: str, x: float, y: float, width: float, height: floa
             (left, three_quarter_y),
             (left, quarter_y),
         ]
+    if kind == "decagon":
+        return _regular_polygon_points(10, x, y, width, height)
+    if kind == "dodecagon":
+        return _regular_polygon_points(12, x, y, width, height)
     if kind == "bevel":
         bevel_x = x + width * 0.18
         bevel_y = y + height * 0.18
