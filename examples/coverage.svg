@@ -66,7 +66,7 @@
     <text x="236" y="144" font-size="7" fill="#0f172a">run <tspan text-anchor="end">anchor</tspan></text>
     <text x="302" y="144" font-weight=" BOLD " font-style=" oblique 10deg " font-size="7" fill="#0f172a">style</text>
     <text x="302" y="126" font-family="'A,B Display', Arial, sans-serif" font-stretch="100.0%" font-size="6" fill="#0f172a">family</text>
-    <text x="284" y="116" kerning="4" font-kerning="none" font-size="7" fill="#0f172a">A</text>
+    <text x="284" y="116" kerning="4" font-kerning="none" glyph-orientation-vertical="360deg" font-size="7" fill="#0f172a">A</text>
     <text x="170" y="66" baseline-shift="super" font-size="7" fill="#0f172a">sup</text>
     <text x="12" y="116" font-size="6" fill="#111827" stroke="#ffffff" stroke-width="1" transform="SCALE(1.5)">outline</text>
     <path class="route" d="M20 130 C80 70, 140 170, 210 110 S300 70, 320 132" marker-start="none" marker-mid="none" marker-end="url(#arrow)" stroke-dashoffset="3mm" fill-rule="evenodd" clip-rule="evenodd" clip-path="none" filter="none" mask="none" paint-order="fill stroke markers" shape-rendering="auto" vector-effect="none"/>

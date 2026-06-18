@@ -1441,8 +1441,8 @@ def test_unconverted_text_direction_and_typography_attributes_are_reported() -> 
       <text x="0" y="80" glyph-orientation-vertical="90deg" glyph-orientation-horizontal="90deg">Glyphs</text>
       <text class="features" x="0" y="100" kerning="4" font-kerning="none">Features</text>
       <text x="0" y="120" writing-mode="horizontal-tb" direction="ltr" unicode-bidi="normal"
-        alignment-baseline="hanging" dominant-baseline="middle" glyph-orientation-vertical="0deg"
-        glyph-orientation-horizontal="0" kerning="auto" font-kerning="normal"
+        alignment-baseline="hanging" dominant-baseline="middle" glyph-orientation-vertical="360deg"
+        glyph-orientation-horizontal="0.0turn" kerning="auto" font-kerning="normal"
         font-feature-settings="normal" font-variation-settings="normal">Noop</text>
       <text x="0" y="140" kerning="0px">Zero kerning</text>
       <text x="0" y="160" kerning="4" font-kerning="none">A</text>

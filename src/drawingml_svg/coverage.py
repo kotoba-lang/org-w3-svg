@@ -39,6 +39,7 @@ from .converter import (
     _svg_linecap,
     _svg_linejoin,
     _svg_rotation_values,
+    _transform_angle_arg,
     _transform_origin,
     _switch_selected_child,
     _url_ref,
@@ -692,7 +693,13 @@ def _glyph_orientation_has_no_effect(style: dict[str, str], attr: str) -> bool:
     if value is None:
         return False
     normalized = value.strip().lower()
-    return normalized in {"", "auto", "0", "0deg", "0grad", "0rad", "0turn"}
+    if normalized in {"", "auto"}:
+        return True
+    angle = _transform_angle_arg(normalized)
+    if angle is None:
+        return False
+    remainder = angle % 360
+    return min(remainder, abs(remainder - 360)) < 1e-9
 
 
 def _font_kerning_has_no_effect(element: ET.Element, style: dict[str, str]) -> bool:
