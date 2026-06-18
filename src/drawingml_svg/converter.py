@@ -522,8 +522,13 @@ def _dml_table_shapes(element: ET.Element) -> Iterable[Shape]:
                         font_weight=_dml_font_weight_from_properties(text_properties),
                         font_style=_dml_font_style_from_properties(text_properties),
                         font_family=_dml_font_family_from_properties(text_properties),
+                        font_variant=_dml_font_variant_from_properties(text_properties),
+                        text_decoration=_dml_text_decoration_from_properties(text_properties),
+                        text_decoration_style=_dml_text_decoration_style_from_properties(text_properties),
                         text_anchor=_dml_table_cell_text_anchor(cell),
                         text_baseline=_dml_table_cell_text_baseline(cell) or "middle",
+                        text_baseline_shift=_dml_text_baseline_shift_from_properties(text_properties),
+                        letter_spacing=_dml_letter_spacing_from_properties(text_properties),
                 )
             )
             left += cell_width
@@ -620,8 +625,20 @@ def _dml_table_cell_border_paint(cell: ET.Element, tag: str) -> Paint | None:
 
 def _dml_table_cell_text_paint(cell: ET.Element) -> Paint:
     r_pr, def_r_pr, end_para_r_pr = _dml_table_cell_text_run_property_candidates(cell)
-    fill, fill_alpha = _dml_text_fill(cell, r_pr, def_r_pr, end_para_r_pr, Paint(fill="#000000", stroke="none"))
-    return Paint(fill=fill or "#000000", fill_alpha=fill_alpha, stroke="none")
+    shape_paint = Paint(fill="#000000", stroke="none")
+    ln = _dml_text_line_properties(r_pr, def_r_pr, end_para_r_pr)
+    fill, fill_alpha = _dml_text_fill(cell, r_pr, def_r_pr, end_para_r_pr, shape_paint)
+    return Paint(
+        fill=fill or "#000000",
+        stroke=_dml_line_color(ln) if ln is not None else shape_paint.stroke,
+        stroke_width=_dml_line_width(ln) if ln is not None else shape_paint.stroke_width,
+        fill_alpha=fill_alpha,
+        stroke_alpha=_dml_line_alpha(ln) if ln is not None else shape_paint.stroke_alpha,
+        stroke_linecap=_dml_linecap(ln.get("cap")) if ln is not None else shape_paint.stroke_linecap,
+        stroke_linejoin=_dml_linejoin(ln) if ln is not None else shape_paint.stroke_linejoin,
+        stroke_dasharray=_dml_dasharray(ln) if ln is not None else shape_paint.stroke_dasharray,
+        stroke_miterlimit=_dml_miterlimit(ln) if ln is not None else shape_paint.stroke_miterlimit,
+    )
 
 
 def _dml_table_cell_text_run_property_candidates(

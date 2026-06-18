@@ -7905,8 +7905,13 @@ def test_drawingml_native_table_cell_list_style_default_run_styles_apply_to_text
                   <a:bodyPr/>
                   <a:lstStyle>
                     <a:lvl2pPr>
-                      <a:defRPr sz="1400" b="1" i="1">
+                      <a:defRPr sz="1400" b="1" i="1" cap="small" u="dash" strike="sngStrike" baseline="30000" spc="150">
                         <a:solidFill><a:srgbClr val="2563EB"><a:alpha val="50000"/></a:srgbClr></a:solidFill>
+                        <a:ln w="9525" cap="rnd">
+                          <a:solidFill><a:srgbClr val="DC2626"><a:alpha val="75000"/></a:srgbClr></a:solidFill>
+                          <a:prstDash val="dash"/>
+                          <a:round/>
+                        </a:ln>
                         <a:latin typeface="Aptos Display"/>
                       </a:defRPr>
                     </a:lvl2pPr>
@@ -7929,4 +7934,15 @@ def test_drawingml_native_table_cell_list_style_default_run_styles_apply_to_text
     assert 'font-weight="bold"' in svg
     assert 'font-style="italic"' in svg
     assert 'font-family="Aptos Display"' in svg
+    assert 'font-variant="small-caps"' in svg
+    assert 'text-decoration="underline line-through"' in svg
+    assert 'text-decoration-style="dashed"' in svg
+    assert 'baseline-shift="super"' in svg
+    assert 'letter-spacing="2"' in svg
+    assert 'stroke="#dc2626"' in svg
+    assert 'stroke-width="1"' in svg
+    assert 'stroke-opacity="0.75"' in svg
+    assert 'stroke-linecap="round"' in svg
+    assert 'stroke-linejoin="round"' in svg
+    assert 'stroke-dasharray="4 3"' in svg
     assert ">Styled</text>" in svg

@@ -21,7 +21,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added DrawingML table cell text inset handling from `bodyPr` `lIns`/`rIns`/`tIns`/`bIns`.
 - Added DrawingML table cell text vertical anchor extraction from `bodyPr` `anchor`.
 - Added DrawingML table cell list-style paragraph alignment fallback.
-- Added DrawingML table cell list-style default run paint/font fallback.
+- Added DrawingML table cell list-style default run paint/font/outline/decoration fallback.
 - Added conservative SVG rect/text, line/text, and rect-background/line-border grid detection that exports complete simple grids and merged cells as native DrawingML tables.
 - Added SVG table grid-line paint preservation as individual DrawingML table cell borders.
 - Added SVG table grid-line cap/dash/join preservation as individual DrawingML table cell borders.
