@@ -977,10 +977,17 @@ def _subtree_has_visible_fill(
     style: dict[str, str],
     ancestors: tuple[ET.Element, ...],
     viewport: tuple[float, float],
+    ref_stack: frozenset[str] = frozenset(),
 ) -> bool:
     if _is_display_none(style):
         return False
     tag = _local_name(element.tag)
+    if tag == "use":
+        ref_context = _use_reference_context(element, refs, viewport, ref_stack)
+        if ref_context is None:
+            return False
+        ref, ref_viewport, next_stack = ref_context
+        return _subtree_has_visible_fill(ref, css, refs, style, ancestors + (element,), ref_viewport, next_stack)
     if (
         not _is_visibility_hidden(style)
         and tag in {"circle", "ellipse", "path", "polygon", "polyline", "rect", "text", "tspan"}
@@ -1013,6 +1020,7 @@ def _subtree_has_visible_fill(
             selected_style,
             ancestors + (element,),
             child_viewport,
+            ref_stack,
         )
     previous_children: list[ET.Element] = []
     for child in element:
@@ -1024,6 +1032,7 @@ def _subtree_has_visible_fill(
             child_style,
             ancestors + (element,),
             child_viewport,
+            ref_stack,
         ):
             return True
         previous_children.append(child)
@@ -1037,10 +1046,17 @@ def _subtree_has_visible_stroke(
     style: dict[str, str],
     ancestors: tuple[ET.Element, ...],
     viewport: tuple[float, float],
+    ref_stack: frozenset[str] = frozenset(),
 ) -> bool:
     if _is_display_none(style):
         return False
     tag = _local_name(element.tag)
+    if tag == "use":
+        ref_context = _use_reference_context(element, refs, viewport, ref_stack)
+        if ref_context is None:
+            return False
+        ref, ref_viewport, next_stack = ref_context
+        return _subtree_has_visible_stroke(ref, css, refs, style, ancestors + (element,), ref_viewport, next_stack)
     if (
         not _is_visibility_hidden(style)
         and tag in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}
@@ -1066,11 +1082,13 @@ def _subtree_has_visible_stroke(
             ancestors + (element,),
             _previous_element_siblings(element, selected),
         )
-        return _subtree_has_visible_stroke(selected, css, refs, selected_style, ancestors + (element,), child_viewport)
+        return _subtree_has_visible_stroke(
+            selected, css, refs, selected_style, ancestors + (element,), child_viewport, ref_stack
+        )
     previous_children: list[ET.Element] = []
     for child in element:
         child_style = _computed_style(child, css, style, ancestors + (element,), tuple(previous_children))
-        if _subtree_has_visible_stroke(child, css, refs, child_style, ancestors + (element,), child_viewport):
+        if _subtree_has_visible_stroke(child, css, refs, child_style, ancestors + (element,), child_viewport, ref_stack):
             return True
         previous_children.append(child)
     return False
@@ -1930,10 +1948,17 @@ def _subtree_has_unsupported_paint_order(
     style: dict[str, str],
     ancestors: tuple[ET.Element, ...],
     viewport: tuple[float, float],
+    ref_stack: frozenset[str] = frozenset(),
 ) -> bool:
     if _is_display_none(style):
         return False
     tag = _local_name(element.tag)
+    if tag == "use":
+        ref_context = _use_reference_context(element, refs, viewport, ref_stack)
+        if ref_context is None:
+            return False
+        ref, ref_viewport, next_stack = ref_context
+        return _subtree_has_unsupported_paint_order(ref, css, refs, style, ancestors + (element,), ref_viewport, next_stack)
     if (
         not _is_visibility_hidden(style)
         and tag in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}
@@ -1968,6 +1993,7 @@ def _subtree_has_unsupported_paint_order(
             selected_style,
             ancestors + (element,),
             child_viewport,
+            ref_stack,
         )
     previous_children: list[ET.Element] = []
     for child in element:
@@ -1979,6 +2005,7 @@ def _subtree_has_unsupported_paint_order(
             child_style,
             ancestors + (element,),
             child_viewport,
+            ref_stack,
         ):
             return True
         previous_children.append(child)
@@ -2071,10 +2098,19 @@ def _subtree_has_unsupported_stroke_line_enum(
     ancestors: tuple[ET.Element, ...],
     viewport: tuple[float, float],
     attr: str,
+    ref_stack: frozenset[str] = frozenset(),
 ) -> bool:
     if _is_display_none(style):
         return False
     tag = _local_name(element.tag)
+    if tag == "use":
+        ref_context = _use_reference_context(element, refs, viewport, ref_stack)
+        if ref_context is None:
+            return False
+        ref, ref_viewport, next_stack = ref_context
+        return _subtree_has_unsupported_stroke_line_enum(
+            ref, css, refs, style, ancestors + (element,), ref_viewport, attr, next_stack
+        )
     if (
         not _is_visibility_hidden(style)
         and tag in {"circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"}
@@ -2109,6 +2145,7 @@ def _subtree_has_unsupported_stroke_line_enum(
             ancestors + (element,),
             child_viewport,
             attr,
+            ref_stack,
         )
     previous_children: list[ET.Element] = []
     for child in element:
@@ -2121,6 +2158,7 @@ def _subtree_has_unsupported_stroke_line_enum(
             ancestors + (element,),
             child_viewport,
             attr,
+            ref_stack,
         ):
             return True
         previous_children.append(child)

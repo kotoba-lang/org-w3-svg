@@ -2544,6 +2544,20 @@ def test_analyze_svg_reports_vector_effect_with_visible_stroke() -> None:
     assert analyze_svg(inherited).unsupported_attributes == {"vector-effect": 1}
 
 
+def test_analyze_svg_reports_inherited_vector_effect_on_use_visible_stroke() -> None:
+    stroke = """<svg>
+      <defs><g id="glyph"><rect width="10" height="8" fill="#111111" stroke="#222222" stroke-width="2"/></g></defs>
+      <g vector-effect="non-scaling-size"><use href="#glyph"/></g>
+    </svg>"""
+    fill_only = """<svg>
+      <defs><g id="glyph"><rect width="10" height="8" fill="#111111" stroke="none"/></g></defs>
+      <g vector-effect="non-scaling-size"><use href="#glyph"/></g>
+    </svg>"""
+
+    assert analyze_svg(stroke).unsupported_attributes == {"vector-effect": 1}
+    assert analyze_svg(fill_only).unsupported_attributes == {}
+
+
 def test_analyze_svg_ignores_clip_rule_outside_clip_path() -> None:
     svg = '<svg><path d="M0 0 H10 V10 Z" clip-rule="evenodd" fill="#111111"/></svg>'
 
@@ -2603,6 +2617,20 @@ def test_analyze_svg_reports_inherited_paint_order_when_fill_and_stroke_are_visi
     assert analyze_svg(svg).unsupported_attributes == {"paint-order": 1}
 
 
+def test_analyze_svg_reports_inherited_paint_order_on_use_fill_and_stroke() -> None:
+    visible = """<svg>
+      <defs><g id="glyph"><path d="M0 0 H10 V10 Z" fill="#ffffff" stroke="#111111" stroke-width="2"/></g></defs>
+      <g paint-order="stroke fill"><use href="#glyph"/></g>
+    </svg>"""
+    fill_only = """<svg>
+      <defs><g id="glyph"><path d="M0 0 H10 V10 Z" fill="#ffffff" stroke="none"/></g></defs>
+      <g paint-order="stroke fill"><use href="#glyph"/></g>
+    </svg>"""
+
+    assert analyze_svg(visible).unsupported_attributes == {"paint-order": 1}
+    assert analyze_svg(fill_only).unsupported_attributes == {}
+
+
 def test_analyze_svg_ignores_fill_rule_without_visible_fill() -> None:
     svg = """<svg>
       <path d="M0 0 H10 V10 Z" fill="none" stroke="#111111" fill-rule="evenodd"/>
@@ -2635,6 +2663,20 @@ def test_analyze_svg_reports_inherited_fill_rule_with_visible_fill() -> None:
     svg = '<svg><g fill-rule="evenodd"><path d="M0 0 H10 V10 Z" fill="#111111"/></g></svg>'
 
     assert analyze_svg(svg).unsupported_attributes == {"fill-rule": 1}
+
+
+def test_analyze_svg_reports_inherited_fill_rule_on_use_visible_fill() -> None:
+    filled = """<svg>
+      <defs><g id="glyph"><path d="M0 0 H10 V10 Z" fill="#111111"/></g></defs>
+      <g fill-rule="evenodd"><use href="#glyph"/></g>
+    </svg>"""
+    stroke_only = """<svg>
+      <defs><g id="glyph"><path d="M0 0 H10 V10 Z" fill="none" stroke="#111111"/></g></defs>
+      <g fill-rule="evenodd"><use href="#glyph"/></g>
+    </svg>"""
+
+    assert analyze_svg(filled).unsupported_attributes == {"fill-rule": 1}
+    assert analyze_svg(stroke_only).unsupported_attributes == {}
 
 
 def test_analyze_svg_reports_fill_rule_when_fill_is_visible() -> None:
@@ -5762,6 +5804,24 @@ def test_analyze_svg_reports_inherited_unconverted_stroke_line_enums_when_visibl
       <g stroke-linejoin="arcs">
         <path d="M0 26 L10 26 L10 36" fill="none" stroke="#111111" stroke-linejoin="round"/>
       </g>
+    </svg>"""
+
+    assert analyze_svg(svg).unsupported_attributes == {
+        "stroke-linecap": 1,
+        "stroke-linejoin": 1,
+    }
+
+
+def test_analyze_svg_reports_inherited_unconverted_stroke_line_enums_on_use_descendants() -> None:
+    svg = """<svg>
+      <defs>
+        <g id="line"><line x1="0" y1="0" x2="10" y2="0" stroke="#111111"/></g>
+        <g id="corner"><path d="M0 12 L10 12 L10 22" fill="none" stroke="#111111"/></g>
+        <g id="override"><path d="M0 26 L10 26 L10 36" fill="none" stroke="#111111" stroke-linejoin="round"/></g>
+      </defs>
+      <g stroke-linecap="triangle"><use href="#line"/></g>
+      <g stroke-linejoin="arcs"><use href="#corner"/></g>
+      <g stroke-linejoin="arcs"><use href="#override"/></g>
     </svg>"""
 
     assert analyze_svg(svg).unsupported_attributes == {
