@@ -581,6 +581,66 @@ def test_docs_point_legacy_ir_to_svgraph_model() -> None:
     assert "`drawingml_svg.ir.svg_to_pptx_ir()` | `svgraph.model.svg_to_svgraph_presentation()`" in migration
 
 
+def test_adr_defines_svgraph_as_presentation_package_contract() -> None:
+    adr = (Path(__file__).resolve().parents[1] / "docs" / "adr" / "0001-svgraph.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "SVG source can later emit Android VectorDrawable, DrawingML, PresentationML, or other targets.",
+        '"kind": "svgraph"',
+        '"kind": "svgraph-presentation"',
+        '"masters": []',
+        '"layouts": []',
+        '"guides": []',
+        '"rulers": []',
+        '"text_styles": []',
+        '`data-kind="slide-master"`',
+        '`data-kind="slide-layout"`',
+        '`data-kind="guide"`',
+        '`data-kind="ruler"`',
+        '`data-kind="style-template"`',
+        "The package emitter can then map:",
+        "each slide node to `ppt/slides/slideN.xml`",
+        "`masters` and `layouts` to PresentationML slide master/layout parts",
+        "`guides` and `rulers` to editor metadata or custom XML sidecars",
+        "`text_styles` to PresentationML default text styles and placeholder styles",
+        "semantic relations to connectors when they have visual counterparts",
+        "use `svgraph-presentation` as the package-level contract",
+    ]:
+        assert expected in adr
+
+    assert "pptxsvg" not in adr
+    assert "presentation IR" not in adr
+
+
+def test_web_editor_design_uses_browser_only_svgraph_contract() -> None:
+    design = (Path(__file__).resolve().parents[1] / "docs" / "svgraph-web-editor.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "`svg_to_svgraph()` exposes SVGraph structure",
+        "`svg_to_svgraph_presentation()` provides the package-level plan for `.pptx` export",
+        "`web/app.ts` is the TypeScript browser runtime.",
+        "GitHub Pages loads the compiled `docs/app.js`.",
+        "without Python",
+        "`SVGraphDocument`",
+        "`SVGraphPresentation` projection",
+        "`svgraph-presentation` view",
+        "`svgraph.json`",
+        "`svgraph-presentation.json`",
+        "The `.pptx` exporter should consume the SVGraph `presentation.parts` projection",
+        "Web LLM should run in a dedicated worker",
+        'device: "webgpu"',
+        "LLM output is always a proposed patch against SVGraph-level commands",
+        "validated by deterministic code before applying",
+        "The canonical Python import package is `svgraph`",
+    ]:
+        assert expected in design
+
+    assert "PPTXSVG" not in design
+    assert "pptxsvg" not in design
+    assert "presentation IR" not in design
+    assert "drawingml-svg-web" not in design
+
+
 def test_migration_guide_covers_public_rename_surfaces() -> None:
     migration = (Path(__file__).resolve().parents[1] / "MIGRATION.md").read_text(encoding="utf-8")
 
