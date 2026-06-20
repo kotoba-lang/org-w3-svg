@@ -604,7 +604,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       .css-positioned-text { x: 900px; y: 412px; dx: 6px; dy: 4px; }
       .css-geom-rect { x: 735px; y: 165px; width: 75px; height: 38px; rx: 8px; fill: #fee2e2; stroke: #b91c1c; stroke-width: 2px; }
       .css-geom-circle { cx: 845px; cy: 184px; r: 19px; fill: #dcfce7; stroke: #15803d; stroke-width: 2px; }
-      .css-geom-line { x1: 735px; y1: 220px; x2: 875px; y2: 220px; stroke: #0f172a; stroke-width: 4px; }
+      .css-geom-line { x1: 735px; y1: 220px; x2: 875px; y2: 220px; pathLength: 70; stroke: #0f172a; stroke-width: 4px; stroke-dasharray: 8 4; }
       .css-image-frame { x: 980px; y: 340px; width: 96px; height: 48px; }
     </style>
     <rect width="1280" height="720" fill="#ffffff" stroke="none"/>
@@ -1538,15 +1538,16 @@ function coverageElementIsIgnored(element: Element, tag: string, style: SvgStyle
     style.display === "none" ||
     style.visibility === "hidden" ||
     style.visibility === "collapse" ||
-    coverageHasNonRenderingGeometry(element, tag, style, viewport) ||
+    coverageHasNonRenderingGeometry(element, tag, style, css, viewport) ||
     coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport)
   );
 }
 
-function coverageHasNonRenderingGeometry(element: Element, tag: string, style: SvgStyle, viewport: Viewport): boolean {
-  if (tag === "foreignObject" || tag === "rect" || tag === "image") return geom(element, "width", "x", viewport) <= 0 || geom(element, "height", "y", viewport) <= 0;
-  if (tag === "circle") return geom(element, "r", "diag", viewport) <= 0;
-  if (tag === "ellipse") return geom(element, "rx", "x", viewport) <= 0 || geom(element, "ry", "y", viewport) <= 0;
+function coverageHasNonRenderingGeometry(element: Element, tag: string, style: SvgStyle, css: CssRule[], viewport: Viewport): boolean {
+  const declarations = resolvedCascadedDeclarations(element, css, style);
+  if (tag === "foreignObject" || tag === "rect" || tag === "image") return cascadedGeom(element, declarations, "width", "x", viewport) <= 0 || cascadedGeom(element, declarations, "height", "y", viewport) <= 0;
+  if (tag === "circle") return cascadedGeom(element, declarations, "r", "diag", viewport) <= 0;
+  if (tag === "ellipse") return cascadedGeom(element, declarations, "rx", "x", viewport) <= 0 || cascadedGeom(element, declarations, "ry", "y", viewport) <= 0;
   return false;
 }
 
@@ -1579,7 +1580,7 @@ function coverageSubtreeHasVisibleRendering(element: Element, inheritedStyle: Sv
     const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport) : viewport;
     return coverageSubtreeHasVisibleRendering(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
   }
-  if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageSupportedElements.has(tag) && !coverageHasNonRenderingGeometry(element, tag, style, viewport) && !coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack)) return true;
+  if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageSupportedElements.has(tag) && !coverageHasNonRenderingGeometry(element, tag, style, css, viewport) && !coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack)) return true;
   const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport) : viewport;
   if (tag === "switch") {
     const selected = switchSelectedChild(element);
@@ -1603,7 +1604,7 @@ function inspectCoverageAttributes(element: Element, style: SvgStyle, tag: strin
   for (const [name, value] of Object.entries(attributes)) {
     if (!coverageUnsupportedAttributes.has(name)) continue;
     if (coverageTextLayoutAttributes.has(name) && !subtreeHasVisibleText(element, style, css, refs, viewport)) continue;
-    if (coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, refs, viewport)) continue;
+    if (coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, refs, css, viewport)) continue;
     addCoverageCount(stats.unsupported_attributes, name);
   }
   inspectCoverageHref(element, tag, stats, refs);
@@ -1698,7 +1699,7 @@ function subtreeHasVisibleText(element: Element, inheritedStyle: SvgStyle, css: 
   return Array.from(element.children).some((child) => subtreeHasVisibleText(child, style, css, refs, childViewport, refStack));
 }
 
-function coverageAttributeIsSupportedOrNoop(element: Element, tag: string, name: string, value: string, style: SvgStyle, refs: Map<string, Element>, viewport: Viewport): boolean {
+function coverageAttributeIsSupportedOrNoop(element: Element, tag: string, name: string, value: string, style: SvgStyle, refs: Map<string, Element>, css: CssRule[], viewport: Viewport): boolean {
   const normalized = value.trim().toLowerCase();
   if (!normalized || coverageAttributeHasNoEffect(element, name, value)) return true;
   if (name === "clip-path") return clipPathHasRect(value, refs);
@@ -1731,7 +1732,7 @@ function coverageAttributeIsSupportedOrNoop(element: Element, tag: string, name:
   if (name === "text-decoration-skip-ink" || name === "text-underline-offset") return !hasUnderline(style) || normalized === "auto";
   if (name === "text-orientation") return normalized === "mixed";
   if (name === "text-transform") return normalizeTextTransform(value) != null;
-  if (name === "transform-origin") return transformOriginPoint(element, value, viewport) != null;
+  if (name === "transform-origin") return transformOriginPoint(element, value, viewport, css, style) != null;
   if (name === "unicode-bidi") return normalized === "normal";
   if (name === "vector-effect") return normalizeVectorEffect(value) != null;
   if (name === "word-spacing") return normalizeSpacingLength(value, style.fontSize ?? rootFontSize) != null;
@@ -1950,7 +1951,7 @@ function extractShapes(root: Element): Shape[] {
     const ownStyle = computedStyle(element, inheritedStyle, css, refs, currentViewport);
     if (ownStyle.display === "none") return;
     const visibilityHidden = ownStyle.visibility === "hidden" || ownStyle.visibility === "collapse";
-    let ownMatrix = multiply(matrix, styleTransformMatrix(element, ownStyle, currentViewport));
+    let ownMatrix = multiply(matrix, styleTransformMatrix(element, ownStyle, currentViewport, css));
     let childViewport = currentViewport;
     let childClip = activeClip;
     if (tag === "svg") {
@@ -2062,7 +2063,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
   if (tag === "line") {
     const [x1, y1] = point(matrix, cascadedGeom(element, declarations, "x1", "x", viewport), cascadedGeom(element, declarations, "y1", "y", viewport));
     const [x2, y2] = point(matrix, cascadedGeom(element, declarations, "x2", "x", viewport), cascadedGeom(element, declarations, "y2", "y", viewport));
-    const pathPaintStyle = scaledPathLengthDashStyle(paintStyle, pathLengthScale(paintStyle, element, "line", viewport));
+    const pathPaintStyle = scaledPathLengthDashStyle(paintStyle, pathLengthScale(paintStyle, element, "line", viewport, null, css, paintStyle));
     return {
       id,
       kind: "line",
@@ -5347,19 +5348,20 @@ function scaledPathLengthDashStyle(style: SvgStyle, scale: number): SvgStyle {
   return next;
 }
 
-function pathLengthScale(style: SvgStyle, element: Element, tag: string, viewport: Viewport, points: [number, number][] | null = null): number {
+function pathLengthScale(style: SvgStyle, element: Element, tag: string, viewport: Viewport, points: [number, number][] | null = null, css: CssRule[] = [], inheritedStyle: SvgStyle = {}): number {
   const declared = style.pathLength ?? normalizePathLength(element.getAttribute("pathLength"));
   if (!declared || declared <= 0) return 1;
-  const actual = pathActualLength(element, tag, viewport, points);
+  const actual = pathActualLength(element, tag, viewport, points, css, inheritedStyle);
   return actual && actual > 0 ? actual / declared : 1;
 }
 
-function pathActualLength(element: Element, tag: string, viewport: Viewport, points: [number, number][] | null): number | null {
+function pathActualLength(element: Element, tag: string, viewport: Viewport, points: [number, number][] | null, css: CssRule[] = [], inheritedStyle: SvgStyle = {}): number | null {
   if (tag === "line") {
-    const x1 = geom(element, "x1", "x", viewport);
-    const y1 = geom(element, "y1", "y", viewport);
-    const x2 = geom(element, "x2", "x", viewport);
-    const y2 = geom(element, "y2", "y", viewport);
+    const declarations = resolvedCascadedDeclarations(element, css, inheritedStyle);
+    const x1 = cascadedGeom(element, declarations, "x1", "x", viewport);
+    const y1 = cascadedGeom(element, declarations, "y1", "y", viewport);
+    const x2 = cascadedGeom(element, declarations, "x2", "x", viewport);
+    const y2 = cascadedGeom(element, declarations, "y2", "y", viewport);
     return Math.hypot(x2 - x1, y2 - y1);
   }
   if (points && points.length >= 2) return polylineLength(points, tag === "polygon");
@@ -6061,9 +6063,9 @@ function edges(values: number[]): number[] {
   return [...new Set(values.map((value) => Math.round(value * 1000) / 1000))].sort((a, b) => a - b);
 }
 
-function styleTransformMatrix(element: Element, style: SvgStyle, viewport: Viewport = defaultViewport()): Matrix {
+function styleTransformMatrix(element: Element, style: SvgStyle, viewport: Viewport = defaultViewport(), css: CssRule[] = []): Matrix {
   const matrix = transformMatrix(style.transform);
-  const origin = transformOriginPoint(element, style.transformOrigin, viewport);
+  const origin = transformOriginPoint(element, style.transformOrigin, viewport, css, style);
   if (!origin) return matrix;
   return multiply(multiply([1, 0, 0, 1, origin[0], origin[1]], matrix), [1, 0, 0, 1, -origin[0], -origin[1]]);
 }
@@ -6133,11 +6135,11 @@ function parseTransformAngleArg(value: string): number | null {
   return number;
 }
 
-function transformOriginPoint(element: Element, value: string | null | undefined, viewport: Viewport = defaultViewport()): [number, number] | null {
+function transformOriginPoint(element: Element, value: string | null | undefined, viewport: Viewport = defaultViewport(), css: CssRule[] = [], inheritedStyle: SvgStyle = {}): [number, number] | null {
   if (!value) return null;
   const parts = transformOriginParts(value);
   if (!parts) return null;
-  const box = elementReferenceBox(element, viewport);
+  const box = elementReferenceBox(element, viewport, css, inheritedStyle);
   const x = originLength(parts[0], "x", box);
   const y = originLength(parts[1], "y", box);
   if (x == null || y == null) return null;
@@ -6195,27 +6197,28 @@ function originLength(value: string, axis: "x" | "y", box: { x: number; y: numbe
   return Number.isFinite(length) ? length : null;
 }
 
-function elementReferenceBox(element: Element, viewport: Viewport = defaultViewport()): { x: number; y: number; width: number; height: number } | null {
+function elementReferenceBox(element: Element, viewport: Viewport = defaultViewport(), css: CssRule[] = [], inheritedStyle: SvgStyle = {}): { x: number; y: number; width: number; height: number } | null {
   const tag = localName(element);
+  const declarations = resolvedCascadedDeclarations(element, css, inheritedStyle);
   if (tag === "rect" || tag === "image" || tag === "foreignObject") {
-    const width = geom(element, "width", "x", viewport);
-    const height = geom(element, "height", "y", viewport);
-    return width >= 0 && height >= 0 ? { x: geom(element, "x", "x", viewport), y: geom(element, "y", "y", viewport), width, height } : null;
+    const width = cascadedGeom(element, declarations, "width", "x", viewport);
+    const height = cascadedGeom(element, declarations, "height", "y", viewport);
+    return width >= 0 && height >= 0 ? { x: cascadedGeom(element, declarations, "x", "x", viewport), y: cascadedGeom(element, declarations, "y", "y", viewport), width, height } : null;
   }
   if (tag === "circle") {
-    const r = geom(element, "r", "diag", viewport);
-    return r >= 0 ? { x: geom(element, "cx", "x", viewport) - r, y: geom(element, "cy", "y", viewport) - r, width: r * 2, height: r * 2 } : null;
+    const r = cascadedGeom(element, declarations, "r", "diag", viewport);
+    return r >= 0 ? { x: cascadedGeom(element, declarations, "cx", "x", viewport) - r, y: cascadedGeom(element, declarations, "cy", "y", viewport) - r, width: r * 2, height: r * 2 } : null;
   }
   if (tag === "ellipse") {
-    const rx = geom(element, "rx", "x", viewport);
-    const ry = geom(element, "ry", "y", viewport);
-    return rx >= 0 && ry >= 0 ? { x: geom(element, "cx", "x", viewport) - rx, y: geom(element, "cy", "y", viewport) - ry, width: rx * 2, height: ry * 2 } : null;
+    const rx = cascadedGeom(element, declarations, "rx", "x", viewport);
+    const ry = cascadedGeom(element, declarations, "ry", "y", viewport);
+    return rx >= 0 && ry >= 0 ? { x: cascadedGeom(element, declarations, "cx", "x", viewport) - rx, y: cascadedGeom(element, declarations, "cy", "y", viewport) - ry, width: rx * 2, height: ry * 2 } : null;
   }
   if (tag === "line") {
-    const x1 = geom(element, "x1", "x", viewport);
-    const y1 = geom(element, "y1", "y", viewport);
-    const x2 = geom(element, "x2", "x", viewport);
-    const y2 = geom(element, "y2", "y", viewport);
+    const x1 = cascadedGeom(element, declarations, "x1", "x", viewport);
+    const y1 = cascadedGeom(element, declarations, "y1", "y", viewport);
+    const x2 = cascadedGeom(element, declarations, "x2", "x", viewport);
+    const y2 = cascadedGeom(element, declarations, "y2", "y", viewport);
     return { x: Math.min(x1, x2), y: Math.min(y1, y2), width: Math.abs(x2 - x1), height: Math.abs(y2 - y1) };
   }
   const points = tag === "polygon" || tag === "polyline" ? parsePoints(element.getAttribute("points") || "") : tag === "path" ? parseBasicPath(element.getAttribute("d") || "", [1, 0, 0, 1, 0, 0])?.points ?? [] : [];

@@ -1102,6 +1102,10 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "css-image-frame" in generated
         assert 'style="x:90px;y:465px;width:360px;height:90px"' in generated
         assert "shapesFromForeignObject(element, ownMatrix, nextId, ownStyle, css, childViewport)" in generated
+        assert "coverageHasNonRenderingGeometry(element, tag, style, css, viewport)" in generated
+        assert "styleTransformMatrix(element, ownStyle, currentViewport, css)" in generated
+        assert "elementReferenceBox(element, viewport, css, inheritedStyle)" in generated
+        assert "pathLengthScale(paintStyle, element, \"line\", viewport, null, css, paintStyle)" in generated
         assert "svgTextPosition(element, viewport, css, paintStyle)" in generated
         assert "optionalCascadedGeom" in generated
         assert "firstOptionalCascadedGeom" in generated
@@ -1353,6 +1357,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser text position export with CSS cascade rules for `text` and `tspan` `x`/`y`/`dx`/`dy` geometry",
         "browser basic shape geometry export with CSS cascade rules for `rect`, `circle`, `ellipse`, and `line` geometry",
         "browser frame geometry export with CSS cascade rules for embedded images and `foreignObject` HTML tables",
+        "browser geometry-dependent analysis and transform calculations with CSS cascade rules for non-rendering checks, reference boxes, and line `pathLength` scaling",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",
