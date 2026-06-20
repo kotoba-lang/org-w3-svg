@@ -195,6 +195,31 @@ def test_project_urls_are_canonical_svgraph_locations() -> None:
         assert "com-junkawasaki.github.io/drawingml-svg" not in source
 
 
+def test_github_templates_cover_canonical_svgraph_surfaces() -> None:
+    root = Path(__file__).resolve().parents[1]
+    templates = {
+        path.name: path.read_text(encoding="utf-8")
+        for path in sorted((root / ".github" / "ISSUE_TEMPLATE").glob("*.yml"))
+    }
+    pr_template = (root / ".github" / "pull_request_template.md").read_text(encoding="utf-8")
+
+    assert set(templates) == {"bug_report.yml", "config.yml", "feature_request.yml"}
+    assert "SVG to SVGraph" in templates["bug_report.yml"]
+    assert "SVG to SVGraph presentation" in templates["bug_report.yml"]
+    assert "SVG to PresentationML/PPTX" in templates["bug_report.yml"]
+    assert "Browser editor" in templates["bug_report.yml"]
+    assert "SVGraph JSON" in templates["bug_report.yml"]
+    assert "SVGraph model" in templates["feature_request.yml"]
+    assert "SVGraph presentation model" in templates["feature_request.yml"]
+    assert "PresentationML/PPTX export" in templates["feature_request.yml"]
+    assert "Browser editor" in templates["feature_request.yml"]
+    assert "https://github.com/com-junkawasaki/svgraph/security/advisories/new" in templates["config.yml"]
+    assert "tmp/svgraph-coverage.pptx" in pr_template
+    for source in [*templates.values(), pr_template]:
+        assert "drawingml-svg" not in source
+        assert "pptxsvg" not in source
+
+
 def test_documented_python_api_examples_use_canonical_svgraph_imports() -> None:
     root = Path(__file__).resolve().parents[1]
     docs = {

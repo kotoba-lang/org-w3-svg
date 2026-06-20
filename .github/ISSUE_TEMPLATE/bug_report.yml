@@ -1,5 +1,5 @@
 name: Bug report
-description: Report incorrect SVG, DrawingML, analyzer, or PPTX smoke behavior.
+description: Report incorrect SVGraph, SVG, DrawingML, PresentationML, analyzer, browser editor, or PPTX behavior.
 title: "[bug]: "
 labels:
   - bug
@@ -16,9 +16,13 @@ body:
     attributes:
       label: Conversion direction
       options:
+        - SVG to SVGraph
+        - SVG to SVGraph presentation
         - SVG to DrawingML
         - DrawingML to SVG
+        - SVG to PresentationML/PPTX
         - Analyzer
+        - Browser editor
         - PPTX smoke/example
         - Other
     validations:
@@ -43,14 +47,14 @@ body:
     id: expected
     attributes:
       label: Expected output
-      description: Describe the expected SVG, DrawingML, analyzer report, or PPTX behavior.
+      description: Describe the expected SVGraph, SVG, DrawingML, analyzer report, browser editor, or PPTX behavior.
     validations:
       required: true
   - type: textarea
     id: actual
     attributes:
       label: Actual output
-      description: Include output snippets, analyzer JSON, traceback, or PPTX observations.
+      description: Include output snippets, SVGraph JSON, analyzer JSON, traceback, browser observations, or PPTX observations.
     validations:
       required: true
   - type: input

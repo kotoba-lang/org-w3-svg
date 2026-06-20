@@ -1,5 +1,5 @@
 name: Feature request
-description: Request support for an SVG feature, DrawingML preset, or analyzer rule.
+description: Request support for an SVGraph, SVG, DrawingML, PresentationML, browser editor, or analyzer feature.
 title: "[feature]: "
 labels:
   - enhancement
@@ -16,13 +16,17 @@ body:
     attributes:
       label: Area
       options:
+        - SVGraph model
+        - SVGraph presentation model
         - SVG parsing
         - DrawingML preset geometry
         - DrawingML custom geometry
+        - PresentationML/PPTX export
         - Text
         - Paint/stroke
         - Images
         - Analyzer
+        - Browser editor
         - PPTX example
         - Documentation
         - Other
@@ -38,7 +42,7 @@ body:
     id: desired
     attributes:
       label: Desired behavior
-      description: Describe the expected conversion or analyzer behavior.
+      description: Describe the expected SVGraph, conversion, browser editor, or analyzer behavior.
     validations:
       required: true
   - type: textarea
