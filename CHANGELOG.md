@@ -16,6 +16,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Strengthened release and CI source distribution checks so `svgraph-web` and Python package versions stay synchronized.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
+- Added runtime regression coverage for the retained `svg2pptx` compatibility executable alias.
 - Added `python -m svgraph` as a canonical module execution path and moved local contribution checks away from `python -m svgraph.cli`.
 - Updated README, ADR, and release checklist guidance to document `python -m svgraph` and `svgraph.model` as canonical migration targets.
 - Added release checklist coverage for verifying the public `com-junkawasaki/svgraph` repository identity and Pages URL before publishing.

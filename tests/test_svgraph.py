@@ -33,7 +33,7 @@ def test_compatibility_package_top_level_exports_match_svgraph_api() -> None:
     assert drawingml_svg.__all__ == svgraph_package.__all__
 
 
-@pytest.mark.parametrize("executable", ["svg2dml", "dml2svg", "drawingml-svg-analyze"])
+@pytest.mark.parametrize("executable", ["svg2dml", "dml2svg", "svg2pptx", "drawingml-svg-analyze"])
 def test_cli_alias_version_writes_installed_package_version(monkeypatch, capsys, executable: str) -> None:
     monkeypatch.setattr("sys.argv", [executable, "--version"])
 
@@ -48,7 +48,12 @@ def test_cli_alias_version_writes_installed_package_version(monkeypatch, capsys,
 
 @pytest.mark.parametrize(
     ("executable", "command"),
-    [("svg2dml", "svg2dml"), ("dml2svg", "dml2svg"), ("drawingml-svg-analyze", "analyze")],
+    [
+        ("svg2dml", "svg2dml"),
+        ("dml2svg", "dml2svg"),
+        ("svg2pptx", "svg2pptx"),
+        ("drawingml-svg-analyze", "analyze"),
+    ],
 )
 def test_cli_alias_help_writes_command_help(monkeypatch, capsys, executable: str, command: str) -> None:
     monkeypatch.setattr("sys.argv", [executable, "-h"])
