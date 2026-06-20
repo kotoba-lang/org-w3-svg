@@ -366,6 +366,28 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "run: npm run build:web" in workflow
 
 
+def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
+    changelog = (Path(__file__).resolve().parents[1] / "CHANGELOG.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "top-level APIs",
+        "Pages artifacts",
+        "non-compatibility code paths",
+        "python -m svgraph",
+        "python -m svgraph.cli",
+        "release and CI smoke checks",
+        "wheel metadata",
+        "canonical `svgraph` surfaces",
+        "canonical typed Python import package",
+        "svgraph.model",
+        "svgraph.converter",
+        "svgraph.coverage",
+        "svgraph.pptx",
+        "contributing, security, code of conduct, issue templates, PR template",
+    ]:
+        assert expected in changelog
+
+
 def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
     root = Path(__file__).resolve().parents[1]
     unexpected: list[str] = []
