@@ -1039,6 +1039,10 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert 'downloadBlob("svgraph-drawingml.xml"' in generated
         assert "function svgToDrawingMl" in generated
         assert "function buildDrawingMlFragment" in generated
+        assert 'value("text-decoration-style")' in generated
+        assert "underlineStyle: underlineStyle(textStyle)" in generated
+        assert "underlineStyle: underlineStyle(runStyle)" in generated
+        assert "text-decoration-style:dashed" in generated
         assert "const assistantAllowedOps" in generated
         assert "function assistantPatchProposal" in generated
         assert "function validateAssistantPatch" in generated
@@ -1129,6 +1133,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "`web/app.ts` builds SVGraph" in readme
     assert "`docs/app.js` is the compiled Pages artifact." in readme
     assert "Python or server APIs" in readme
+    assert "underline/strike decoration including underline style, color, and thickness" in readme
     assert "npm ci" in readme
     assert "npm run check:web" in readme
     assert "npm run build:web" in readme
@@ -1228,6 +1233,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser storage status reporting",
         "`svgraph-sidecar.json` source restoration",
         "browser Open flow error reporting",
+        "browser PPTX export support for SVG `text-decoration-style` underline mapping",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",

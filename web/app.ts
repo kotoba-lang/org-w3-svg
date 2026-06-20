@@ -245,6 +245,7 @@ type TextShape = BaseShape & {
   italic: boolean;
   fontVariant: string | null;
   underline: boolean;
+  underlineStyle: string | null;
   underlineColor: string | null;
   underlineAlpha: number | null;
   underlineThickness: number | null;
@@ -634,7 +635,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       <text id="scaled-text" x="62" y="10" style="font-size:12;font-family:Arial;fill:#111827;stroke:#ffffff;stroke-width:1;vector-effect:non-scaling-stroke">Scale</text>
     </g>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px;text-transform:none"> blue</tspan></text>
-    <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;stroke:#ffffff;stroke-width:1;stroke-opacity:.5;text-anchor:middle;dominant-baseline:middle;text-decoration-line:underline;text-decoration-color:#dc2626;text-decoration-thickness:3px">Centered</text>
+    <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;stroke:#ffffff;stroke-width:1;stroke-opacity:.5;text-anchor:middle;dominant-baseline:middle;text-decoration-line:underline;text-decoration-style:dashed;text-decoration-color:#dc2626;text-decoration-thickness:3px">Centered</text>
     <text id="preserve-text" x="90" y="355" xml:space="preserve" style="font-size:22;font-family:Arial;fill:#64748b">  padded  <tspan style="fill:#0f766e"> kept </tspan></text>
     <text id="length-text" x="735" y="95" textLength="170" lengthAdjust="spacing" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
     <text id="font-shorthand" class="font-short-title" x="760" y="135">Font short</text>
@@ -1857,6 +1858,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
       italic: isItalic(textStyle),
       fontVariant: textStyle.fontVariant ?? null,
       underline: hasUnderline(textStyle),
+      underlineStyle: underlineStyle(textStyle),
       underlineColor: textStyle.textDecorationColor ?? null,
       underlineAlpha: textStyle.textDecorationAlpha ?? null,
       underlineThickness: textStyle.textDecorationThickness ?? null,
@@ -2552,6 +2554,7 @@ function htmlCaptionShape(caption: Element, style: SvgStyle, id: number, x: numb
     italic: isItalic(style),
     fontVariant: style.fontVariant ?? null,
     underline: hasUnderline(style),
+    underlineStyle: underlineStyle(style),
     underlineColor: style.textDecorationColor ?? null,
     underlineAlpha: style.textDecorationAlpha ?? null,
     underlineThickness: style.textDecorationThickness ?? null,
@@ -3022,7 +3025,7 @@ function htmlTextRun(text: string, style: SvgStyle): TextRun {
     italic: isItalic(style),
     fontVariant: style.fontVariant ?? null,
     underline: hasUnderline(style),
-    underlineStyle: htmlUnderlineStyle(style),
+    underlineStyle: underlineStyle(style),
     underlineColor: style.textDecorationColor ?? null,
     underlineAlpha: style.textDecorationAlpha ?? null,
     underlineThickness: style.textDecorationThickness ?? null,
@@ -3032,7 +3035,7 @@ function htmlTextRun(text: string, style: SvgStyle): TextRun {
   };
 }
 
-function htmlUnderlineStyle(style: SvgStyle): string | null {
+function underlineStyle(style: SvgStyle): string | null {
   const decoration = style.textDecoration || "";
   if (decoration.includes("dashed")) return "dashed";
   if (decoration.includes("dotted")) return "dotted";
@@ -3085,7 +3088,7 @@ function textRuns(element: Element, inheritedStyle: SvgStyle, viewport: Viewport
       italic: isItalic(runStyle),
       fontVariant: runStyle.fontVariant ?? null,
       underline: hasUnderline(runStyle),
-      underlineStyle: null,
+      underlineStyle: underlineStyle(runStyle),
       underlineColor: runStyle.textDecorationColor ?? null,
       underlineAlpha: runStyle.textDecorationAlpha ?? null,
       underlineThickness: runStyle.textDecorationThickness ?? null,
@@ -3533,7 +3536,7 @@ function textXml(shape: TextShape): string {
     italic: shape.italic,
     fontVariant: shape.fontVariant,
     underline: shape.underline,
-    underlineStyle: null,
+    underlineStyle: shape.underlineStyle,
     underlineColor: shape.underlineColor,
     underlineAlpha: shape.underlineAlpha,
     underlineThickness: shape.underlineThickness,
@@ -4293,7 +4296,7 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   const fontWeight = value("font-weight");
   const fontStyle = value("font-style");
   const fontVariant = value("font-variant");
-  const textDecoration = value("text-decoration-line") ?? value("text-decoration");
+  const textDecoration = [value("text-decoration-line") ?? value("text-decoration"), value("text-decoration-style")].filter(Boolean).join(" ") || null;
   const textDecorationColor = value("text-decoration-color");
   const textDecorationThickness = value("text-decoration-thickness");
   const textTransform = value("text-transform");
