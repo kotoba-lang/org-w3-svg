@@ -794,6 +794,38 @@ def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
     assert unexpected == []
 
 
+def test_legacy_ir_module_keeps_only_pre_svgraph_alias_exports() -> None:
+    source = (Path(__file__).resolve().parents[1] / "src" / "drawingml_svg" / "ir.py").read_text(encoding="utf-8")
+
+    assert _literal_all(source) == [
+        "SvgIRDependency",
+        "SvgIRDocument",
+        "SvgIRGuide",
+        "SvgIRNode",
+        "SvgIRPackagePart",
+        "SvgIRPresentation",
+        "SvgIRRuler",
+        "SvgIRSlide",
+        "SvgIRTemplate",
+        "SvgIRTextStyle",
+        "svg_ir_to_json",
+        "svg_pptx_ir_to_json",
+        "svg_to_ir",
+        "svg_to_pptx_ir",
+    ]
+    for unexpected in [
+        "SVGraphDocument",
+        "SVGraphNode",
+        "svg_to_svgraph",
+        "svg_to_svgraph_presentation",
+        "svg_svgraph_to_json",
+        "svg_svgraph_presentation_to_json",
+    ]:
+        assert f'"{unexpected}"' not in source
+    assert '_warn_legacy("svg_to_ir()", "svgraph.model.svg_to_svgraph()")' in source
+    assert '_warn_legacy("svg_to_pptx_ir()", "svgraph.model.svg_to_svgraph_presentation()")' in source
+
+
 def test_docs_point_legacy_ir_to_svgraph_model() -> None:
     root = Path(__file__).resolve().parents[1]
     readme = (root / "README.md").read_text(encoding="utf-8")
