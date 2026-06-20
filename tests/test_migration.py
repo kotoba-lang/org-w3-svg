@@ -533,13 +533,17 @@ def test_release_checklist_verifies_public_svgraph_repo_identity() -> None:
     release = (Path(__file__).resolve().parents[1] / "RELEASE.md").read_text(encoding="utf-8")
 
     for expected in [
-        "gh repo view com-junkawasaki/svgraph --json nameWithOwner,isPrivate,visibility,url,homepageUrl,defaultBranchRef",
+        (
+            "gh repo view com-junkawasaki/svgraph --json "
+            "nameWithOwner,isPrivate,visibility,url,homepageUrl,defaultBranchRef,repositoryTopics"
+        ),
         "nameWithOwner: com-junkawasaki/svgraph",
         "isPrivate: false",
         "visibility: PUBLIC",
         "url: https://github.com/com-junkawasaki/svgraph",
         "homepageUrl: https://com-junkawasaki.github.io/svgraph/",
         "defaultBranchRef.name: main",
+        "repositoryTopics: drawingml, ooxml, pptx, presentationml, svg, svgraph, web-editor",
     ]:
         assert expected in release
 

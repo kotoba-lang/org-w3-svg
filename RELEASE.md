@@ -9,7 +9,7 @@ Use this checklist when publishing a new `svgraph` release.
 - Confirm the public GitHub repository and Pages URL are the canonical SVGraph locations:
 
 ```bash
-gh repo view com-junkawasaki/svgraph --json nameWithOwner,isPrivate,visibility,url,homepageUrl,defaultBranchRef
+gh repo view com-junkawasaki/svgraph --json nameWithOwner,isPrivate,visibility,url,homepageUrl,defaultBranchRef,repositoryTopics
 ```
 
 Expected values:
@@ -21,6 +21,7 @@ visibility: PUBLIC
 url: https://github.com/com-junkawasaki/svgraph
 homepageUrl: https://com-junkawasaki.github.io/svgraph/
 defaultBranchRef.name: main
+repositoryTopics: drawingml, ooxml, pptx, presentationml, svg, svgraph, web-editor
 ```
 
 - Run the local checks from `CONTRIBUTING.md`.
