@@ -52,6 +52,7 @@ with tarfile.open(sdist_path) as sdist:
     root = next(name for name in names if name.endswith("/pyproject.toml")).rsplit("/", 1)[0]
     pyproject = tomllib.loads(sdist.extractfile(f"{root}/pyproject.toml").read().decode("utf-8"))
     web_package = json.loads(sdist.extractfile(f"{root}/package.json").read().decode("utf-8"))
+    web_lock = json.loads(sdist.extractfile(f"{root}/package-lock.json").read().decode("utf-8"))
 assert pyproject["project"]["name"] == "svgraph"
 assert pyproject["project"]["description"] == "Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing."
 assert {"svg", "svgraph", "drawingml", "presentationml", "pptx", "web"} <= set(pyproject["project"]["keywords"])
@@ -59,6 +60,10 @@ assert web_package["name"] == "svgraph-web"
 assert web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."
 assert {"svg", "svgraph", "presentationml", "pptx", "web"} <= set(web_package["keywords"])
 assert web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"
+assert web_lock["name"] == web_package["name"]
+assert web_lock["version"] == web_package["version"]
+assert web_lock["packages"][""]["name"] == web_package["name"]
+assert web_lock["packages"][""]["version"] == web_package["version"]
 for expected in [
     "docs/index.html",
     "docs/app.js",

@@ -434,6 +434,8 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
             'web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."'
         ) in source
         assert 'web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"' in source
+        assert 'web_lock["name"] == web_package["name"]' in source
+        assert 'web_lock["packages"][""]["name"] == web_package["name"]' in source
         assert "tmp/dist/drawingml_svg-" not in source
         assert "tmp/dist/drawingml-svg-" not in source
 
