@@ -183,6 +183,7 @@ jobs:
           test -f tmp/dist/svgraph-*.whl
           python - <<'PY'
           import glob
+          import json
           import tarfile
           import tomllib
           import zipfile
@@ -218,9 +219,14 @@ jobs:
               sdist_names = set(sdist.getnames())
               root = next(name for name in sdist_names if name.endswith("/pyproject.toml")).rsplit("/", 1)[0]
               pyproject = tomllib.loads(sdist.extractfile(f"{root}/pyproject.toml").read().decode("utf-8"))
+              web_package = json.loads(sdist.extractfile(f"{root}/package.json").read().decode("utf-8"))
           assert pyproject["project"]["name"] == "svgraph"
           assert pyproject["project"]["description"] == "Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing."
           assert {"svg", "svgraph", "drawingml", "presentationml", "pptx", "web"} <= set(pyproject["project"]["keywords"])
+          assert web_package["name"] == "svgraph-web"
+          assert web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."
+          assert {"svg", "svgraph", "presentationml", "pptx", "web"} <= set(web_package["keywords"])
+          assert web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"
           assert f"{root}/README.md" in sdist_names
           assert f"{root}/LICENSE" in sdist_names
           assert f"{root}/CODE_OF_CONDUCT.md" in sdist_names
