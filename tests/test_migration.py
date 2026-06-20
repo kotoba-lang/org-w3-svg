@@ -39,6 +39,20 @@ ALLOWED_LEGACY_TERMS = {
     "tests/test_svgraph.py": {"SvgIR", "svg_to_ir", "svg_to_pptx_ir", "svg_ir", "pptx_ir", "Svgraph"},
 }
 
+FORBIDDEN_PUBLIC_LEGACY_STRINGS = (
+    "com-junkawasaki/drawingml-svg",
+    "com-junkawasaki.github.io/drawingml-svg",
+    "drawingml-svg-web",
+    "drawingml-svg sample",
+    "drawingml-svg web",
+    "DrawingML SVG Group",
+    "drawingml-svg-arrow",
+    "drawingml-svg-sample.pptx",
+    "drawingml-svg-coverage.pptx",
+    "drawingml-svg-complex.pptx",
+    "drawingml-svg-svgraph.pptx",
+)
+
 
 def test_legacy_names_are_limited_to_compatibility_surfaces() -> None:
     root = Path(__file__).resolve().parents[1]
@@ -49,6 +63,21 @@ def test_legacy_names_are_limited_to_compatibility_surfaces() -> None:
         allowed = ALLOWED_LEGACY_TERMS.get(relative, set())
         for term in LEGACY_TERMS:
             if term in text and term not in allowed:
+                unexpected.append(f"{relative}: {term}")
+
+    assert unexpected == []
+
+
+def test_public_surfaces_use_svgraph_repo_and_artifact_names() -> None:
+    root = Path(__file__).resolve().parents[1]
+    unexpected: list[str] = []
+    for path in _text_files(root):
+        relative = path.relative_to(root).as_posix()
+        if relative == "tests/test_migration.py":
+            continue
+        text = path.read_text(encoding="utf-8")
+        for term in FORBIDDEN_PUBLIC_LEGACY_STRINGS:
+            if term in text:
                 unexpected.append(f"{relative}: {term}")
 
     assert unexpected == []
