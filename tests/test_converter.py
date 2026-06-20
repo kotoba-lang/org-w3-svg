@@ -36,7 +36,7 @@ def _documented_drawingml_preset_names() -> set[str]:
 
 def _implemented_drawingml_preset_names() -> set[str]:
     root = Path(__file__).resolve().parents[1]
-    tree = ast.parse((root / "src" / "drawingml_svg" / "converter.py").read_text(encoding="utf-8"))
+    tree = ast.parse((root / "src" / "svgraph" / "converter.py").read_text(encoding="utf-8"))
     names: set[str] = set()
     for node in ast.walk(tree):
         if not isinstance(node, ast.FunctionDef) or node.name not in {"_dml_kind_to_shape", "_dml_preset_points"}:
@@ -285,7 +285,7 @@ def test_svgraph_executable_keeps_svgraph_program_name(monkeypatch, capsys) -> N
 
 
 def test_pptx_exporter_uses_only_svgraph_internal_shape_prefix() -> None:
-    pptx_source = resources.files("drawingml_svg").joinpath("pptx.py").read_text(encoding="utf-8")
+    pptx_source = resources.files("svgraph").joinpath("pptx.py").read_text(encoding="utf-8")
 
     assert "_svgraph_" in pptx_source
     assert "_pptxsvg_" not in pptx_source

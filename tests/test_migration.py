@@ -25,6 +25,7 @@ ALLOWED_LEGACY_TERMS = {
     "docs/adr/0001-svgraph.md": {"svg_to_ir"},
     "src/drawingml_svg/cli.py": {"pptxsvg"},
     "src/drawingml_svg/ir.py": {"SvgIR", "svg_to_ir", "svg_to_pptx_ir", "svg_ir", "pptx_ir"},
+    "src/svgraph/cli.py": {"pptxsvg"},
     "tests/test_converter.py": {
         "PPTXSVG",
         "pptxsvg",
@@ -73,16 +74,17 @@ LEGACY_IMPORT_PATTERNS = (
 )
 
 ALLOWED_LEGACY_IMPORT_SURFACES = {
-    "src/svgraph/__init__.py",
-    "src/svgraph/__main__.py",
-    "src/svgraph/cli.py",
-    "src/svgraph/converter.py",
-    "src/svgraph/coverage.py",
-    "src/svgraph/model.py",
-    "src/svgraph/pptx.py",
     "tests/test_converter.py",
     "tests/test_migration.py",
     "tests/test_svgraph.py",
+}
+
+COMPATIBILITY_WRAPPER_MODULES = {
+    "src/drawingml_svg/cli.py": "from svgraph.cli import *",
+    "src/drawingml_svg/converter.py": "from svgraph.converter import *",
+    "src/drawingml_svg/coverage.py": "from svgraph.coverage import *",
+    "src/drawingml_svg/pptx.py": "from svgraph.pptx import *",
+    "src/drawingml_svg/svgraph.py": "from svgraph.model import *",
 }
 
 
@@ -141,6 +143,19 @@ def test_canonical_code_paths_import_svgraph_package() -> None:
         for pattern in LEGACY_IMPORT_PATTERNS:
             if pattern in text:
                 unexpected.append(f"{relative}: {pattern}")
+
+    assert unexpected == []
+
+
+def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
+    root = Path(__file__).resolve().parents[1]
+    unexpected: list[str] = []
+    for relative, expected_import in COMPATIBILITY_WRAPPER_MODULES.items():
+        text = (root / relative).read_text(encoding="utf-8")
+        if expected_import not in text:
+            unexpected.append(f"{relative}: missing {expected_import}")
+        if "def " in text or "class " in text:
+            unexpected.append(f"{relative}: contains implementation definitions")
 
     assert unexpected == []
 
