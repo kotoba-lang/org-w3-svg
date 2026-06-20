@@ -5568,19 +5568,24 @@ function gradientStops(element: Element | undefined, refs: Map<string, Element>,
   const tag = localName(element);
   if (tag !== "linearGradient" && tag !== "radialGradient") return [];
   const colors: string[] = [];
+  const gradientDeclarations = styleDeclarations(element.getAttribute("style"));
+  const inheritedStopColor = gradientDeclarations["stop-color"] ?? element.getAttribute("stop-color") ?? null;
+  const inheritedStopOpacity = element.getAttribute("stop-opacity") ?? gradientDeclarations["stop-opacity"] ?? null;
+  const gradientColor = gradientDeclarations.color ?? element.getAttribute("color") ?? null;
+  const gradientStyle: SvgStyle = gradientColor ? { ...style, color: parseCssColor(gradientColor, style) ?? style.color ?? null } : style;
   const href = element.getAttribute("href") || element.getAttribute("xlink:href") || "";
   if (href.startsWith("#")) {
     const inherited = refs.get(href.slice(1));
     const inheritedId = inherited?.getAttribute("id") || "";
-    if (inherited && inheritedId && !seen.has(inheritedId)) colors.push(...gradientStops(inherited, refs, style, new Set([...seen, inheritedId])));
+    if (inherited && inheritedId && !seen.has(inheritedId)) colors.push(...gradientStops(inherited, refs, gradientStyle, new Set([...seen, inheritedId])));
   }
   for (const stop of Array.from(element.children)) {
     if (localName(stop) !== "stop") continue;
     const declarations = styleDeclarations(stop.getAttribute("style"));
-    const color = declarations["stop-color"] ?? stop.getAttribute("stop-color") ?? "#000000";
-    const stopOpacity = stop.getAttribute("stop-opacity") ?? declarations["stop-opacity"] ?? null;
+    const color = declarations["stop-color"] ?? stop.getAttribute("stop-color") ?? inheritedStopColor ?? "#000000";
+    const stopOpacity = stop.getAttribute("stop-opacity") ?? declarations["stop-opacity"] ?? inheritedStopOpacity;
     const stopOpacityAlpha = parseAlpha(stopOpacity);
-    const normalized = normalizeStopColor(color, style);
+    const normalized = normalizeStopColor(color, gradientStyle);
     const colorAlpha = cssColorAlpha(color);
     if (normalized && combinedAlpha(stopOpacityAlpha, colorAlpha) !== 0) colors.push(normalized);
   }
