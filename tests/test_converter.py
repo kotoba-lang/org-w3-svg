@@ -193,6 +193,24 @@ def test_examples_use_canonical_svgraph_package_and_artifact_names() -> None:
     assert "drawingml-svg" not in make_pptx
 
 
+def test_changelog_documents_svgraph_migration_surfaces() -> None:
+    changelog = (_project_root() / "CHANGELOG.md").read_text(encoding="utf-8")
+    unreleased = changelog.split("## Unreleased\n", 1)[1].split("\n## ", 1)[0]
+
+    for expected in [
+        "Python API, CLI, package metadata, README, ADR, examples, and browser editor",
+        "Python distribution metadata and wheel/sdist artifacts",
+        "canonical `svgraph` package",
+        "public repository and Pages site to `com-junkawasaki/svgraph`",
+        "web package names",
+        "smoke artifact filenames with SVGraph branding",
+        "`python -m svgraph` as a canonical module execution path",
+        "packaged migration guide",
+        "migration guard tests",
+    ]:
+        assert expected in unreleased
+
+
 def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     release = (_project_root() / "RELEASE.md").read_text(encoding="utf-8")
 
