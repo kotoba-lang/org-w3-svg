@@ -25,6 +25,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Strengthened compatibility submodule runtime guards so retained import paths expose canonical SVGraph callables.
 - Strengthened release and CI package file-list guards for canonical SVGraph modules and retained compatibility wrappers.
 - Strengthened release and CI wheel smoke checks so every pyproject console script and top-level package is verified from built wheel metadata.
+- Strengthened release and CI wheel smoke checks so retained legacy executable aliases verify their deprecation warnings from built wheel commands.
 - Added SVGraph-oriented public repository topics and release checklist verification for them.
 - Added a release checklist smoke for the published SVGraph Pages site.
 - Expanded published Pages smoke coverage to validate the live `app.js` artifact for canonical SVGraph controls and legacy-name exclusions.

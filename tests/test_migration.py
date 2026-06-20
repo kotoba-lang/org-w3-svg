@@ -568,6 +568,13 @@ def test_release_checklist_keeps_legacy_console_alias_smoke() -> None:
     assert '"tmp/release-venv/bin/python -m svgraph"' in release
     for executable in sorted(set(scripts) - {"svgraph"}):
         assert f'"tmp/release-venv/bin/{executable}"' in release
+    for expected in [
+        "tmp/release-legacy-analyze.err",
+        "tmp/release-legacy-svgraph.err",
+        "executable 'drawingml-svg-analyze' is deprecated; use 'svgraph analyze'",
+        "executable 'drawingml-svg' is deprecated; use 'svgraph'",
+    ]:
+        assert expected in release
 
 
 def test_release_checklist_verifies_public_svgraph_repo_identity() -> None:
@@ -694,9 +701,22 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
     assert "tmp/release-svgraph.json" in release
     assert "tmp/release-svgraph-presentation.json" in release
     assert "tmp/release-legacy-svgraph.json" in release
+    assert "tmp/release-legacy-analyze.json" in release
     assert "tmp/wheel-svgraph.json" in workflow
     assert "tmp/wheel-svgraph-presentation.json" in workflow
     assert "tmp/wheel-legacy-svgraph.json" in workflow
+    assert "tmp/wheel-legacy-analyze.json" in workflow
+    for expected in [
+        "tmp/wheel-legacy-analyze.err",
+        "tmp/wheel-legacy-svgraph.err",
+        "tmp/wheel-svg2dml.err",
+        "tmp/wheel-svg2pptx.err",
+        "executable 'drawingml-svg-analyze' is deprecated; use 'svgraph analyze'",
+        "executable 'drawingml-svg' is deprecated; use 'svgraph'",
+        "executable 'svg2dml' is deprecated; use 'svgraph svg2dml'",
+        "executable 'svg2pptx' is deprecated; use 'svgraph svg2pptx'",
+    ]:
+        assert expected in workflow
     assert 'part_types = {part["kind"]: part["content_type"] for part in presentation["parts"]}' in workflow
     assert 'part["content_type"] == "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"' in workflow
     assert 'expected_version="svgraph $(tmp/wheel-venv/bin/python' in workflow

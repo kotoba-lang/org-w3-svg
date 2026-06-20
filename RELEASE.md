@@ -249,8 +249,11 @@ assert "svg_to_" + "ir" not in svgraph.__all__
 assert svg_to_svgraph("<svg><rect data-kind='table'/></svg>").kind == "svgraph"
 PY
 tmp/release-venv/bin/svgraph analyze examples/coverage.svg
+tmp/release-venv/bin/drawingml-svg-analyze examples/coverage.svg > tmp/release-legacy-analyze.json 2> tmp/release-legacy-analyze.err
+grep "executable 'drawingml-svg-analyze' is deprecated; use 'svgraph analyze'" tmp/release-legacy-analyze.err
 tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json
-tmp/release-venv/bin/drawingml-svg examples/svgraph.svg > tmp/release-legacy-svgraph.json
+tmp/release-venv/bin/drawingml-svg examples/svgraph.svg > tmp/release-legacy-svgraph.json 2> tmp/release-legacy-svgraph.err
+grep "executable 'drawingml-svg' is deprecated; use 'svgraph'" tmp/release-legacy-svgraph.err
 tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
 python - <<'PY'
 import json

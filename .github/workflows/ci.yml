@@ -323,7 +323,8 @@ jobs:
           done
           tmp/wheel-venv/bin/svgraph analyze examples/coverage.svg
           tmp/wheel-venv/bin/python -m svgraph analyze examples/coverage.svg
-          tmp/wheel-venv/bin/drawingml-svg-analyze examples/coverage.svg
+          tmp/wheel-venv/bin/drawingml-svg-analyze examples/coverage.svg > tmp/wheel-legacy-analyze.json 2> tmp/wheel-legacy-analyze.err
+          grep "executable 'drawingml-svg-analyze' is deprecated; use 'svgraph analyze'" tmp/wheel-legacy-analyze.err
           tmp/wheel-venv/bin/python - <<'PY'
           import svgraph
           from svgraph import svg_to_svgraph, svg_to_svgraph_presentation
@@ -335,7 +336,8 @@ jobs:
           assert svg_to_svgraph("<svg><rect data-kind='table'/></svg>").kind == "svgraph"
           PY
           tmp/wheel-venv/bin/svgraph examples/svgraph.svg > tmp/wheel-svgraph.json
-          tmp/wheel-venv/bin/drawingml-svg examples/svgraph.svg > tmp/wheel-legacy-svgraph.json
+          tmp/wheel-venv/bin/drawingml-svg examples/svgraph.svg > tmp/wheel-legacy-svgraph.json 2> tmp/wheel-legacy-svgraph.err
+          grep "executable 'drawingml-svg' is deprecated; use 'svgraph'" tmp/wheel-legacy-svgraph.err
           tmp/wheel-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/wheel-svgraph-presentation.json
           python - <<'PY'
           import json
@@ -363,9 +365,11 @@ jobs:
               for part in presentation["parts"]
           )
           PY
-          tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml
+          tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml 2> tmp/wheel-svg2dml.err
+          grep "executable 'svg2dml' is deprecated; use 'svgraph svg2dml'" tmp/wheel-svg2dml.err
           test -s tmp/wheel-smoke.xml
-          tmp/wheel-venv/bin/svg2pptx examples/sample.svg -o tmp/wheel-smoke.pptx
+          tmp/wheel-venv/bin/svg2pptx examples/sample.svg -o tmp/wheel-smoke.pptx 2> tmp/wheel-svg2pptx.err
+          grep "executable 'svg2pptx' is deprecated; use 'svgraph svg2pptx'" tmp/wheel-svg2pptx.err
           python -m zipfile --test tmp/wheel-smoke.pptx
           tmp/wheel-venv/bin/python - <<'PY'
           import io
