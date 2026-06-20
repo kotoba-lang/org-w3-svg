@@ -233,6 +233,27 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
     assert "tmp/wheel-legacy-svgraph.json" in workflow
 
 
+def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> None:
+    root = Path(__file__).resolve().parents[1]
+    contributing = (root / "CONTRIBUTING.md").read_text(encoding="utf-8")
+    pr_template = (root / ".github" / "pull_request_template.md").read_text(encoding="utf-8")
+
+    for source in [contributing, pr_template]:
+        assert "PYTHONPATH=src python -m pytest -q" in source
+        assert "PYTHONPATH=src python -m svgraph analyze examples/coverage.svg" in source
+        assert "tmp/svgraph-coverage.pptx" in source
+        assert "python -m zipfile --test tmp/svgraph-coverage.pptx" in source
+        assert "python -m svgraph.cli" not in source
+        assert "python -m drawingml_svg" not in source
+        assert "tmp/drawingml-svg-coverage.pptx" not in source
+
+    assert "PYTHONPATH=src python -m svgraph svgraph examples/svgraph.svg > tmp/svgraph.json" in contributing
+    assert (
+        "PYTHONPATH=src python -m svgraph svgraph-presentation examples/svgraph.svg > tmp/svgraph-presentation.json"
+        in contributing
+    )
+
+
 def test_pptx_exporter_uses_only_svgraph_internal_shape_prefix() -> None:
     pptx_source = (Path(__file__).resolve().parents[1] / "src" / "svgraph" / "pptx.py").read_text(encoding="utf-8")
 
