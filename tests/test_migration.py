@@ -1006,6 +1006,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser SVGraph presentation package part content types",
         "SVGraph presentation package part schema documentation",
         "release and CI generated presentation JSON package part content types",
+        "Python SVGraph presentation package part content type unit coverage",
     ]:
         assert expected in changelog
 

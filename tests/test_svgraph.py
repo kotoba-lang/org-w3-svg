@@ -276,6 +276,10 @@ def test_svgraph_presentation_discovers_declared_slides() -> None:
     assert [slide.title for slide in presentation.slides] == ["Intro", "Detail"]
     assert presentation.slides[1].view_box == (0.0, 0.0, 960.0, 540.0)
     assert [part.part_name for part in presentation.parts[-2:]] == ["/ppt/slides/slide1.xml", "/ppt/slides/slide2.xml"]
+    assert [part.content_type for part in presentation.parts[-2:]] == [
+        "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
+        "application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
+    ]
     assert [part.source_node_id for part in presentation.parts[-2:]] == ["n0.0", "n0.1"]
 
 
@@ -311,6 +315,17 @@ def test_svgraph_presentation_preserves_presentation_templates_guides_rulers_and
     assert [part.part_name for part in presentation.parts if part.kind == "slide-master"] == [
         "/ppt/slideMasters/slideMaster1.xml",
         "/ppt/slideMasters/slideMaster2.xml",
+    ]
+    assert [part.content_type for part in presentation.parts if part.kind == "slide-master"] == [
+        "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml",
+        "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml",
+    ]
+    assert [part.content_type for part in presentation.parts if part.kind == "slide-layout"] == [
+        "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml",
+        "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml",
+    ]
+    assert [part.content_type for part in presentation.parts if part.kind == "theme"] == [
+        "application/vnd.openxmlformats-officedocument.theme+xml",
     ]
     assert [part.source_node_id for part in presentation.parts if part.kind == "slide-master"] == [None, "n0.0"]
     assert [(guide.guide_id, guide.orientation, guide.position) for guide in presentation.guides] == [
