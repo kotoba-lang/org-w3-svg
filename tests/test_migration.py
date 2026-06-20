@@ -899,7 +899,9 @@ def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
 
 
 def test_legacy_ir_module_keeps_only_pre_svgraph_alias_exports() -> None:
-    source = (Path(__file__).resolve().parents[1] / "src" / "drawingml_svg" / "ir.py").read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "src" / "drawingml_svg" / "ir.py").read_text(encoding="utf-8")
+    migration = (root / "MIGRATION.md").read_text(encoding="utf-8")
 
     assert _literal_all(source) == [
         "SvgIRDependency",
@@ -928,6 +930,8 @@ def test_legacy_ir_module_keeps_only_pre_svgraph_alias_exports() -> None:
         assert f'"{unexpected}"' not in source
     assert '_warn_legacy("svg_to_ir()", "svgraph.model.svg_to_svgraph()")' in source
     assert '_warn_legacy("svg_to_pptx_ir()", "svgraph.model.svg_to_svgraph_presentation()")' in source
+    assert "legacy `drawingml_svg.ir` module intentionally exports only pre-SVGraph `SvgIR*` aliases" in migration
+    assert "import canonical `SVGraph*` types from `svgraph.model`" in migration
 
 
 def test_docs_point_legacy_ir_to_svgraph_model() -> None:

@@ -37,6 +37,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Strengthened release and CI smoke checks so SVGraph JSON, presentation JSON, top-level wheel metadata, and sample XML generation use or verify canonical `svgraph` surfaces first.
 - Added the canonical `svgraph` console script, with `svgraph input.svg` emitting SVGraph JSON directly while keeping `drawingml-svg` as a compatibility entry point.
 - Added deprecated compatibility aliases for the pre-SVGraph `drawingml_svg.ir` APIs and hidden CLI aliases, with warnings that point to `svgraph.model`, `svgraph`, and `svgraph-presentation`.
+- Documented that legacy `drawingml_svg.ir` exports stay limited to pre-SVGraph IR aliases while canonical `SVGraph*` types live in `svgraph.model`.
 - Added migration guard tests that keep legacy names out of top-level APIs, Pages artifacts, and non-compatibility code paths.
 - Added OSS project guidance, including contributing, security, code of conduct, issue templates, PR template, and README status links.
 - Added Dependabot configuration for GitHub Actions, Python, and npm/web dependency update pull requests.

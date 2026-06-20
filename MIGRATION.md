@@ -43,7 +43,7 @@ from svgraph import (
 )
 ```
 
-The `drawingml_svg` package remains installable for existing callers, but its main modules are compatibility wrappers over `svgraph`. Deprecated pre-SVGraph IR APIs continue to emit `DeprecationWarning` and point callers to `svgraph.model`.
+The `drawingml_svg` package remains installable for existing callers, but its main modules are compatibility wrappers over `svgraph`. Deprecated pre-SVGraph IR APIs continue to emit `DeprecationWarning` and point callers to `svgraph.model`. The legacy `drawingml_svg.ir` module intentionally exports only pre-SVGraph `SvgIR*` aliases; import canonical `SVGraph*` types from `svgraph.model`.
 
 ## CLI
 
