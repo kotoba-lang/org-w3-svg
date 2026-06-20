@@ -54,6 +54,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-linecap:round;stroke-linejoin:bevel"/>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px;text-transform:none"> blue</tspan></text>
     <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;text-anchor:middle;dominant-baseline:middle">Centered</text>
+    <text id="preserve-text" x="90" y="355" xml:space="preserve" style="font-size:22;font-family:Arial;fill:#64748b">  padded  <tspan style="fill:#0f766e"> kept </tspan></text>
     <text id="length-text" x="735" y="95" textLength="170" lengthAdjust="spacing" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
     <text id="rtl-text" x="560" y="95" direction="rtl" style="font-size:22;font-family:Arial;fill:#0f766e">RTL
 line</text>
@@ -607,12 +608,14 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = []) {
 }
 function textRuns(element, inheritedStyle) {
     const runs = [];
-    const append = (text, style) => {
+    const rootPreserveSpace = xmlSpacePreserve(element);
+    const append = (text, style, preserveSpace) => {
         if (!text)
             return;
         const transformed = applyTextTransform(text, style.textTransform);
         runs.push({
             text: transformed,
+            preserveSpace,
             fill: style.fill ?? "#111827",
             fillAlpha: style.fillAlpha ?? null,
             fontSize: style.fontSize ?? inheritedStyle.fontSize ?? 18,
@@ -628,15 +631,16 @@ function textRuns(element, inheritedStyle) {
     };
     for (const node of Array.from(element.childNodes)) {
         if (node.nodeType === Node.TEXT_NODE) {
-            append(node.textContent || "", inheritedStyle);
+            append(node.textContent || "", inheritedStyle, rootPreserveSpace);
         }
         else if (node.nodeType === Node.ELEMENT_NODE && localName(node) === "tspan") {
             const style = computedStyle(node, inheritedStyle);
-            append((node.textContent || ""), style);
+            const preserveSpace = rootPreserveSpace || xmlSpacePreserve(node);
+            append((node.textContent || ""), style, preserveSpace);
         }
     }
     if (!runs.length)
-        append(element.textContent || "", inheritedStyle);
+        append(element.textContent || "", inheritedStyle, rootPreserveSpace);
     const first = runs.findIndex((run) => run.text.trim());
     let last = -1;
     for (let index = runs.length - 1; index >= 0; index -= 1) {
@@ -649,8 +653,11 @@ function textRuns(element, inheritedStyle) {
         return [];
     return runs.slice(first, last + 1).map((run, index, sliced) => ({
         ...run,
-        text: index === 0 ? run.text.trimStart() : index === sliced.length - 1 ? run.text.trimEnd() : run.text,
+        text: run.preserveSpace ? run.text : index === 0 ? run.text.trimStart() : index === sliced.length - 1 ? run.text.trimEnd() : run.text,
     })).filter((run) => run.text.length > 0);
+}
+function xmlSpacePreserve(element) {
+    return element.getAttribute("xml:space") === "preserve" || element.getAttributeNS("http://www.w3.org/XML/1998/namespace", "space") === "preserve";
 }
 function isItalic(style) {
     const value = (style.fontStyle || "").trim().toLowerCase();
@@ -952,6 +959,7 @@ function connectorXml(shape) {
 function textXml(shape) {
     const runs = (shape.runs.length ? shape.runs : [{
             text: shape.text,
+            preserveSpace: false,
             fill: shape.fill,
             fillAlpha: null,
             fontSize: shape.fontSize,
