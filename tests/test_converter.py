@@ -102,18 +102,21 @@ def test_project_metadata_exposes_public_repository_links() -> None:
 def test_generated_distribution_metadata_preserves_svgraph_identity() -> None:
     pkg_info = _project_root() / "src" / "drawingml_svg.egg-info" / "PKG-INFO"
     entry_points = _project_root() / "src" / "drawingml_svg.egg-info" / "entry_points.txt"
-    if not pkg_info.exists() or not entry_points.exists():
+    top_level = _project_root() / "src" / "drawingml_svg.egg-info" / "top_level.txt"
+    if not pkg_info.exists() or not entry_points.exists() or not top_level.exists():
         pytest.skip("egg-info metadata has not been generated")
 
     metadata = Parser().parsestr(pkg_info.read_text(encoding="utf-8"))
     project_urls = metadata.get_all("Project-URL") or []
     entry_point_text = entry_points.read_text(encoding="utf-8")
+    top_level_names = set(top_level.read_text(encoding="utf-8").splitlines())
 
     assert "Homepage, https://github.com/com-junkawasaki/svgraph" in project_urls
     assert "Repository, https://github.com/com-junkawasaki/svgraph" in project_urls
     assert "Issues, https://github.com/com-junkawasaki/svgraph/issues" in project_urls
     assert "svgraph = svgraph.cli:main" in entry_point_text
     assert "drawingml-svg = svgraph.cli:main" in entry_point_text
+    assert {"svgraph", "drawingml_svg"} <= top_level_names
 
 
 def test_readme_documents_supported_drawingml_presets() -> None:
@@ -163,9 +166,10 @@ def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     assert "python -m build --sdist --wheel -o tmp/dist" in release
     assert "svgraph --version" in release
     assert "svgraph examples/svgraph.svg > tmp/release-svgraph.json" in release
+    assert "svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json" in release
     assert "drawingml-svg --version" in release
     assert "svgraph analyze examples/coverage.svg" in release
-    assert "svg2dml examples/sample.svg -o tmp/release-smoke.xml" in release
+    assert "svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml" in release
 
 
 def test_ci_pptx_smoke_covers_recent_fixture_regressions() -> None:

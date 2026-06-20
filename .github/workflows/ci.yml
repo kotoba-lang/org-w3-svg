@@ -189,8 +189,10 @@ jobs:
               wheel_names = set(wheel.namelist())
               metadata_name = next(name for name in wheel_names if name.endswith(".dist-info/METADATA"))
               entry_points_name = next(name for name in wheel_names if name.endswith(".dist-info/entry_points.txt"))
+              top_level_name = next(name for name in wheel_names if name.endswith(".dist-info/top_level.txt"))
               wheel_metadata = wheel.read(metadata_name).decode("utf-8")
               entry_points = wheel.read(entry_points_name).decode("utf-8")
+              top_level = set(wheel.read(top_level_name).decode("utf-8").splitlines())
           assert "drawingml_svg/py.typed" in wheel_names
           assert "svgraph/py.typed" in wheel_names
           assert "svgraph/converter.py" in wheel_names
@@ -202,6 +204,7 @@ jobs:
           assert "Project-URL: Issues, https://github.com/com-junkawasaki/svgraph/issues" in wheel_metadata
           assert "svgraph = svgraph.cli:main" in entry_points
           assert "drawingml-svg = svgraph.cli:main" in entry_points
+          assert {"svgraph", "drawingml_svg"} <= top_level
 
           with tarfile.open(sdist_path) as sdist:
               sdist_names = set(sdist.getnames())
@@ -231,7 +234,7 @@ jobs:
           tmp/wheel-venv/bin/svgraph analyze examples/coverage.svg
           tmp/wheel-venv/bin/drawingml-svg-analyze examples/coverage.svg
           tmp/wheel-venv/bin/svgraph examples/svgraph.svg > tmp/wheel-svgraph.json
-          tmp/wheel-venv/bin/drawingml-svg svgraph-presentation examples/svgraph.svg > tmp/wheel-svgraph-presentation.json
+          tmp/wheel-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/wheel-svgraph-presentation.json
           python - <<'PY'
           import json
           from pathlib import Path

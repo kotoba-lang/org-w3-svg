@@ -31,8 +31,8 @@ tmp/release-venv/bin/svgraph --version
 tmp/release-venv/bin/drawingml-svg --version
 tmp/release-venv/bin/svgraph analyze examples/coverage.svg
 tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json
-tmp/release-venv/bin/drawingml-svg svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
-tmp/release-venv/bin/svg2dml examples/sample.svg -o tmp/release-smoke.xml
+tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
+tmp/release-venv/bin/svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml
 ```
 
 ## Tag and publish

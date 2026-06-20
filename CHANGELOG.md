@@ -10,6 +10,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Renamed the public repository and Pages site to `com-junkawasaki/svgraph`, and aligned web package names, generated PPTX metadata, generated DrawingML/SVG object names, and smoke artifact filenames with SVGraph branding.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
+- Strengthened release and CI smoke checks so SVGraph JSON, presentation JSON, top-level wheel metadata, and sample XML generation use or verify canonical `svgraph` surfaces first.
 - Added the canonical `svgraph` console script, with `svgraph input.svg` emitting SVGraph JSON directly while keeping `drawingml-svg` as a compatibility entry point.
 - Added deprecated compatibility aliases for the pre-SVGraph `drawingml_svg.ir` APIs and hidden CLI aliases, with warnings that point to `drawingml_svg.svgraph`, `svgraph`, and `svgraph-presentation`.
 - Added migration guard tests that keep legacy names out of top-level APIs, Pages artifacts, and non-compatibility code paths.
