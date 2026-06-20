@@ -119,7 +119,9 @@ type RectShape = BaseShape & {
   height: number;
   rx: number;
   fill: string | null;
+  fillAlpha: number | null;
   stroke: string | null;
+  strokeAlpha: number | null;
   strokeWidth: number;
   strokeLineCap: string | null;
   strokeLineJoin: string | null;
@@ -133,7 +135,9 @@ type EllipseShape = BaseShape & {
   width: number;
   height: number;
   fill: string | null;
+  fillAlpha: number | null;
   stroke: string | null;
+  strokeAlpha: number | null;
   strokeWidth: number;
   strokeLineCap: string | null;
   strokeLineJoin: string | null;
@@ -147,6 +151,7 @@ type LineShape = BaseShape & {
   x2: number;
   y2: number;
   stroke: string | null;
+  strokeAlpha: number | null;
   strokeWidth: number;
   strokeLineCap: string | null;
   strokeLineJoin: string | null;
@@ -176,7 +181,9 @@ type FreeformShape = BaseShape & {
   points: [number, number][];
   closed: boolean;
   fill: string | null;
+  fillAlpha: number | null;
   stroke: string | null;
+  strokeAlpha: number | null;
   strokeWidth: number;
   strokeLineCap: string | null;
   strokeLineJoin: string | null;
@@ -214,7 +221,9 @@ type Matrix = [number, number, number, number, number, number];
 
 type SvgStyle = {
   fill?: string | null;
+  fillAlpha?: number | null;
   stroke?: string | null;
+  strokeAlpha?: number | null;
   strokeWidth?: number;
   color?: string | null;
   strokeLineCap?: string | null;
@@ -290,6 +299,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <rect id="clipped-bar" x="930" y="500" width="250" height="70" style="fill:#fecaca;stroke:#991b1b;clip-path:url(#bar-clip)"/>
     <ellipse id="bbox-clipped-ellipse" cx="1090" cy="560" rx="80" ry="50" style="fill:#ede9fe;stroke:#6d28d9;clip-path:url(#bbox-clip)"/>
     <rect id="css-colors" x="740" y="615" width="120" height="50" style="color:orange;fill:currentColor;stroke:hsl(210 100% 50%)"/>
+    <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-linecap:round;stroke-linejoin:bevel"/>
     <rect id="gradient-fill" x="900" y="615" width="120" height="50" style="fill:url(#linear-fallback);stroke:url(#radial-fallback)"/>
     <circle id="pattern-fill" cx="1080" cy="640" r="32" style="fill:url(#pattern-fallback);stroke:#334155"/>
@@ -668,7 +678,9 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
       height: box.height,
       rx: num(element, "rx"),
       fill: style.fill ?? "#000000",
+      fillAlpha: style.fillAlpha ?? null,
       stroke: style.stroke ?? null,
+      strokeAlpha: style.strokeAlpha ?? null,
       strokeWidth: style.strokeWidth ?? 1,
       ...strokeStyle(style),
     };
@@ -689,7 +701,9 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
       width: box.width,
       height: box.height,
       fill: style.fill ?? "#000000",
+      fillAlpha: style.fillAlpha ?? null,
       stroke: style.stroke ?? null,
+      strokeAlpha: style.strokeAlpha ?? null,
       strokeWidth: style.strokeWidth ?? 1,
       ...strokeStyle(style),
     };
@@ -707,6 +721,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
       x2,
       y2,
       stroke: style.stroke ?? "#111827",
+      strokeAlpha: style.strokeAlpha ?? null,
       strokeWidth: style.strokeWidth ?? 1,
       ...strokeStyle(style),
       relation: data.kind === "relation" || data.role === "relation",
@@ -746,7 +761,9 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
         points,
         closed: tag === "polygon",
         fill: tag === "polygon" ? (style.fill ?? "#000000") : null,
+        fillAlpha: tag === "polygon" ? (style.fillAlpha ?? null) : null,
         stroke: style.stroke ?? "#111827",
+        strokeAlpha: style.strokeAlpha ?? null,
         strokeWidth: style.strokeWidth ?? 1,
         ...strokeStyle(style),
         markerStart: style.markerStart ?? false,
@@ -765,7 +782,9 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
         points: parsed.points,
         closed: parsed.closed,
         fill: style.fill ?? (parsed.closed ? "#000000" : null),
+        fillAlpha: style.fill ? (style.fillAlpha ?? null) : parsed.closed ? (style.fillAlpha ?? null) : null,
         stroke: style.stroke ?? "#111827",
+        strokeAlpha: style.strokeAlpha ?? null,
         strokeWidth: style.strokeWidth ?? 1,
         ...strokeStyle(style),
         markerStart: style.markerStart ?? false,
@@ -986,11 +1005,11 @@ function shapeToXml(shape: Shape): string {
 }
 
 function rectXml(shape: RectShape): string {
-  return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, shape.rx ? "roundRect" : "rect", fillXml(shape.fill) + lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape)), "");
+  return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, shape.rx ? "roundRect" : "rect", fillXml(shape.fill, shape.fillAlpha) + lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape)), "");
 }
 
 function ellipseXml(shape: EllipseShape): string {
-  return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, "ellipse", fillXml(shape.fill) + lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape)), "");
+  return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, "ellipse", fillXml(shape.fill, shape.fillAlpha) + lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape)), "");
 }
 
 function lineXml(shape: LineShape): string {
@@ -1043,7 +1062,7 @@ function freeformXml(shape: FreeformShape): string {
     .concat(shape.closed ? ["<a:close/>"] : [])
     .join("");
   const geom = `<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/><a:rect l="l" t="t" r="r" b="b"/><a:pathLst><a:path w="${emu(width)}" h="${emu(height)}">${commands}</a:path></a:pathLst></a:custGeom>`;
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${emu(box.x)}" y="${emu(box.y)}"/><a:ext cx="${emu(width)}" cy="${emu(height)}"/></a:xfrm>${geom}${fillXml(shape.fill)}${lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape, { head: shape.markerEnd, tail: shape.markerStart }))}</p:spPr></p:sp>`;
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${emu(box.x)}" y="${emu(box.y)}"/><a:ext cx="${emu(width)}" cy="${emu(height)}"/></a:xfrm>${geom}${fillXml(shape.fill, shape.fillAlpha)}${lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape, { head: shape.markerEnd, tail: shape.markerStart }))}</p:spPr></p:sp>`;
 }
 
 function imageXml(shape: ImageShape): string {
@@ -1054,18 +1073,18 @@ function spXml(id: number, name: string, x: number, y: number, width: number, he
   return `<p:sp><p:nvSpPr><p:cNvPr id="${id}" name="${xml(name)}"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr><p:spPr><a:xfrm><a:off x="${emu(x)}" y="${emu(y)}"/><a:ext cx="${emu(width)}" cy="${emu(height)}"/></a:xfrm><a:prstGeom prst="${prst}"><a:avLst/></a:prstGeom>${style}</p:spPr>${body}</p:sp>`;
 }
 
-function fillXml(color: string | null): string {
-  return color ? `<a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill>` : "<a:noFill/>";
+function fillXml(color: string | null, alpha: number | null = null): string {
+  return color ? `<a:solidFill><a:srgbClr val="${hex(color)}">${alphaXml(alpha)}</a:srgbClr></a:solidFill>` : "<a:noFill/>";
 }
 
-function solidColorXml(color: string | null): string {
-  return color ? `<a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill>` : "";
+function solidColorXml(color: string | null, alpha: number | null = null): string {
+  return color ? `<a:solidFill><a:srgbClr val="${hex(color)}">${alphaXml(alpha)}</a:srgbClr></a:solidFill>` : "";
 }
 
 function lineStyleXml(color: string | null, width: number, options: LineOptions = {}): string {
   if (!color || width <= 0) return "<a:ln><a:noFill/></a:ln>";
   const cap = options.cap ? ` cap="${xml(options.cap)}"` : "";
-  return `<a:ln w="${emu(width)}"${cap}><a:solidFill><a:srgbClr val="${hex(color)}"/></a:solidFill>${dashXml(options.dasharray, width)}${joinXml(options.join)}${options.tail ? '<a:tailEnd type="triangle"/>' : ""}${options.head ? '<a:headEnd type="triangle"/>' : ""}</a:ln>`;
+  return `<a:ln w="${emu(width)}"${cap}><a:solidFill><a:srgbClr val="${hex(color)}">${alphaXml(options.alpha)}</a:srgbClr></a:solidFill>${dashXml(options.dasharray, width)}${joinXml(options.join)}${options.tail ? '<a:tailEnd type="triangle"/>' : ""}${options.head ? '<a:headEnd type="triangle"/>' : ""}</a:ln>`;
 }
 
 type LineOptions = {
@@ -1074,10 +1093,11 @@ type LineOptions = {
   cap?: string | null;
   join?: string | null;
   dasharray?: string | null;
+  alpha?: number | null;
 };
 
-function lineOptions(shape: { strokeLineCap: string | null; strokeLineJoin: string | null; strokeDasharray: string | null }, arrows: { head?: boolean; tail?: boolean } = {}): LineOptions {
-  return { ...arrows, cap: svgLineCapToDml(shape.strokeLineCap), join: shape.strokeLineJoin, dasharray: shape.strokeDasharray };
+function lineOptions(shape: { strokeLineCap: string | null; strokeLineJoin: string | null; strokeDasharray: string | null; strokeAlpha?: number | null }, arrows: { head?: boolean; tail?: boolean } = {}): LineOptions {
+  return { ...arrows, cap: svgLineCapToDml(shape.strokeLineCap), join: shape.strokeLineJoin, dasharray: shape.strokeDasharray, alpha: shape.strokeAlpha ?? null };
 }
 
 function dashXml(value: string | null | undefined, strokeWidth: number): string {
@@ -1107,6 +1127,11 @@ function svgLineCapToDml(value: string | null | undefined): string | null {
   if (value === "square") return "sq";
   if (value === "butt") return "flat";
   return null;
+}
+
+function alphaXml(value: number | null | undefined): string {
+  if (value == null || value >= 1) return "";
+  return `<a:alpha val="${Math.round(clamp(value, 0, 1) * 100000)}"/>`;
 }
 
 function writePptx(slideXmls: string[], slideSize: [number, number]): Uint8Array {
@@ -1390,6 +1415,9 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   const color = value("color");
   const fill = value("fill");
   const stroke = value("stroke");
+  const opacity = value("opacity");
+  const fillOpacity = value("fill-opacity");
+  const strokeOpacity = value("stroke-opacity");
   const strokeWidth = value("stroke-width");
   const strokeLineCap = value("stroke-linecap");
   const strokeLineJoin = value("stroke-linejoin");
@@ -1402,8 +1430,27 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   const markerStart = value("marker-start");
   const markerEnd = value("marker-end");
   if (color != null) next.color = parseCssColor(color, next);
-  if (fill != null) next.fill = normalizePaint(fill, refs, next);
-  if (stroke != null) next.stroke = normalizePaint(stroke, refs, next);
+  const opacityAlpha = parseAlpha(opacity);
+  const fillPaint = fill != null ? normalizePaintValue(fill, refs, next) : null;
+  const strokePaint = stroke != null ? normalizePaintValue(stroke, refs, next) : null;
+  if (fillPaint) {
+    next.fill = fillPaint.color;
+    next.fillAlpha = combinedAlpha(opacityAlpha, parseAlpha(fillOpacity), fillPaint.alpha);
+  } else if (fill != null) {
+    next.fill = null;
+    next.fillAlpha = null;
+  } else if (opacityAlpha != null || fillOpacity != null) {
+    next.fillAlpha = combinedAlpha(opacityAlpha, parseAlpha(fillOpacity), next.fillAlpha);
+  }
+  if (strokePaint) {
+    next.stroke = strokePaint.color;
+    next.strokeAlpha = combinedAlpha(opacityAlpha, parseAlpha(strokeOpacity), strokePaint.alpha);
+  } else if (stroke != null) {
+    next.stroke = null;
+    next.strokeAlpha = null;
+  } else if (opacityAlpha != null || strokeOpacity != null) {
+    next.strokeAlpha = combinedAlpha(opacityAlpha, parseAlpha(strokeOpacity), next.strokeAlpha);
+  }
   if (strokeWidth != null) next.strokeWidth = parseLength(strokeWidth, next.strokeWidth ?? 1);
   if (strokeLineCap != null) next.strokeLineCap = normalizeStrokeLineCap(strokeLineCap);
   if (strokeLineJoin != null) next.strokeLineJoin = normalizeStrokeLineJoin(strokeLineJoin);
@@ -1512,13 +1559,20 @@ function dasharrayNumbers(value: string): number[] | null {
 }
 
 function normalizePaint(value: string, refs: Map<string, Element> = new Map(), style: SvgStyle = {}): string | null {
+  return normalizePaintValue(value, refs, style)?.color ?? null;
+}
+
+function normalizePaintValue(value: string, refs: Map<string, Element> = new Map(), style: SvgStyle = {}): { color: string; alpha: number | null } | null {
   const trimmed = value.trim();
   if (!trimmed || trimmed === "none" || trimmed === "transparent") return null;
   const ref = paintUrlRef(trimmed);
   if (ref) {
-    return paintServerColor(ref.id, refs, style) ?? normalizePaint(ref.fallback, refs, style);
+    const server = paintServerColor(ref.id, refs, style);
+    if (server) return { color: server, alpha: cssColorAlpha(server) };
+    return normalizePaintValue(ref.fallback, refs, style);
   }
-  return parseCssColor(trimmed, style) ?? trimmed;
+  const color = parseCssColor(trimmed, style) ?? trimmed;
+  return { color, alpha: cssColorAlpha(trimmed) };
 }
 
 function paintServerColor(id: string, refs: Map<string, Element>, style: SvgStyle, seen: Set<string> = new Set()): string | null {
@@ -1636,6 +1690,35 @@ function parseCssColor(value: string | null, style: SvgStyle = {}): string | nul
   const hsl = parseHslFunction(trimmed);
   if (hsl) return rgbToHex(hsl);
   return null;
+}
+
+function cssColorAlpha(value: string | null): number | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (/^#[0-9a-f]{4}$/i.test(trimmed)) return Number.parseInt(trimmed.slice(4, 5).repeat(2), 16) / 255;
+  if (/^#[0-9a-f]{8}$/i.test(trimmed)) return Number.parseInt(trimmed.slice(7, 9), 16) / 255;
+  const functionMatch = trimmed.match(/^(?:rgba|hsla?)\(([^)]+)\)$/i);
+  if (!functionMatch) return null;
+  const parts = colorFunctionParts(functionMatch[1] || "");
+  return parts.length >= 4 ? parseAlpha(parts[3]!) : null;
+}
+
+function parseAlpha(value: string | null): number | null {
+  if (value == null) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return cssAlpha(trimmed);
+}
+
+function combinedAlpha(...values: (number | null | undefined)[]): number | null {
+  let alpha = 1;
+  let seen = false;
+  for (const value of values) {
+    if (value == null) continue;
+    alpha *= clamp(value, 0, 1);
+    seen = true;
+  }
+  return seen ? alpha : null;
 }
 
 const namedColors: Record<string, string | null> = {
