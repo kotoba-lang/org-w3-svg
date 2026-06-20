@@ -185,6 +185,21 @@ def test_top_level_packages_expose_only_canonical_svgraph_api() -> None:
         assert "SvgIRDocument" not in source
 
 
+def test_typed_package_data_keeps_svgraph_canonical_and_compatibility_markers() -> None:
+    root = Path(__file__).resolve().parents[1]
+    pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
+    package_data = pyproject["tool"]["setuptools"]["package-data"]
+    workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert package_data == {"drawingml_svg": ["py.typed"], "svgraph": ["py.typed"]}
+    assert (root / "src" / "svgraph" / "py.typed").is_file()
+    assert (root / "src" / "drawingml_svg" / "py.typed").is_file()
+    assert '"svgraph/py.typed" in wheel_names' in workflow
+    assert '"drawingml_svg/py.typed" in wheel_names' in workflow
+    assert 'f"{root}/src/svgraph/py.typed" in sdist_names' in workflow
+    assert 'f"{root}/src/drawingml_svg/py.typed" in sdist_names' in workflow
+
+
 def test_module_execution_is_canonical_svgraph_entry_point() -> None:
     root = Path(__file__).resolve().parents[1]
     main_source = (root / "src" / "svgraph" / "__main__.py").read_text(encoding="utf-8")
