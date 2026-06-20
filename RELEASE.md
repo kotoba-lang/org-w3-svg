@@ -34,6 +34,7 @@ python - <<'PY'
 from urllib.request import urlopen
 
 html = urlopen("https://com-junkawasaki.github.io/svgraph/", timeout=20).read().decode("utf-8")
+app_js = urlopen("https://com-junkawasaki.github.io/svgraph/app.js", timeout=20).read().decode("utf-8")
 for expected in [
     "<title>SVGraph Editor</title>",
     'name="description"',
@@ -46,6 +47,14 @@ for expected in [
     "Download Sidecar",
 ]:
     assert expected in html
+for expected in [
+    "SVGraph",
+    "downloadSVGraphBtn",
+    "svgraph-source.svg",
+    "svgraph-sidecar.json",
+    "svgraph-web.pptx",
+]:
+    assert expected in app_js
 for forbidden in [
     "PPTX" + "SVG",
     "pptx" + "svg",
@@ -54,6 +63,7 @@ for forbidden in [
     "download" + "Pptxsvg",
 ]:
     assert forbidden not in html
+    assert forbidden not in app_js
 PY
 ```
 

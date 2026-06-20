@@ -26,6 +26,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Strengthened release and CI package file-list guards for canonical SVGraph modules and retained compatibility wrappers.
 - Added SVGraph-oriented public repository topics and release checklist verification for them.
 - Added a release checklist smoke for the published SVGraph Pages site.
+- Expanded published Pages smoke coverage to validate the live `app.js` artifact for canonical SVGraph controls and legacy-name exclusions.
 - Expanded release checklist coverage for public repository description, MIT license metadata, and SVGraph topics.
 - Expanded published Pages title, description, Open Graph, and Twitter metadata smoke coverage.
 - Expanded release package metadata URLs for Homepage, Repository, Documentation, and Issues smoke coverage.

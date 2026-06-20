@@ -588,6 +588,7 @@ def test_release_checklist_smokes_published_svgraph_pages_site() -> None:
 
     for expected in [
         'urlopen("https://com-junkawasaki.github.io/svgraph/", timeout=20)',
+        'urlopen("https://com-junkawasaki.github.io/svgraph/app.js", timeout=20)',
         '"<title>SVGraph Editor</title>"',
         "'name=\"description\"'",
         '\'property="og:title" content="SVGraph Editor"\'',
@@ -597,13 +598,19 @@ def test_release_checklist_smokes_published_svgraph_pages_site() -> None:
         '"Download SVG"',
         '"Download SVGraph"',
         '"Download Sidecar"',
+        '"downloadSVGraphBtn"',
+        '"svgraph-source.svg"',
+        '"svgraph-sidecar.json"',
+        '"svgraph-web.pptx"',
         '"PPTX" + "SVG"',
         '"pptx" + "svg"',
         '"drawingml-" + "svg-web"',
         '"download" + "IrBtn"',
         '"download" + "Pptxsvg"',
         "assert expected in html",
+        "assert expected in app_js",
         "assert forbidden not in html",
+        "assert forbidden not in app_js",
     ]:
         assert expected in release
 
@@ -1119,6 +1126,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "GitHub Actions, Python, and npm/web dependency update pull requests",
         "public repository description, MIT license metadata, and SVGraph topics",
         "published Pages title, description, Open Graph, and Twitter metadata",
+        "live `app.js` artifact for canonical SVGraph controls and legacy-name exclusions",
         "release package metadata URLs for Homepage, Repository, Documentation, and Issues",
         "wheel license expression and license file metadata",
         "canonical `svgraph.model` explicit exports",
