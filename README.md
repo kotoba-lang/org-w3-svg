@@ -86,7 +86,7 @@ svgraph --version
 python -m svgraph --version
 ```
 
-`drawingml-svg`, `dml2svg`, and `svg2dml` are also installed as compatibility aliases.
+`drawingml-svg`, `dml2svg`, `svg2dml`, `svg2pptx`, and `drawingml-svg-analyze` are also installed as compatibility aliases.
 
 ## PPTX smoke test
 

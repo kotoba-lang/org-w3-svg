@@ -136,6 +136,15 @@ def test_pyproject_keeps_legacy_console_scripts_as_svgraph_compatibility_aliases
     assert project["scripts"]["svg2pptx"] == "svgraph.cli:main"
 
 
+def test_readme_lists_all_legacy_console_compatibility_aliases() -> None:
+    root = Path(__file__).resolve().parents[1]
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    readme = (root / "README.md").read_text(encoding="utf-8")
+
+    for executable in sorted(set(project["scripts"]) - {"svgraph"}):
+        assert executable in readme
+
+
 def test_generated_distribution_metadata_preserves_legacy_compatibility_entry_points() -> None:
     root = Path(__file__).resolve().parents[1]
     pkg_info = root / "src" / "svgraph.egg-info" / "PKG-INFO"
