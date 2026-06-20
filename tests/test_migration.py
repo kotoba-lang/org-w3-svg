@@ -418,6 +418,12 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
     for source in [release, workflow]:
         assert "tmp/dist/svgraph-*.whl" in source
         assert "tmp/dist/svgraph-*.tar.gz" in source
+        assert "Name: svgraph" in source
+        assert (
+            "Summary: Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, "
+            "PresentationML/PPTX, and browser-only web editing."
+        ) in source
+        assert "Keywords: drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter" in source
         assert "tmp/dist/drawingml_svg-" not in source
         assert "tmp/dist/drawingml-svg-" not in source
 
