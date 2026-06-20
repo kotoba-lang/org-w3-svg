@@ -92,6 +92,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser rectangular `clipPath` transforms with CSS cascade rules.
 - Added browser rectangular `clipPath` container propagation for grouped shapes and referenced `use` subtrees.
 - Preserved browser line direction with DrawingML `flipH`/`flipV` transforms for reversed SVG lines and relation connectors.
+- Normalized browser `clipPathUnits` values for rectangular clip paths.
 - Added Python PPTX custom XML `source_svg` preservation so generated packages carry the editable SVG source alongside SVGraph presentation metadata.
 - Added browser PPTX custom XML `source_svg` preservation so browser-generated packages match Python source recovery metadata.
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.

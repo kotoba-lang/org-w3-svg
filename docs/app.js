@@ -122,7 +122,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <defs>
       <rect id="reused-chip" width="170" height="70" rx="14"/>
       <clipPath id="bar-clip"><rect style="x:950px;y:500px;width:150px;height:70px;transform:translate(10px,0)"/></clipPath>
-      <clipPath id="bbox-clip" clipPathUnits="objectBoundingBox"><rect style="x:0.15;y:0.15;width:0.7;height:0.7"/></clipPath>
+      <clipPath id="bbox-clip" clipPathUnits=" OBJECTBOUNDINGBOX "><rect style="x:0.15;y:0.15;width:0.7;height:0.7"/></clipPath>
       <clipPath id="group-clip"><rect x="1150" y="615" width="70" height="50"/></clipPath>
       <linearGradient id="linear-fallback"><stop offset="0" stop-color="#ef4444"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
       <radialGradient id="radial-fallback"><stop offset="0" stop-color="#fef08a"/><stop offset="1" stop-color="#16a34a"/></radialGradient>
@@ -3352,7 +3352,7 @@ function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()
     const clip = refs.get(refId);
     if (!clip || localName(clip) !== "clipPath")
         return null;
-    const units = (clip.getAttribute("clipPathUnits") || "userSpaceOnUse").toLowerCase();
+    const units = normalizedClipPathUnits(clip);
     const rect = Array.from(clip.children).find((child) => localName(child) === "rect");
     if (!rect)
         return null;
@@ -3381,6 +3381,10 @@ function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()
         return null;
     const box = transformedBox(clipMatrix, cascadedGeom(rect, declarations, "x", "x", viewport), cascadedGeom(rect, declarations, "y", "y", viewport), width, height);
     return box.width > 0 && box.height > 0 ? box : null;
+}
+function normalizedClipPathUnits(clip) {
+    const units = (clip.getAttribute("clipPathUnits") || "userSpaceOnUse").trim().toLowerCase();
+    return units === "objectboundingbox" ? "objectboundingbox" : units === "userspaceonuse" ? "userspaceonuse" : "";
 }
 function svgViewportClip(element, style, positionedMatrix, viewport) {
     if (style.overflow !== "hidden")

@@ -1110,6 +1110,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "useViewport(ref, element, currentViewport, css, ownStyle)" in generated
         assert "rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport, css)" in generated
         assert "bboxCascadedGeom" in generated
+        assert "function normalizedClipPathUnits" in generated
+        assert "clip.getAttribute(\"clipPathUnits\")" in generated
+        assert 'clipPathUnits=" OBJECTBOUNDINGBOX "' in generated
         assert "computedStyle(clip, style, css, refs, viewport)" in generated
         assert "computedStyle(rect, clipStyle, css, refs, viewport)" in generated
         assert "transformMatrix(rectStyle.transform ?? rect.getAttribute(\"transform\"))" in generated
@@ -1378,6 +1381,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser rectangular `clipPath` transforms with CSS cascade rules",
         "browser rectangular `clipPath` container propagation",
         "browser line direction with DrawingML `flipH`/`flipV` transforms",
+        "browser `clipPathUnits` values",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",
