@@ -55,6 +55,8 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps">Rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px"> blue</tspan></text>
     <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;text-anchor:middle;dominant-baseline:middle">Centered</text>
     <text id="length-text" x="735" y="95" textLength="170" lengthAdjust="spacing" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
+    <text id="rtl-text" x="560" y="95" direction="rtl" style="font-size:22;font-family:Arial;fill:#0f766e">RTL
+line</text>
     <rect id="gradient-fill" x="900" y="615" width="120" height="50" style="fill:url(#linear-fallback);stroke:url(#radial-fallback)"/>
     <circle id="pattern-fill" cx="1080" cy="640" r="32" style="fill:url(#pattern-fallback);stroke:#334155"/>
     <use href="#reused-chip" class="accent-use" x="360" y="400"/>
@@ -495,6 +497,7 @@ function elementToShape(element, matrix, style, id) {
             baselineShift: style.baselineShift ?? null,
             letterSpacing: effectiveLetterSpacing(style, text, fontSize),
             rotation,
+            direction: style.direction ?? null,
             anchor,
             baseline,
             runs,
@@ -661,6 +664,9 @@ function hasStrike(style) {
 function normalizeFontVariant(value) {
     const normalized = value.trim().toLowerCase();
     return normalized === "small-caps" || normalized === "all-small-caps" ? normalized : null;
+}
+function normalizeTextDirection(value) {
+    return value.trim().toLowerCase() === "rtl" ? "rtl" : null;
 }
 function normalizeTextAnchor(value) {
     const normalized = value.trim().toLowerCase();
@@ -942,12 +948,13 @@ function textXml(shape) {
             baselineShift: shape.baselineShift,
             letterSpacing: shape.letterSpacing,
         }]).map(textRunXml).join("");
-    const body = `<p:txBody><a:bodyPr wrap="none"${textBaselineAnchorXml(shape.baseline)}/><a:lstStyle/><a:p>${paragraphAlignXml(shape.anchor)}${runs}</a:p></p:txBody>`;
+    const body = `<p:txBody><a:bodyPr wrap="none"${textBaselineAnchorXml(shape.baseline)}/><a:lstStyle/><a:p>${paragraphPropertiesXml(shape.anchor, shape.direction)}${runs}</a:p></p:txBody>`;
     return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, "rect", "<a:noFill/><a:ln><a:noFill/></a:ln>", body, shape.rotation);
 }
 function textRunXml(run) {
     const attrs = ` lang="en-US" sz="${Math.round(run.fontSize * 100)}"${run.bold ? ' b="1"' : ""}${run.italic ? ' i="1"' : ""}${fontVariantXml(run.fontVariant)}${run.underline ? ' u="sng"' : ""}${run.strike ? ' strike="sngStrike"' : ""}${baselineShiftXml(run.baselineShift)}${letterSpacingXml(run.letterSpacing)}`;
-    return `<a:r><a:rPr${attrs}>${solidColorXml(run.fill, run.fillAlpha)}<a:latin typeface="${xml(run.fontFamily)}"/></a:rPr><a:t>${xml(run.text)}</a:t></a:r>`;
+    const parts = run.text.split(/\r\n|\r|\n/);
+    return parts.map((part, index) => `${index > 0 ? "<a:br/>" : ""}<a:r><a:rPr${attrs}>${solidColorXml(run.fill, run.fillAlpha)}<a:latin typeface="${xml(run.fontFamily)}"/></a:rPr><a:t>${xml(part)}</a:t></a:r>`).join("");
 }
 function fontVariantXml(value) {
     if (value === "small-caps")
@@ -968,12 +975,15 @@ function letterSpacingXml(value) {
         return "";
     return ` spc="${Math.round(value * 75)}"`;
 }
-function paragraphAlignXml(anchor) {
+function paragraphPropertiesXml(anchor, direction) {
+    const attrs = [];
     if (anchor === "middle")
-        return '<a:pPr algn="ctr"/>';
+        attrs.push('algn="ctr"');
     if (anchor === "end")
-        return '<a:pPr algn="r"/>';
-    return "";
+        attrs.push('algn="r"');
+    if (direction === "rtl")
+        attrs.push('rtl="1"');
+    return attrs.length ? `<a:pPr ${attrs.join(" ")}/>` : "";
 }
 function textBaselineAnchorXml(baseline) {
     if (baseline === "middle")
@@ -1366,6 +1376,7 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
     const textLength = inlineDeclarations.textLength ?? element.getAttribute("textLength") ?? cssDeclarations.textLength ?? null;
     const lengthAdjust = inlineDeclarations.lengthAdjust ?? element.getAttribute("lengthAdjust") ?? cssDeclarations.lengthAdjust ?? null;
     const rotate = value("rotate");
+    const direction = value("direction");
     const clipPath = value("clip-path");
     const marker = value("marker");
     const markerStart = value("marker-start");
@@ -1433,6 +1444,8 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
         next.lengthAdjust = normalizeLengthAdjust(lengthAdjust);
     if (rotate != null)
         next.rotate = singleTextRotation(rotate, element.textContent || null);
+    if (direction != null)
+        next.direction = normalizeTextDirection(direction);
     if (clipPath != null)
         next.clipPath = clipPath.trim();
     if (marker != null) {
