@@ -81,10 +81,13 @@ assert web_package["version"] == pyproject["project"]["version"]
 assert web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."
 assert {"svg", "svgraph", "presentationml", "pptx", "web"} <= set(web_package["keywords"])
 assert web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"
+assert web_package["private"] is True
+assert web_package["license"] == "MIT"
 assert web_lock["name"] == web_package["name"]
 assert web_lock["version"] == web_package["version"]
 assert web_lock["packages"][""]["name"] == web_package["name"]
 assert web_lock["packages"][""]["version"] == web_package["version"]
+assert web_lock["packages"][""]["license"] == web_package["license"]
 for expected in [
     "README.md",
     "LICENSE",
