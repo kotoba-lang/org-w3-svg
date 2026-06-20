@@ -583,6 +583,14 @@ def test_pages_workflow_deploys_svgraph_docs_site() -> None:
     assert "uses: actions/deploy-pages@v4" in workflow
     assert (root / "docs" / ".nojekyll").is_file()
     assert "<title>SVGraph Editor</title>" in html
+    assert (
+        'content="Browser-only SVGraph editor for converting SVG presentation graphs into editable '
+        'PresentationML and PPTX."'
+    ) in html
+    assert '<link rel="canonical" href="https://com-junkawasaki.github.io/svgraph/" />' in html
+    assert '<meta property="og:title" content="SVGraph Editor" />' in html
+    assert '<meta property="og:url" content="https://com-junkawasaki.github.io/svgraph/" />' in html
+    assert '<meta name="twitter:title" content="SVGraph Editor" />' in html
     assert "https://com-junkawasaki.github.io/drawingml-svg" not in workflow + html
 
 
