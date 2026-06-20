@@ -324,6 +324,28 @@ def test_migration_guide_covers_public_rename_surfaces() -> None:
         assert f"{legacy} | {canonical}" in migration
 
 
+def test_migration_guide_cli_examples_use_canonical_svgraph_entry_points() -> None:
+    root = Path(__file__).resolve().parents[1]
+    migration = (root / "MIGRATION.md").read_text(encoding="utf-8")
+    project = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    cli_section = migration.split("## CLI", maxsplit=1)[1].split("## Generated Artifacts", maxsplit=1)[0]
+
+    assert project["scripts"]["svgraph"] == "svgraph.cli:main"
+    for command in [
+        "svgraph svg2dml input.svg -o shape.xml",
+        "svgraph svg2pptx deck.svg -o deck.pptx",
+        "svgraph analyze input.svg",
+        "svgraph input.svg",
+        "svgraph svgraph-presentation input.svg",
+        "python -m svgraph --version",
+    ]:
+        assert command in cli_section
+
+    assert "drawingml-svg" not in cli_section
+    assert "pptxsvg" not in cli_section
+    assert "\nir " not in cli_section
+
+
 def _text_files(root: Path) -> list[Path]:
     skipped = {".git", ".pytest_cache", ".ruff_cache", "build", "dist", "node_modules", "tmp", "__pycache__"}
     suffixes = {".html", ".js", ".json", ".md", ".py", ".svg", ".toml", ".ts", ".txt", ".yml", ".yaml"}
