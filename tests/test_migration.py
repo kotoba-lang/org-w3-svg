@@ -41,7 +41,7 @@ ALLOWED_LEGACY_TERMS = {
         "Svgraph",
     },
     "tests/test_migration.py": set(LEGACY_TERMS),
-    "tests/test_svgraph.py": {"SvgIR", "svg_to_ir", "svg_to_pptx_ir", "svg_ir", "pptx_ir", "Svgraph"},
+    "tests/test_svgraph.py": {"SvgIR", "pptxsvg", "svg_to_ir", "svg_to_pptx_ir", "svg_ir", "pptx_ir", "Svgraph"},
 }
 
 FORBIDDEN_PUBLIC_LEGACY_STRINGS = (

@@ -366,36 +366,6 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "downloadPptxsvg" not in combined
 
 
-@pytest.mark.parametrize("executable", ["svg2dml", "dml2svg", "drawingml-svg-analyze"])
-def test_cli_alias_version_writes_installed_package_version(monkeypatch, capsys, executable: str) -> None:
-    monkeypatch.setattr("sys.argv", [executable, "--version"])
-
-    with pytest.raises(SystemExit) as excinfo:
-        cli_main()
-
-    captured = capsys.readouterr()
-
-    assert excinfo.value.code == 0
-    assert captured.out == "drawingml-svg 0.1.0\n"
-
-
-@pytest.mark.parametrize(
-    ("executable", "command"),
-    [("svg2dml", "svg2dml"), ("dml2svg", "dml2svg"), ("drawingml-svg-analyze", "analyze")],
-)
-def test_cli_alias_help_writes_command_help(monkeypatch, capsys, executable: str, command: str) -> None:
-    monkeypatch.setattr("sys.argv", [executable, "-h"])
-
-    with pytest.raises(SystemExit) as excinfo:
-        cli_main()
-
-    captured = capsys.readouterr()
-
-    assert excinfo.value.code == 0
-    assert captured.out.startswith(f"usage: drawingml-svg {command} ")
-    assert "Input file. Reads stdin when omitted." in captured.out
-
-
 def test_cli_converts_between_files_and_creates_output_parent(tmp_path) -> None:
     source = tmp_path / "input.svg"
     dml_output = tmp_path / "nested" / "shape.xml"
@@ -443,21 +413,6 @@ def test_cli_alias_invocation_uses_executable_name(tmp_path, monkeypatch) -> Non
     assert cli_main() == 0
     assert output.is_file()
     assert "<p:sp>" in output.read_text(encoding="utf-8")
-
-
-def test_cli_legacy_svgraph_commands_still_work(tmp_path, capsys) -> None:
-    source = tmp_path / "input.svg"
-    source.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><g data-slide="1"/></svg>', encoding="utf-8")
-
-    assert cli_main(["ir", str(source)]) == 0
-    captured = capsys.readouterr()
-    assert '"kind": "svgraph"' in captured.out
-    assert "'ir' is deprecated; use 'svgraph'" in captured.err
-
-    assert cli_main(["pptxsvg", str(source)]) == 0
-    captured = capsys.readouterr()
-    assert '"kind": "svgraph-presentation"' in captured.out
-    assert "'pptxsvg' is deprecated; use 'svgraph-presentation'" in captured.err
 
 
 def test_cli_reports_missing_input_without_traceback(tmp_path, capsys) -> None:

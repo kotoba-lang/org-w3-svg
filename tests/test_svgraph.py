@@ -10,6 +10,7 @@ import drawingml_svg.ir
 import svgraph as svgraph_package
 from drawingml_svg.ir import svg_ir_to_json, svg_pptx_ir_to_json, svg_to_ir, svg_to_pptx_ir
 from svgraph import svg_to_svgraph, svg_to_svgraph_presentation
+from svgraph.cli import main as cli_main
 from svgraph.model import svg_svgraph_presentation_to_json, svg_svgraph_to_json
 
 
@@ -24,6 +25,36 @@ def test_compatibility_package_declares_inline_types() -> None:
     from importlib import resources
 
     assert resources.files(drawingml_svg).joinpath("py.typed").is_file()
+
+
+@pytest.mark.parametrize("executable", ["svg2dml", "dml2svg", "drawingml-svg-analyze"])
+def test_cli_alias_version_writes_installed_package_version(monkeypatch, capsys, executable: str) -> None:
+    monkeypatch.setattr("sys.argv", [executable, "--version"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main()
+
+    captured = capsys.readouterr()
+
+    assert excinfo.value.code == 0
+    assert captured.out == "drawingml-svg 0.1.0\n"
+
+
+@pytest.mark.parametrize(
+    ("executable", "command"),
+    [("svg2dml", "svg2dml"), ("dml2svg", "dml2svg"), ("drawingml-svg-analyze", "analyze")],
+)
+def test_cli_alias_help_writes_command_help(monkeypatch, capsys, executable: str, command: str) -> None:
+    monkeypatch.setattr("sys.argv", [executable, "-h"])
+
+    with pytest.raises(SystemExit) as excinfo:
+        cli_main()
+
+    captured = capsys.readouterr()
+
+    assert excinfo.value.code == 0
+    assert captured.out.startswith(f"usage: drawingml-svg {command} ")
+    assert "Input file. Reads stdin when omitted." in captured.out
 
 
 def test_svgraph_preserves_metadata_data_attributes_and_dependencies() -> None:
@@ -201,3 +232,18 @@ def test_legacy_pptx_ir_alias_matches_svgraph_presentation_payload() -> None:
 
     assert legacy.kind == "svgraph-presentation"
     assert legacy_payload == json.loads(json.dumps(asdict(legacy)))
+
+
+def test_cli_legacy_svgraph_commands_still_work(tmp_path, capsys) -> None:
+    source = tmp_path / "input.svg"
+    source.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><g data-slide="1"/></svg>', encoding="utf-8")
+
+    assert cli_main(["ir", str(source)]) == 0
+    captured = capsys.readouterr()
+    assert '"kind": "svgraph"' in captured.out
+    assert "'ir' is deprecated; use 'svgraph'" in captured.err
+
+    assert cli_main(["pptxsvg", str(source)]) == 0
+    captured = capsys.readouterr()
+    assert '"kind": "svgraph-presentation"' in captured.out
+    assert "'pptxsvg' is deprecated; use 'svgraph-presentation'" in captured.err
