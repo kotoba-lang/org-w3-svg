@@ -121,8 +121,8 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
   <g id="coverage-slide" data-kind="slide" data-title="Browser SVG Coverage" style="stroke:#334155;stroke-width:4;fill:#fde68a">
     <defs>
       <rect id="reused-chip" width="170" height="70" rx="14"/>
-      <clipPath id="bar-clip"><rect x="960" y="500" width="150" height="70"/></clipPath>
-      <clipPath id="bbox-clip" clipPathUnits="objectBoundingBox"><rect x="0.15" y="0.15" width="0.7" height="0.7"/></clipPath>
+      <clipPath id="bar-clip"><rect style="x:960px;y:500px;width:150px;height:70px"/></clipPath>
+      <clipPath id="bbox-clip" clipPathUnits="objectBoundingBox"><rect style="x:0.15;y:0.15;width:0.7;height:0.7"/></clipPath>
       <linearGradient id="linear-fallback"><stop offset="0" stop-color="#ef4444"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
       <radialGradient id="radial-fallback"><stop offset="0" stop-color="#fef08a"/><stop offset="1" stop-color="#16a34a"/></radialGradient>
       <pattern id="pattern-fallback" width="12" height="12" patternUnits="userSpaceOnUse">
@@ -154,6 +154,9 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       .css-geom-circle { cx: 845px; cy: 184px; r: 19px; fill: #dcfce7; stroke: #15803d; stroke-width: 2px; }
       .css-geom-line { x1: 735px; y1: 220px; x2: 875px; y2: 220px; pathLength: 70; stroke: #0f172a; stroke-width: 4px; stroke-dasharray: 8 4; }
       .css-image-frame { x: 980px; y: 340px; width: 96px; height: 48px; }
+      .css-use-frame { x: 500px; y: 385px; width: 80px; height: 40px; }
+      .css-nested-frame { x: 610px; y: 385px; width: 80px; height: 40px; }
+      .css-overflow-frame { x: 1120px; y: 610px; width: 80px; height: 40px; }
     </style>
     <rect width="1280" height="720" fill="#ffffff" stroke="none"/>
     <text x="90" y="90" style="font-size:40;font-family:Arial;font-weight:700;fill:#17202a">Browser SVG coverage</text>
@@ -207,12 +210,12 @@ line</text>
     <rect id="gradient-fill" x="900" y="615" width="120" height="50" style="fill:url(#linear-fallback);stroke:url(#radial-fallback)"/>
     <circle id="pattern-fill" cx="1080" cy="640" r="32" style="fill:url(#pattern-fallback);stroke:#334155"/>
     <use href="#reused-chip" class="accent-use" x="360" y="400"/>
-    <use id="symbol-viewbox-use" href="#viewbox-icon" x="500" y="385" width="80" height="40" preserveAspectRatio="xMaxYMax slice"/>
+    <use id="symbol-viewbox-use" class="css-use-frame" href="#viewbox-icon" preserveAspectRatio="xMaxYMax slice"/>
     <use id="context-paint-use" href="#context-badge" x="455" y="600" width="80" height="40" fill="#123456" stroke="#abcdef"/>
-    <svg id="nested-viewbox" x="610" y="385" width="80" height="40" viewBox="0 0 20 10" preserveAspectRatio="none">
+    <svg id="nested-viewbox" class="css-nested-frame" viewBox="0 0 20 10" preserveAspectRatio="none">
       <rect x="50%" y="50%" width="25%" height="50%" fill="#0f766e" stroke="#064e3b" stroke-width="1"/>
     </svg>
-    <svg id="nested-overflow" x="1120" y="610" width="80" height="40" viewBox="0 0 20 10" overflow="hidden">
+    <svg id="nested-overflow" class="css-overflow-frame" viewBox="0 0 20 10" overflow="hidden">
       <rect id="nested-overflow-rect" x="-5" y="-5" width="30" height="20" fill="#fee2e2" stroke="#991b1b" stroke-width="1"/>
     </svg>
     <g transform="translate(90 390) scale(1.5)">
@@ -1012,7 +1015,7 @@ function analyzeSvgCoverage(root) {
             inspectCoverageAttributes(element, style, tag, stats, refs, css, currentViewport);
         if (tag === "foreignObject")
             return;
-        const childViewport = tag === "svg" ? renderedSvgViewport(element, currentViewport) : currentViewport;
+        const childViewport = tag === "svg" ? renderedSvgViewport(element, currentViewport, css, style) : currentViewport;
         for (const child of Array.from(element.children))
             walk(child, style, childViewport, inDefs || tag === "defs");
     };
@@ -1049,7 +1052,7 @@ function coverageUseReferenceIsSupported(element, inheritedStyle, refs, css, vie
     const ref = refId ? refs.get(refId) : null;
     if (!ref || refStack.has(refId))
         return false;
-    const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport) : viewport;
+    const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, inheritedStyle) : viewport;
     return coverageReferencedSubtreeIsSupported(ref, inheritedStyle, refs, css, refViewport, new Set([...refStack, refId]));
 }
 function coverageReferencedSubtreeIsSupported(element, inheritedStyle, refs, css, viewport, refStack) {
@@ -1075,7 +1078,7 @@ function coverageReferencedSubtreeIsSupported(element, inheritedStyle, refs, css
     }
     if (!coverageSupportedElements.has(tag) && !coverageIgnoredElements.has(tag))
         return false;
-    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport) : viewport;
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
     return Array.from(element.children).every((child) => coverageReferencedSubtreeIsSupported(child, style, refs, css, childViewport, refStack));
 }
 function coverageElementIsIgnored(element, tag, style, refs, css, viewport, inDefs) {
@@ -1106,7 +1109,7 @@ function coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, ref
         const ref = refId ? refs.get(refId) : null;
         if (!ref || refStack.has(refId))
             return false;
-        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport) : viewport;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
         return !coverageSubtreeHasVisibleRendering(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
     }
     if (!["circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"].includes(tag))
@@ -1128,12 +1131,12 @@ function coverageSubtreeHasVisibleRendering(element, inheritedStyle, refs, css, 
         const ref = refId ? refs.get(refId) : null;
         if (!ref || refStack.has(refId))
             return false;
-        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport) : viewport;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
         return coverageSubtreeHasVisibleRendering(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
     }
     if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageSupportedElements.has(tag) && !coverageHasNonRenderingGeometry(element, tag, style, css, viewport) && !coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack))
         return true;
-    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport) : viewport;
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
     if (tag === "switch") {
         const selected = switchSelectedChild(element);
         return selected ? coverageSubtreeHasVisibleRendering(selected, style, refs, css, childViewport, refStack) : false;
@@ -1215,7 +1218,7 @@ function inspectCoverageUseReference(element, inheritedStyle, stats, refs, css, 
         return;
     let refViewport = viewport;
     if (["svg", "symbol"].includes(localName(ref)))
-        refViewport = useViewport(ref, element, viewport);
+        refViewport = useViewport(ref, element, viewport, css, inheritedStyle);
     inspectCoverageReferencedSubtree(ref, inheritedStyle, stats, refs, css, refViewport, new Set([...refStack, refId]));
 }
 function inspectCoverageReferencedSubtree(element, inheritedStyle, stats, refs, css, viewport, refStack) {
@@ -1230,7 +1233,7 @@ function inspectCoverageReferencedSubtree(element, inheritedStyle, stats, refs, 
         inspectCoverageAttributes(element, style, tag, stats, refs, css, viewport, refStack);
     if (tag === "foreignObject")
         return;
-    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport) : viewport;
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
     if (tag === "switch") {
         const selected = switchSelectedChild(element);
         if (selected)
@@ -1263,12 +1266,12 @@ function subtreeHasVisibleText(element, inheritedStyle, css, refs, viewport, ref
         const ref = refId ? refs.get(refId) : null;
         if (!ref || refStack.has(refId))
             return false;
-        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport) : viewport;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
         return subtreeHasVisibleText(ref, style, css, refs, refViewport, new Set([...refStack, refId]));
     }
     if (tag === "foreignObject")
         return !!element.textContent?.trim();
-    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport) : viewport;
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
     if (tag === "switch") {
         const selected = switchSelectedChild(element);
         return selected ? subtreeHasVisibleText(selected, style, css, refs, childViewport, refStack) : false;
@@ -1584,7 +1587,7 @@ function extractShapes(root) {
     const css = collectCss(scopeRoot);
     const refs = collectRefs(scopeRoot);
     const viewport = svgViewport(scopeRoot);
-    const rootMatrix = localName(scopeRoot) === "svg" ? viewBoxMatrix(scopeRoot, renderedSvgViewport(scopeRoot, viewport)) : [1, 0, 0, 1, 0, 0];
+    const rootMatrix = localName(scopeRoot) === "svg" ? viewBoxMatrix(scopeRoot, renderedSvgViewport(scopeRoot, viewport, css)) : [1, 0, 0, 1, 0, 0];
     let nextId = 2;
     const walk = (element, matrix, inheritedStyle, refStack, currentViewport, activeClip = null) => {
         const tag = localName(element);
@@ -1598,8 +1601,9 @@ function extractShapes(root) {
         let childViewport = currentViewport;
         let childClip = activeClip;
         if (tag === "svg") {
-            childViewport = renderedSvgViewport(element, currentViewport);
-            const positionedMatrix = multiply(ownMatrix, [1, 0, 0, 1, geom(element, "x", "x", currentViewport), geom(element, "y", "y", currentViewport)]);
+            childViewport = renderedSvgViewport(element, currentViewport, css, ownStyle);
+            const declarations = resolvedCascadedDeclarations(element, css, ownStyle);
+            const positionedMatrix = multiply(ownMatrix, [1, 0, 0, 1, cascadedGeom(element, declarations, "x", "x", currentViewport), cascadedGeom(element, declarations, "y", "y", currentViewport)]);
             childClip = combineClips(activeClip, svgViewportClip(element, ownStyle, positionedMatrix, childViewport));
             ownMatrix = multiply(positionedMatrix, viewBoxMatrix(element, childViewport));
         }
@@ -1608,10 +1612,11 @@ function extractShapes(root) {
             const refId = href.startsWith("#") ? href.slice(1) : "";
             const ref = refs.get(refId);
             if (ref && !refStack.has(refId)) {
-                let useMatrix = multiply(ownMatrix, [1, 0, 0, 1, geom(element, "x", "x", currentViewport), geom(element, "y", "y", currentViewport)]);
+                const declarations = resolvedCascadedDeclarations(element, css, ownStyle);
+                let useMatrix = multiply(ownMatrix, [1, 0, 0, 1, cascadedGeom(element, declarations, "x", "x", currentViewport), cascadedGeom(element, declarations, "y", "y", currentViewport)]);
                 let refViewport = currentViewport;
                 if (["svg", "symbol"].includes(localName(ref))) {
-                    refViewport = useViewport(ref, element, currentViewport);
+                    refViewport = useViewport(ref, element, currentViewport, css, ownStyle);
                     useMatrix = multiply(useMatrix, viewBoxMatrix(ref, refViewport, element.getAttribute("preserveAspectRatio")));
                 }
                 walk(ref, useMatrix, ownStyle, new Set([...refStack, refId]), refViewport, activeClip);
@@ -1641,7 +1646,7 @@ function extractShapes(root) {
             return;
         }
         const rawShape = tag === "svg" || visibilityHidden ? null : elementToShape(element, ownMatrix, ownStyle, nextId, childViewport, css, refs);
-        const clip = combineClips(activeClip, rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport));
+        const clip = combineClips(activeClip, rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport, css));
         const shape = applyClip(rawShape, clip);
         if (shape) {
             shapes.push(shape);
@@ -3331,7 +3336,7 @@ function shapeBox(shape) {
     }
     return { x: shape.x, y: shape.y, width: shape.width, height: shape.height };
 }
-function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()) {
+function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport(), css = []) {
     if (!style.clipPath || style.clipPath === "none")
         return null;
     const refId = urlRef(style.clipPath);
@@ -3344,8 +3349,9 @@ function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()
     const rect = Array.from(clip.children).find((child) => localName(child) === "rect");
     if (!rect)
         return null;
-    const width = units === "objectboundingbox" ? num(rect, "width") : geom(rect, "width", "x", viewport);
-    const height = units === "objectboundingbox" ? num(rect, "height") : geom(rect, "height", "y", viewport);
+    const declarations = resolvedCascadedDeclarations(rect, css, style);
+    const width = units === "objectboundingbox" ? bboxCascadedGeom(rect, declarations, "width") : cascadedGeom(rect, declarations, "width", "x", viewport);
+    const height = units === "objectboundingbox" ? bboxCascadedGeom(rect, declarations, "height") : cascadedGeom(rect, declarations, "height", "y", viewport);
     if (width <= 0 || height <= 0)
         return null;
     if (units === "objectboundingbox") {
@@ -3353,8 +3359,8 @@ function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()
         if (!box || clip.getAttribute("transform") || rect.getAttribute("transform"))
             return null;
         return {
-            x: box.x + num(rect, "x") * box.width,
-            y: box.y + num(rect, "y") * box.height,
+            x: box.x + bboxCascadedGeom(rect, declarations, "x") * box.width,
+            y: box.y + bboxCascadedGeom(rect, declarations, "y") * box.height,
             width: width * box.width,
             height: height * box.height,
         };
@@ -3364,7 +3370,7 @@ function rectClipBounds(shape, style, refs, matrix, viewport = defaultViewport()
     const clipMatrix = multiply(multiply(matrix, transformMatrix(clip.getAttribute("transform"))), transformMatrix(rect.getAttribute("transform")));
     if (!matrixKeepsRectAxisAligned(clipMatrix))
         return null;
-    const box = transformedBox(clipMatrix, geom(rect, "x", "x", viewport), geom(rect, "y", "y", viewport), width, height);
+    const box = transformedBox(clipMatrix, cascadedGeom(rect, declarations, "x", "x", viewport), cascadedGeom(rect, declarations, "y", "y", viewport), width, height);
     return box.width > 0 && box.height > 0 ? box : null;
 }
 function svgViewportClip(element, style, positionedMatrix, viewport) {
@@ -4193,6 +4199,10 @@ function firstOptionalCascadedGeom(element, declarations, name, axis, viewport) 
     const parsed = parseCssLength(first, percentageBasis(axis, viewport), Number.NaN);
     return Number.isFinite(parsed) ? parsed : null;
 }
+function bboxCascadedGeom(element, declarations, name, fallback = 0) {
+    const parsed = parseCssLength(cascadedGeomValue(element, declarations, name), 1, Number.NaN);
+    return Number.isFinite(parsed) ? parsed : fallback;
+}
 function percentageBasis(axis, viewport) {
     if (axis === "x")
         return viewport.width;
@@ -4212,10 +4222,11 @@ function svgViewport(root) {
 function defaultViewport() {
     return { width: 1280, height: 720 };
 }
-function renderedSvgViewport(element, parentViewport = defaultViewport()) {
+function renderedSvgViewport(element, parentViewport = defaultViewport(), css = [], inheritedStyle = {}) {
     const box = viewBoxValues(element);
-    const width = optionalGeom(element, "width", "x", parentViewport) ?? box?.width ?? defaultViewport().width;
-    const height = optionalGeom(element, "height", "y", parentViewport) ?? box?.height ?? defaultViewport().height;
+    const declarations = resolvedCascadedDeclarations(element, css, inheritedStyle);
+    const width = optionalCascadedGeom(element, declarations, "width", "x", parentViewport) ?? box?.width ?? defaultViewport().width;
+    const height = optionalCascadedGeom(element, declarations, "height", "y", parentViewport) ?? box?.height ?? defaultViewport().height;
     return { width: width > 0 ? width : (box?.width ?? defaultViewport().width), height: height > 0 ? height : (box?.height ?? defaultViewport().height) };
 }
 function viewBoxValues(element) {
@@ -4227,13 +4238,15 @@ function viewBoxValues(element) {
         ? { minX, minY, width, height }
         : null;
 }
-function useViewport(ref, useElement, viewport) {
+function useViewport(ref, useElement, viewport, css = [], inheritedStyle = {}) {
     const refBox = viewBoxValues(ref);
-    const widthFallback = refBox?.width ?? parseCssLength(ref.getAttribute("width"), Number.NaN, 0);
-    const heightFallback = refBox?.height ?? parseCssLength(ref.getAttribute("height"), Number.NaN, 0);
+    const refDeclarations = resolvedCascadedDeclarations(ref, css, inheritedStyle);
+    const useDeclarations = resolvedCascadedDeclarations(useElement, css, inheritedStyle);
+    const widthFallback = refBox?.width ?? cascadedGeom(ref, refDeclarations, "width", "x", viewport);
+    const heightFallback = refBox?.height ?? cascadedGeom(ref, refDeclarations, "height", "y", viewport);
     return {
-        width: optionalGeom(useElement, "width", "x", viewport) ?? widthFallback,
-        height: optionalGeom(useElement, "height", "y", viewport) ?? heightFallback,
+        width: optionalCascadedGeom(useElement, useDeclarations, "width", "x", viewport) ?? widthFallback,
+        height: optionalCascadedGeom(useElement, useDeclarations, "height", "y", viewport) ?? heightFallback,
     };
 }
 function viewBoxMatrix(element, viewport, preserveAspectRatioOverride = null) {

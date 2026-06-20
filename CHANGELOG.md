@@ -88,6 +88,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser basic shape geometry export with CSS cascade rules for `rect`, `circle`, `ellipse`, and `line` geometry.
 - Aligned browser frame geometry export with CSS cascade rules for embedded images and `foreignObject` HTML tables.
 - Aligned browser geometry-dependent analysis and transform calculations with CSS cascade rules for non-rendering checks, reference boxes, and line `pathLength` scaling.
+- Aligned browser nested SVG, `use`, and rectangular `clipPath` geometry with CSS cascade rules.
 - Added Python PPTX custom XML `source_svg` preservation so generated packages carry the editable SVG source alongside SVGraph presentation metadata.
 - Added browser PPTX custom XML `source_svg` preservation so browser-generated packages match Python source recovery metadata.
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.
