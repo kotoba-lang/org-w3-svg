@@ -2,6 +2,11 @@
 const emuPerPx = 9525;
 const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
   <metadata>{"presentation":{"slideSize":{"width":1280,"height":720},"masters":[{"id":"brand-master"}],"layouts":[{"id":"title-content","master":"brand-master"}],"guides":[{"id":"safe-left","orientation":"vertical","position":90}],"rulers":[{"id":"x","orientation":"horizontal","origin":0,"spacing":16}],"textStyles":{"title":{"fontFamily":"Aptos Display","fontSize":54,"bold":true},"lead":{"fontFamily":"Aptos","fontSize":28},"body":{"fontFamily":"Aptos","fontSize":18}}}}</metadata>
+  <style>
+    table.cascade-table td { background-color: #e0f2fe; color: #0c4a6e; }
+    #cascade-cell { background-color: #fef3c7; color: #78350f; border-left: 4px solid #d97706 !important; }
+    .cascade-table tr > * { background-color: #fee2e2; color: #991b1b; }
+  </style>
   <g id="cover" data-kind="slide" data-title="PPTXSVG Cover">
     <rect width="1280" height="720" fill="#f8fafc"/>
     <rect x="90" y="96" width="500" height="210" rx="22" fill="#ccfbf1" stroke="#0f766e" stroke-width="4"/>
@@ -26,7 +31,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <text x="90" y="90" font-size="40" font-family="Arial" font-weight="700" fill="#17202a">foreignObject table becomes native</text>
     <foreignObject id="html-table" x="90" y="150" width="620" height="250">
       <body xmlns="http://www.w3.org/1999/xhtml">
-        <table cellpadding="6">
+        <table class="cascade-table" cellpadding="6">
           <caption style="font-size:18px;color:#2563eb">HTML metrics <strong>native</strong></caption>
           <colgroup>
             <col style="width:35%"/>
@@ -44,7 +49,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
           </tr>
           <tr>
             <td style="background-color:#ffffff;color:#111827;border:none;padding:1px">PPTX</td>
-            <td style="background-color:#f8fafc;color:#111827;border:1px solid #94a3b8">Pages</td>
+            <td id="cascade-cell" style="border:1px solid #94a3b8;border-left:2px solid #dc2626">Cascade</td>
           </tr>
         </table>
       </body>
@@ -394,8 +399,9 @@ function buildSlideXml(slide, slideIndex) {
 }
 function extractShapes(root) {
     const shapes = [];
-    const css = collectCss(root);
-    const refs = collectRefs(root);
+    const scopeRoot = root.ownerDocument?.documentElement ?? root;
+    const css = collectCss(scopeRoot);
+    const refs = collectRefs(scopeRoot);
     let nextId = 2;
     const walk = (element, matrix, inheritedStyle, refStack) => {
         const tag = localName(element);
@@ -927,9 +933,8 @@ function htmlTableCellStyle(cell, table, inheritedStyle, css) {
     return htmlElementStyle(cell, rowStyle, css);
 }
 function htmlElementStyle(element, inheritedStyle, css) {
-    const cssDeclarations = matchingCssDeclarations(element, css);
-    const inlineDeclarations = styleDeclarations(element.getAttribute("style"));
-    const value = (name) => inlineDeclarations[name] ?? element.getAttribute(name) ?? cssDeclarations[name] ?? null;
+    const declarations = cascadedDeclarations(element, css, htmlAttributeAliases(element));
+    const value = (name) => declarations[name] ?? null;
     const next = { ...inheritedStyle };
     const color = value("color");
     const background = value("background-color") ?? value("background") ?? element.getAttribute("bgcolor");
@@ -1001,10 +1006,10 @@ function htmlElementStyle(element, inheritedStyle, css) {
     if (element.hasAttribute("nowrap"))
         next.tableCellNowrap = true;
     const currentBorder = tableBorderFromStyle(next);
-    next.tableBorderLeft = htmlSideBorder(element, "left", currentBorder, next);
-    next.tableBorderRight = htmlSideBorder(element, "right", currentBorder, next);
-    next.tableBorderTop = htmlSideBorder(element, "top", currentBorder, next);
-    next.tableBorderBottom = htmlSideBorder(element, "bottom", currentBorder, next);
+    next.tableBorderLeft = htmlSideBorder(declarations, "left", currentBorder, next);
+    next.tableBorderRight = htmlSideBorder(declarations, "right", currentBorder, next);
+    next.tableBorderTop = htmlSideBorder(declarations, "top", currentBorder, next);
+    next.tableBorderBottom = htmlSideBorder(declarations, "bottom", currentBorder, next);
     const tag = localName(element);
     const fontTagSize = tag === "font" ? htmlFontSize(element.getAttribute("size")) : null;
     const fontTagColor = tag === "font" ? element.getAttribute("color") : null;
@@ -1069,8 +1074,7 @@ function inlineBaselineShift(value) {
     const normalized = value?.trim().toLowerCase();
     return normalized === "super" || normalized === "sub" ? normalized : null;
 }
-function htmlSideBorder(element, side, fallback, style) {
-    const declarations = styleDeclarations(element.getAttribute("style"));
+function htmlSideBorder(declarations, side, fallback, style) {
     const shorthand = declarations[`border-${side}`];
     const sideStyle = declarations[`border-${side}-style`];
     const sideWidth = declarations[`border-${side}-width`];
@@ -1161,7 +1165,21 @@ function htmlStyleValue(element, name) {
     return styleDeclarations(element.getAttribute("style"))[name] ?? null;
 }
 function htmlCssValue(element, name, css) {
-    return styleDeclarations(element.getAttribute("style"))[name] ?? element.getAttribute(name) ?? matchingCssDeclarations(element, css)[name] ?? null;
+    return cascadedDeclarations(element, css, htmlAttributeAliases(element))[name] ?? null;
+}
+function htmlAttributeAliases(element) {
+    const aliases = {
+        align: "text-align",
+        valign: "vertical-align",
+        bgcolor: "background-color",
+        border: "border",
+        bordercolor: "border-color",
+        cellpadding: "padding",
+        cellspacing: "border-spacing",
+    };
+    if (element.hasAttribute("nowrap"))
+        aliases.nowrap = "white-space";
+    return aliases;
 }
 function htmlCellText(cell) {
     return (cell.textContent || "").replace(/\s+/g, " ").trim();
@@ -2122,9 +2140,8 @@ function num(element, name, fallback = 0) {
     return Number.isFinite(value) ? value : fallback;
 }
 function computedStyle(element, inherited, css = [], refs = new Map()) {
-    const cssDeclarations = matchingCssDeclarations(element, css);
-    const inlineDeclarations = styleDeclarations(element.getAttribute("style"));
-    const value = (name) => inlineDeclarations[name] ?? element.getAttribute(name) ?? cssDeclarations[name] ?? null;
+    const declarations = cascadedDeclarations(element, css);
+    const value = (name) => declarations[name] ?? null;
     const next = { ...inherited };
     const color = value("color");
     const fill = value("fill");
@@ -2148,8 +2165,8 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
     const baselineShift = value("baseline-shift");
     const letterSpacing = value("letter-spacing");
     const wordSpacing = value("word-spacing");
-    const textLength = inlineDeclarations.textLength ?? element.getAttribute("textLength") ?? cssDeclarations.textLength ?? null;
-    const lengthAdjust = inlineDeclarations.lengthAdjust ?? element.getAttribute("lengthAdjust") ?? cssDeclarations.lengthAdjust ?? null;
+    const textLength = declarations.textLength ?? null;
+    const lengthAdjust = declarations.lengthAdjust ?? null;
     const rotate = value("rotate");
     const direction = value("direction");
     const clipPath = value("clip-path");
@@ -2240,14 +2257,14 @@ function collectCss(root) {
     const rules = [];
     let order = 0;
     for (const style of Array.from(root.querySelectorAll("style"))) {
-        const text = style.textContent || "";
+        const text = (style.textContent || "").replace(/\/\*[\s\S]*?\*\//g, "");
         for (const match of text.matchAll(/([^{}]+)\{([^{}]+)\}/g)) {
             const selectorText = (match[1] || "").trim();
             const body = match[2] || "";
             if (!selectorText || selectorText.startsWith("@"))
                 continue;
-            for (const selector of selectorText.split(",").map((item) => item.trim()).filter(Boolean)) {
-                rules.push({ selector, declarations: styleDeclarations(body), order });
+            for (const selector of selectorList(selectorText)) {
+                rules.push({ selector, declarations: parseStyleDeclarations(body), specificity: selectorSpecificity(selector), order });
                 order += 1;
             }
         }
@@ -2267,30 +2284,303 @@ function collectRefs(root) {
     return refs;
 }
 function matchingCssDeclarations(element, css) {
+    return cascadedDeclarations(element, css, {}, false);
+}
+function cascadedDeclarations(element, css, aliases = {}, includePresentation = true) {
     const declarations = {};
+    const priorities = new Map();
+    const apply = (name, declaration, specificity, order) => {
+        if (!name)
+            return;
+        const priority = [declaration.important ? 1 : 0, specificity[0], specificity[1], specificity[2], order];
+        const current = priorities.get(name) ?? [-1, -1, -1, -1, -1];
+        if (comparePriority(priority, current) < 0)
+            return;
+        declarations[name] = declaration.value;
+        priorities.set(name, priority);
+    };
+    if (includePresentation) {
+        for (const attr of Array.from(element.attributes)) {
+            apply(attr.name, { value: attr.value, important: false }, [0, 0, 0, 0], -1);
+        }
+        for (const [attr, name] of Object.entries(aliases)) {
+            const attrValue = element.getAttribute(attr);
+            if (attrValue != null)
+                apply(name, { value: attr === "nowrap" ? "nowrap" : attrValue, important: false }, [0, 0, 0, 0], -1);
+        }
+    }
     for (const rule of css) {
         if (!matchesSelector(element, rule.selector))
             continue;
-        Object.assign(declarations, rule.declarations);
+        for (const [name, declaration] of Object.entries(rule.declarations)) {
+            apply(name, declaration, [0, ...rule.specificity], rule.order);
+        }
+    }
+    for (const [name, declaration] of Object.entries(parseStyleDeclarations(element.getAttribute("style")))) {
+        apply(name, declaration, [1, 0, 0, 0], 1_000_000);
     }
     return declarations;
 }
+function comparePriority(left, right) {
+    for (let index = 0; index < left.length; index += 1) {
+        const delta = (left[index] ?? 0) - (right[index] ?? 0);
+        if (delta !== 0)
+            return delta;
+    }
+    return 0;
+}
 function matchesSelector(element, selector) {
     try {
-        return element.matches(selector);
+        if (element.matches(selector))
+            return true;
     }
     catch (_) {
-        return false;
+        // Fall through to the namespace-tolerant matcher below.
     }
+    return fallbackMatchesSelector(element, selector);
+}
+function fallbackMatchesSelector(element, selector) {
+    const parts = selectorParts(selector);
+    if (!parts.length)
+        return false;
+    return selectorPartMatchesFrom(element, parts, parts.length - 1);
+}
+function selectorPartMatchesFrom(element, parts, index) {
+    if (!element || index < 0)
+        return index < 0;
+    const part = parts[index];
+    if (!part)
+        return false;
+    if (part === ">")
+        return selectorPartMatchesFrom(element.parentElement, parts, index - 1);
+    if (!simpleSelectorMatches(element, part))
+        return false;
+    if (index === 0)
+        return true;
+    const combinator = parts[index - 1];
+    if (combinator === ">")
+        return selectorPartMatchesFrom(element.parentElement, parts, index - 2);
+    let ancestor = element.parentElement;
+    while (ancestor) {
+        if (selectorPartMatchesFrom(ancestor, parts, index - 1))
+            return true;
+        ancestor = ancestor.parentElement;
+    }
+    return false;
+}
+function simpleSelectorMatches(element, selector) {
+    let normalized = selector.trim();
+    if (!normalized)
+        return true;
+    for (const body of pseudoBodies(normalized, "not")) {
+        if (selectorList(body).some((item) => simpleSelectorMatches(element, item)))
+            return false;
+    }
+    for (const name of ["is", "where"]) {
+        const bodies = pseudoBodies(normalized, name);
+        if (bodies.length && !bodies.some((body) => selectorList(body).some((item) => simpleSelectorMatches(element, item))))
+            return false;
+    }
+    normalized = normalized.replace(/:(?:not|is|where)\([^)]*\)/g, "");
+    if (normalized === "*")
+        return true;
+    const attrs = [...normalized.matchAll(/\[([^\]]+)\]/g)].map((match) => match[1] || "");
+    normalized = normalized.replace(/\[[^\]]+\]/g, "");
+    const idMatches = [...normalized.matchAll(/#([A-Za-z_][\w:-]*)/g)].map((match) => match[1]).filter((item) => Boolean(item));
+    const classMatches = [...normalized.matchAll(/\.([A-Za-z_][\w:-]*)/g)].map((match) => match[1]).filter((item) => Boolean(item));
+    const tag = normalized.replace(/#[A-Za-z_][\w:-]*/g, "").replace(/\.[A-Za-z_][\w:-]*/g, "").trim();
+    if (tag && tag !== "*" && tag.toLowerCase() !== element.localName.toLowerCase())
+        return false;
+    if (idMatches.length && !idMatches.includes(element.getAttribute("id") || ""))
+        return false;
+    const classes = new Set((element.getAttribute("class") || "").split(/\s+/).filter(Boolean));
+    if (!classMatches.every((item) => classes.has(item)))
+        return false;
+    return attrs.every((attr) => attributeSelectorMatches(element, attr));
+}
+function attributeSelectorMatches(element, selector) {
+    const match = selector.match(/^\s*([\w:-]+)\s*(?:([~|^$*]?=)\s*(?:"([^"]*)"|'([^']*)'|([^\]\s]+)))?\s*$/);
+    if (!match)
+        return false;
+    const name = match[1] || "";
+    const operator = match[2] || "";
+    const expected = match[3] ?? match[4] ?? match[5] ?? "";
+    const actual = element.getAttribute(name);
+    if (!operator)
+        return actual != null;
+    if (actual == null)
+        return false;
+    if (operator === "=")
+        return actual === expected;
+    if (operator === "~=")
+        return actual.split(/\s+/).includes(expected);
+    if (operator === "|=")
+        return actual === expected || actual.startsWith(`${expected}-`);
+    if (operator === "^=")
+        return actual.startsWith(expected);
+    if (operator === "$=")
+        return actual.endsWith(expected);
+    if (operator === "*=")
+        return actual.includes(expected);
+    return false;
+}
+function selectorParts(selector) {
+    const parts = [];
+    let current = "";
+    let quote = null;
+    let parenDepth = 0;
+    let bracketDepth = 0;
+    for (const char of selector.trim()) {
+        if (quote) {
+            current += char;
+            if (char === quote)
+                quote = null;
+            continue;
+        }
+        if (char === "\"" || char === "'") {
+            quote = char;
+            current += char;
+            continue;
+        }
+        if (char === "(")
+            parenDepth += 1;
+        if (char === ")" && parenDepth > 0)
+            parenDepth -= 1;
+        if (char === "[")
+            bracketDepth += 1;
+        if (char === "]" && bracketDepth > 0)
+            bracketDepth -= 1;
+        if (parenDepth === 0 && bracketDepth === 0 && (char === ">" || /\s/.test(char))) {
+            if (current.trim()) {
+                parts.push(current.trim());
+                current = "";
+            }
+            if (char === ">")
+                parts.push(">");
+            continue;
+        }
+        current += char;
+    }
+    if (current.trim())
+        parts.push(current.trim());
+    return parts;
+}
+function pseudoBodies(selector, name) {
+    const bodies = [];
+    const token = `:${name}(`;
+    let index = 0;
+    while (index < selector.length) {
+        const start = selector.indexOf(token, index);
+        if (start < 0)
+            break;
+        let depth = 1;
+        let cursor = start + token.length;
+        while (cursor < selector.length && depth > 0) {
+            if (selector[cursor] === "(")
+                depth += 1;
+            if (selector[cursor] === ")")
+                depth -= 1;
+            cursor += 1;
+        }
+        if (depth === 0)
+            bodies.push(selector.slice(start + token.length, cursor - 1));
+        index = cursor;
+    }
+    return bodies;
+}
+function selectorList(selector) {
+    return splitCssTopLevel(selector, ",").map((item) => item.trim()).filter(Boolean);
+}
+function selectorSpecificity(selector) {
+    let normalized = selector.replace(/:where\([^)]*\)/g, "");
+    const pseudoSpecificities = [...normalized.matchAll(/:(?:is|not)\(([^)]*)\)/g)].map((match) => {
+        const options = selectorList(match[1] || "");
+        return options.reduce((best, option) => maxSpecificity(best, selectorSpecificity(option)), [0, 0, 0]);
+    });
+    normalized = normalized.replace(/:(?:is|not)\([^)]*\)/g, "");
+    const ids = (normalized.match(/#[A-Za-z_][\w:-]*/g) || []).length;
+    const classes = (normalized.match(/\.[A-Za-z_][\w:-]*/g) || []).length;
+    const attributes = (normalized.match(/\[[^\]]+\]/g) || []).length;
+    const pseudoClasses = (normalized.match(/:[A-Za-z_][\w:-]*/g) || []).length;
+    const stripped = normalized
+        .replace(/\[[^\]]+\]/g, " ")
+        .replace(/#[A-Za-z_][\w:-]*/g, " ")
+        .replace(/\.[A-Za-z_][\w:-]*/g, " ")
+        .replace(/::?[A-Za-z_][\w:-]*/g, " ");
+    const elements = stripped.split(/[\s>+~]+/).filter((part) => /^[A-Za-z_][\w:-]*$/.test(part) && part !== "*").length;
+    return pseudoSpecificities.reduce((total, item) => [total[0] + item[0], total[1] + item[1], total[2] + item[2]], [ids, classes + attributes + pseudoClasses, elements]);
+}
+function maxSpecificity(left, right) {
+    for (let index = 0; index < left.length; index += 1) {
+        const delta = (left[index] ?? 0) - (right[index] ?? 0);
+        if (delta > 0)
+            return left;
+        if (delta < 0)
+            return right;
+    }
+    return left;
+}
+function cssDeclarationList(style) {
+    return splitCssTopLevel(style, ";");
+}
+function splitCssTopLevel(value, separator) {
+    const parts = [];
+    let current = "";
+    let quote = null;
+    let parenDepth = 0;
+    let bracketDepth = 0;
+    for (const char of value) {
+        if (quote) {
+            current += char;
+            if (char === quote)
+                quote = null;
+            continue;
+        }
+        if (char === "\"" || char === "'") {
+            quote = char;
+            current += char;
+            continue;
+        }
+        if (char === "(")
+            parenDepth += 1;
+        if (char === ")" && parenDepth > 0)
+            parenDepth -= 1;
+        if (char === "[")
+            bracketDepth += 1;
+        if (char === "]" && bracketDepth > 0)
+            bracketDepth -= 1;
+        if (char === separator && parenDepth === 0 && bracketDepth === 0) {
+            parts.push(current);
+            current = "";
+            continue;
+        }
+        current += char;
+    }
+    parts.push(current);
+    return parts;
 }
 function styleDeclarations(style) {
+    return Object.fromEntries(Object.entries(parseStyleDeclarations(style)).map(([name, declaration]) => [name, declaration.value]));
+}
+function parseStyleDeclarations(style) {
     if (!style)
         return {};
-    return Object.fromEntries(style
-        .split(";")
-        .map((entry) => entry.split(":"))
-        .filter((parts) => parts.length >= 2 && Boolean(parts[0]?.trim()))
-        .map(([name, ...value]) => [name.trim(), value.join(":").trim()]));
+    const declarations = {};
+    for (const entry of cssDeclarationList(style)) {
+        const colon = entry.indexOf(":");
+        if (colon <= 0)
+            continue;
+        const name = entry.slice(0, colon).trim();
+        const rawValue = entry.slice(colon + 1).trim();
+        if (!name || !rawValue)
+            continue;
+        const important = /\s*!important\s*$/i.test(rawValue);
+        declarations[name] = {
+            value: important ? rawValue.replace(/\s*!important\s*$/i, "").trim() : rawValue,
+            important,
+        };
+    }
+    return declarations;
 }
 function strokeStyle(style) {
     return {
