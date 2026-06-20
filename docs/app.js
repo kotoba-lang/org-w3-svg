@@ -3875,10 +3875,13 @@ function prepareSlideMedia(slideXml, firstMediaIndex, layoutIndex = 1) {
     let nextRelId = 2;
     let nextMediaIndex = firstMediaIndex;
     const xml = slideXml.replace(/r:embed="(data:image\/(png|jpeg|jpg|gif|webp);base64,([^"]+))"/gi, (_match, _uri, kind, payload) => {
+        const data = base64PayloadBytes(payload);
+        if (!data)
+            return _match;
         const extension = kind.toLowerCase() === "jpeg" ? "jpg" : kind.toLowerCase();
         const relId = `rId${nextRelId}`;
         const path = `ppt/media/image${nextMediaIndex}.${extension}`;
-        media[path] = base64Bytes(payload);
+        media[path] = data;
         relationships.push(`<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${nextMediaIndex}.${extension}"/>`);
         nextRelId += 1;
         nextMediaIndex += 1;
@@ -5868,7 +5871,7 @@ function parseAbsoluteLength(value, fallback = Number.NaN) {
     return scale[unit] == null ? fallback : number * scale[unit];
 }
 function supportedDataImage(value) {
-    return /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(value);
+    return dataImageBytes(value) != null;
 }
 function imagePreserveAspectRatioRect(x, y, width, height, href, value) {
     if (!value)
@@ -5918,7 +5921,9 @@ function dataImageDimensions(uri) {
     if (!match)
         return null;
     const kind = match[1].toLowerCase();
-    const bytes = base64Bytes(match[2] || "");
+    const bytes = dataImageBytes(uri);
+    if (!bytes)
+        return null;
     if (kind === "png")
         return pngDimensions(bytes);
     if (kind === "gif")
@@ -5926,6 +5931,21 @@ function dataImageDimensions(uri) {
     if (kind === "webp")
         return webpDimensions(bytes);
     return jpegDimensions(bytes);
+}
+function dataImageBytes(value) {
+    const match = value.match(/^data:image\/(?:png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
+    return match ? base64PayloadBytes(match[1] || "") : null;
+}
+function base64PayloadBytes(value) {
+    const payload = value.replace(/\s+/g, "");
+    if (!payload || payload.length % 4 !== 0)
+        return null;
+    try {
+        return base64Bytes(payload);
+    }
+    catch {
+        return null;
+    }
 }
 function pngDimensions(bytes) {
     return bytes.length >= 24 && ascii(bytes, 12, 4) === "IHDR" ? { width: be32(bytes, 16), height: be32(bytes, 20) } : null;

@@ -35,6 +35,7 @@ The GitHub Pages editor runs a TypeScript converter entirely in the browser:
 - Browser rect export also follows SVG defaults for invalid negative `rx`/`ry`, including fallback from the valid paired radius.
 - Browser marker export only emits DrawingML arrows for resolved arrow-like SVG marker references; unsupported marker definitions remain analyzer diagnostics.
 - Browser image sizing scans segmented JPEG data URIs so `preserveAspectRatio` works when APP/EXIF segments precede the SOF size marker.
+- Browser data URI image handling validates base64 before conversion or PPTX media embedding.
 
 ```bash
 npm ci

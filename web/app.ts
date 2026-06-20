@@ -4155,10 +4155,12 @@ function prepareSlideMedia(slideXml: string, firstMediaIndex: number, layoutInde
   let nextRelId = 2;
   let nextMediaIndex = firstMediaIndex;
   const xml = slideXml.replace(/r:embed="(data:image\/(png|jpeg|jpg|gif|webp);base64,([^"]+))"/gi, (_match, _uri: string, kind: string, payload: string) => {
+    const data = base64PayloadBytes(payload);
+    if (!data) return _match;
     const extension = kind.toLowerCase() === "jpeg" ? "jpg" : kind.toLowerCase();
     const relId = `rId${nextRelId}`;
     const path = `ppt/media/image${nextMediaIndex}.${extension}`;
-    media[path] = base64Bytes(payload);
+    media[path] = data;
     relationships.push(`<Relationship Id="${relId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/image${nextMediaIndex}.${extension}"/>`);
     nextRelId += 1;
     nextMediaIndex += 1;
@@ -6017,7 +6019,7 @@ function parseAbsoluteLength(value: string | null, fallback = Number.NaN): numbe
 }
 
 function supportedDataImage(value: string): boolean {
-  return /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(value);
+  return dataImageBytes(value) != null;
 }
 
 function imagePreserveAspectRatioRect(x: number, y: number, width: number, height: number, href: string, value: string | null): { x: number; y: number; width: number; height: number; srcRect: [number, number, number, number] | null } {
@@ -6063,11 +6065,27 @@ function dataImageDimensions(uri: string): { width: number; height: number } | n
   const match = uri.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
   if (!match) return null;
   const kind = match[1]!.toLowerCase();
-  const bytes = base64Bytes(match[2] || "");
+  const bytes = dataImageBytes(uri);
+  if (!bytes) return null;
   if (kind === "png") return pngDimensions(bytes);
   if (kind === "gif") return bytes.length >= 10 ? { width: le16(bytes, 6), height: le16(bytes, 8) } : null;
   if (kind === "webp") return webpDimensions(bytes);
   return jpegDimensions(bytes);
+}
+
+function dataImageBytes(value: string): Uint8Array | null {
+  const match = value.match(/^data:image\/(?:png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
+  return match ? base64PayloadBytes(match[1] || "") : null;
+}
+
+function base64PayloadBytes(value: string): Uint8Array | null {
+  const payload = value.replace(/\s+/g, "");
+  if (!payload || payload.length % 4 !== 0) return null;
+  try {
+    return base64Bytes(payload);
+  } catch {
+    return null;
+  }
 }
 
 function pngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
