@@ -138,7 +138,7 @@ presentation = svg_to_svgraph_presentation(svg_text)
 
 ## SVGraph
 
-The `svgraph` command and `svg_to_svgraph()` API expose SVGraph, an SVG-based semantic graph model for app-level pipelines that need more than visual conversion. The legacy `ir` command and `drawingml_svg.ir.svg_to_ir()` API remain compatibility aliases. SVGraph keeps the SVG element tree, normal attributes, `data-*` attributes, `<metadata>` payloads, local reference dependencies such as `href` and `url(#id)`, browser-local coverage diagnostics, and a `presentation` view for slide/package emitters.
+The `svgraph` command and `svg_to_svgraph()` API expose SVGraph, an SVG-based semantic graph model for app-level pipelines that need more than visual conversion. The legacy `ir` command and `drawingml_svg.ir.svg_to_ir()` API remain deprecated compatibility aliases. SVGraph keeps the SVG element tree, normal attributes, `data-*` attributes, `<metadata>` payloads, local reference dependencies such as `href` and `url(#id)`, browser-local coverage diagnostics, and a `presentation` view for slide/package emitters.
 
 This is intended as the stable handoff layer for expanding one SVG source into different targets:
 
@@ -146,7 +146,7 @@ This is intended as the stable handoff layer for expanding one SVG source into d
 - DrawingML: editable shapes, text, and native tables can be emitted where the target supports them.
 - PresentationML: slide-level structure, connectors, reading order, notes, tags, or custom XML can be derived from the same SVGraph document.
 
-The `svgraph-presentation` command and `svg_to_svgraph_presentation()` API expose just the presentation/package view. The legacy `pptxsvg` command and `drawingml_svg.ir.svg_to_pptx_ir()` API remain compatibility aliases. Slide boundaries are inferred from elements with `data-kind="slide"`, `data-role="slide"`, or `data-slide`; if none are present, the root SVG becomes a single slide. Slide size is taken from root `<metadata>` `{"presentation": {"slideSize": {"width": 1280, "height": 720}}}`, then root `viewBox`, then the first slide viewBox. The view also includes a package part blueprint for `/ppt/presentation.xml`, slide master/layout/theme parts, and generated `/ppt/slides/slideN.xml` parts. Presentation metadata can also carry `masters`, `layouts`, `guides`, `rulers`, and `textStyles` templates for title, lead, body, caption, and other PresentationML text roles.
+The `svgraph-presentation` command and `svg_to_svgraph_presentation()` API expose just the presentation/package view. The legacy `pptxsvg` command and `drawingml_svg.ir.svg_to_pptx_ir()` API remain deprecated compatibility aliases. Slide boundaries are inferred from elements with `data-kind="slide"`, `data-role="slide"`, or `data-slide`; if none are present, the root SVG becomes a single slide. Slide size is taken from root `<metadata>` `{"presentation": {"slideSize": {"width": 1280, "height": 720}}}`, then root `viewBox`, then the first slide viewBox. The view also includes a package part blueprint for `/ppt/presentation.xml`, slide master/layout/theme parts, and generated `/ppt/slides/slideN.xml` parts. Presentation metadata can also carry `masters`, `layouts`, `guides`, `rulers`, and `textStyles` templates for title, lead, body, caption, and other PresentationML text roles.
 
 See [docs/adr/0001-svgraph.md](docs/adr/0001-svgraph.md) for the design contract.
 See [docs/svgraph-web-editor.md](docs/svgraph-web-editor.md) for the browser editor and WebGPU LLM integration design.

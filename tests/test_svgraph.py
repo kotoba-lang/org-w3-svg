@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 
+import pytest
+
 import drawingml_svg
 import drawingml_svg.ir
 from drawingml_svg import svg_to_svgraph, svg_to_svgraph_presentation
@@ -71,8 +73,10 @@ def test_legacy_ir_module_keeps_only_explicit_pre_svgraph_aliases() -> None:
 
 def test_legacy_svg_ir_alias_matches_svgraph_payload() -> None:
     svg = """<svg xmlns="http://www.w3.org/2000/svg"><rect data-kind="table" width="10" height="10"/></svg>"""
-    direct = svg_to_ir(svg).to_dict()
-    payload = json.loads(svg_ir_to_json(svg))
+    with pytest.warns(DeprecationWarning, match=r"svg_to_ir\(\) is deprecated; use"):
+        direct = svg_to_ir(svg).to_dict()
+    with pytest.warns(DeprecationWarning, match=r"svg_ir_to_json\(\) is deprecated; use"):
+        payload = json.loads(svg_ir_to_json(svg))
 
     assert direct["kind"] == "svgraph"
     assert payload["kind"] == "svgraph"
@@ -167,8 +171,10 @@ def test_svgraph_presentation_json_cli_payload_is_serializable() -> None:
 def test_legacy_pptx_ir_alias_matches_svgraph_presentation_payload() -> None:
     svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><g data-slide="1"/></svg>"""
 
-    legacy = svg_to_pptx_ir(svg)
-    legacy_payload = json.loads(svg_pptx_ir_to_json(svg))
+    with pytest.warns(DeprecationWarning, match=r"svg_to_pptx_ir\(\) is deprecated; use"):
+        legacy = svg_to_pptx_ir(svg)
+    with pytest.warns(DeprecationWarning, match=r"svg_pptx_ir_to_json\(\) is deprecated; use"):
+        legacy_payload = json.loads(svg_pptx_ir_to_json(svg))
 
     assert legacy.kind == "svgraph-presentation"
     assert legacy_payload == json.loads(json.dumps(asdict(legacy)))

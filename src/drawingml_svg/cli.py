@@ -9,7 +9,6 @@ from xml.etree import ElementTree as ET
 
 from .coverage import analyze_svg
 from .converter import drawingml_to_svg, svg_to_drawingml
-from .ir import svg_ir_to_json, svg_pptx_ir_to_json
 from .pptx import svg_to_pptx
 from .svgraph import svg_svgraph_presentation_to_json, svg_svgraph_to_json
 
@@ -49,13 +48,15 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "analyze":
             output = json.dumps(analyze_svg(source).to_dict(), indent=2, sort_keys=True) + "\n"
         elif args.command == "ir":
-            output = svg_ir_to_json(source)
+            _warn_legacy_command(parser, "ir", "svgraph")
+            output = svg_svgraph_to_json(source)
         elif args.command == "svgraph":
             output = svg_svgraph_to_json(source)
         elif args.command == "svgraph-presentation":
             output = svg_svgraph_presentation_to_json(source)
         elif args.command == "pptxsvg":
-            output = svg_pptx_ir_to_json(source)
+            _warn_legacy_command(parser, "pptxsvg", "svgraph-presentation")
+            output = svg_svgraph_presentation_to_json(source)
         else:
             parser.error(f"unknown command: {args.command}")
 
@@ -99,6 +100,13 @@ def _write_text(path: str | None, text: str) -> None:
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(text, encoding="utf-8")
+
+
+def _warn_legacy_command(parser: argparse.ArgumentParser, command: str, replacement: str) -> None:
+    parser._print_message(
+        f"{parser.prog}: warning: '{command}' is deprecated; use '{replacement}'.\n",
+        sys.stderr,
+    )
 
 
 if __name__ == "__main__":

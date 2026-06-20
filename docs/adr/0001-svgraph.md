@@ -10,7 +10,7 @@ SVG can carry visual geometry, document metadata, and application-specific data 
 
 ## Decision
 
-Introduce SVGraph, an SVG-based semantic graph model exposed as `svg_to_svgraph()`. The legacy `drawingml_svg.ir.svg_to_ir()` API remains a compatibility alias. SVGraph preserves:
+Introduce SVGraph, an SVG-based semantic graph model exposed as `svg_to_svgraph()`. The legacy `drawingml_svg.ir.svg_to_ir()` API remains a deprecated compatibility alias. SVGraph preserves:
 
 - element tree structure with stable node ids
 - normal SVG attributes

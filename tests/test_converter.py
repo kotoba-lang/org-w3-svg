@@ -270,10 +270,14 @@ def test_cli_legacy_svgraph_commands_still_work(tmp_path, capsys) -> None:
     source.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 9"><g data-slide="1"/></svg>', encoding="utf-8")
 
     assert cli_main(["ir", str(source)]) == 0
-    assert '"kind": "svgraph"' in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert '"kind": "svgraph"' in captured.out
+    assert "'ir' is deprecated; use 'svgraph'" in captured.err
 
     assert cli_main(["pptxsvg", str(source)]) == 0
-    assert '"kind": "svgraph-presentation"' in capsys.readouterr().out
+    captured = capsys.readouterr()
+    assert '"kind": "svgraph-presentation"' in captured.out
+    assert "'pptxsvg' is deprecated; use 'svgraph-presentation'" in captured.err
 
 
 def test_cli_reports_missing_input_without_traceback(tmp_path, capsys) -> None:
