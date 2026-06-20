@@ -49,6 +49,16 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
         </table>
       </body>
     </foreignObject>
+    <foreignObject id="spaced-html-table" x="760" y="150" width="360" height="150">
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <table cellspacing="8" style="background:#f8fafc">
+          <tr>
+            <td style="background-color:#ffffff;color:#111827;border:1px solid #94a3b8">Gap A</td>
+            <td style="background-color:#e0f2fe;color:#0c4a6e;border:1px solid #0284c7">Gap B</td>
+          </tr>
+        </table>
+      </body>
+    </foreignObject>
   </g>
   <g id="coverage-slide" data-kind="slide" data-title="Browser SVG Coverage" style="stroke:#334155;stroke-width:4;fill:#fde68a">
     <defs>
@@ -681,8 +691,14 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = []) 
     const captionId = captionText && !captionBottom ? id : id + 1;
     const tableY = box.y + (captionText && !captionBottom ? captionHeight : 0);
     const tableHeight = Math.max(1, box.height - captionHeight);
-    const columns = htmlTableColumns(table, columnCount, box.width);
-    const rowHeights = htmlTableRowHeights(rows, tableHeight);
+    const spacing = htmlTableHasSpans(rows) ? [0, 0] : htmlTableBorderSpacing(table, css, box.width, tableHeight);
+    const spaced = spacing[0] > 0 || spacing[1] > 0;
+    const dataWidth = spaced ? Math.max(1, box.width - spacing[0] * (columnCount + 1)) : box.width;
+    const dataHeight = spaced ? Math.max(1, tableHeight - spacing[1] * (rows.length + 1)) : tableHeight;
+    const dataColumns = htmlTableColumns(table, columnCount, dataWidth);
+    const dataRows = htmlTableRowHeights(rows, dataHeight);
+    const columns = spaced ? interleaveSpacers(dataColumns, spacing[0]) : dataColumns;
+    const rowHeights = spaced ? interleaveSpacers(dataRows, spacing[1]) : dataRows;
     const occupied = Array.from({ length: rows.length }, () => Array(columnCount).fill(false));
     const cells = [];
     rows.forEach((row, rowIndex) => {
@@ -702,8 +718,8 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = []) 
             }
             const style = htmlTableCellStyle(cellElement, table, inheritedStyle, css);
             cells.push({
-                row: rowIndex,
-                col: column,
+                row: spaced ? rowIndex * 2 + 1 : rowIndex,
+                col: spaced ? column * 2 + 1 : column,
                 colSpan,
                 rowSpan,
                 text: htmlCellText(cellElement),
@@ -715,6 +731,8 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = []) 
     });
     if (!cells.length)
         return [];
+    if (spaced)
+        cells.push(...htmlTableSpacerCells(columns.length, rowHeights.length, cells, tableStyle));
     const tableShape = {
         id: tableId,
         kind: "table",
@@ -759,6 +777,49 @@ function htmlTableRows(table) {
 }
 function htmlRowCells(row) {
     return Array.from(row.children).filter((item) => ["td", "th"].includes(localName(item)));
+}
+function htmlTableHasSpans(rows) {
+    return rows.some((row) => htmlRowCells(row).some((cell) => htmlSpan(cell, "colspan") > 1 || htmlSpan(cell, "rowspan") > 1));
+}
+function htmlTableBorderSpacing(table, css, width, height) {
+    const collapse = htmlCssValue(table, "border-collapse", css);
+    if (collapse?.trim().toLowerCase() === "collapse")
+        return [0, 0];
+    const value = htmlCssValue(table, "border-spacing", css) ?? table.getAttribute("cellspacing");
+    if (!value)
+        return [0, 0];
+    const parts = value.trim().split(/\s+/).filter(Boolean);
+    const x = htmlCssLength(parts[0] ?? null, width) ?? 0;
+    const y = htmlCssLength(parts[1] ?? parts[0] ?? null, height) ?? x;
+    return [Math.max(0, x), Math.max(0, y)];
+}
+function interleaveSpacers(values, spacing) {
+    const result = [spacing];
+    for (const value of values)
+        result.push(value, spacing);
+    return result;
+}
+function htmlTableSpacerCells(columnCount, rowCount, dataCells, tableStyle) {
+    const dataPositions = new Set(dataCells.map((cell) => `${cell.row}:${cell.col}`));
+    const fill = tableStyle.fill ?? "#ffffff";
+    const spacerStyle = { fill, stroke: null, strokeWidth: 0 };
+    const cells = [];
+    for (let row = 0; row < rowCount; row += 1) {
+        for (let col = 0; col < columnCount; col += 1) {
+            if (dataPositions.has(`${row}:${col}`))
+                continue;
+            cells.push({
+                row,
+                col,
+                colSpan: 1,
+                rowSpan: 1,
+                text: "",
+                fill,
+                ...tableCellStyle(spacerStyle, false),
+            });
+        }
+    }
+    return cells;
 }
 function htmlTableCaption(table) {
     return Array.from(table.children).find((item) => localName(item) === "caption") ?? null;
