@@ -227,6 +227,12 @@ jobs:
           assert f"{root}/docs/app.js" in sdist_names
           assert f"{root}/docs/index.html" in sdist_names
           assert f"{root}/docs/svgraph-web-editor.md" in sdist_names
+          assert f"{root}/examples/__init__.py" in sdist_names
+          assert f"{root}/examples/complex.svg" in sdist_names
+          assert f"{root}/examples/coverage.svg" in sdist_names
+          assert f"{root}/examples/make_pptx.py" in sdist_names
+          assert f"{root}/examples/sample.svg" in sdist_names
+          assert f"{root}/examples/svgraph.svg" in sdist_names
           assert f"{root}/web/app.ts" in sdist_names
           assert f"{root}/src/drawingml_svg/py.typed" in sdist_names
           assert f"{root}/src/svgraph/__main__.py" in sdist_names

@@ -12,4 +12,10 @@ include docs/adr/0001-svgraph.md
 include docs/app.js
 include docs/index.html
 include docs/svgraph-web-editor.md
+include examples/__init__.py
+include examples/complex.svg
+include examples/coverage.svg
+include examples/make_pptx.py
+include examples/sample.svg
+include examples/svgraph.svg
 include web/app.ts

@@ -239,6 +239,12 @@ def test_manifest_and_ci_package_svgraph_migration_docs() -> None:
         "docs/app.js",
         "docs/index.html",
         "docs/svgraph-web-editor.md",
+        "examples/__init__.py",
+        "examples/complex.svg",
+        "examples/coverage.svg",
+        "examples/make_pptx.py",
+        "examples/sample.svg",
+        "examples/svgraph.svg",
         "web/app.ts",
     ]
 
