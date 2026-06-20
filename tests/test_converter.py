@@ -578,6 +578,22 @@ def test_svg_to_pptx_bytes_creates_multi_slide_package_from_pptxsvg() -> None:
     assert "<a:t>Detail</a:t>" in slide2
 
 
+def test_pptxsvg_semantic_relation_and_table_export_as_native_pptx_objects() -> None:
+    pptx_data = svg_to_pptx_bytes((_project_root() / "examples" / "pptxsvg.svg").read_text(encoding="utf-8"))
+
+    with zipfile.ZipFile(io.BytesIO(pptx_data)) as pptx:
+        slide1 = pptx.read("ppt/slides/slide1.xml").decode("utf-8")
+        slide2 = pptx.read("ppt/slides/slide2.xml").decode("utf-8")
+
+    assert "<p:cxnSp>" in slide1
+    assert "<a:stCxn" in slide1
+    assert "<a:endCxn" in slide1
+    assert '<a:headEnd type="triangle"' in slide1
+    assert "<p:graphicFrame>" in slide2
+    assert "<a:tbl>" in slide2
+    assert slide2.count("<a:tc>") >= 4
+
+
 def test_svg2pptx_cli_writes_multi_slide_package(tmp_path) -> None:
     source = tmp_path / "deck.svg"
     output = tmp_path / "deck.pptx"
