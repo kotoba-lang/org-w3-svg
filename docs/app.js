@@ -225,6 +225,7 @@ const panel = mustElement("panel");
 const fileInput = mustElement("fileInput");
 const undoButton = mustElement("undoBtn");
 const redoButton = mustElement("redoBtn");
+const clearSavedButton = mustElement("clearSavedBtn");
 const documentDbName = "svgraph-documents";
 const documentStoreName = "documents";
 const activeDocumentKey = "active-svg";
@@ -314,6 +315,16 @@ async function loadSourceDocument() {
     });
     db.close();
     return value;
+}
+async function clearSavedSourceDocument() {
+    const db = await openDocumentDb();
+    await new Promise((resolve, reject) => {
+        const transaction = db.transaction(documentStoreName, "readwrite");
+        transaction.objectStore(documentStoreName).delete(activeDocumentKey);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+    });
+    db.close();
 }
 function localName(node) {
     return node.localName || node.nodeName.replace(/^.*:/, "");
@@ -3703,6 +3714,9 @@ mustElement("sampleBtn").addEventListener("click", () => {
 });
 undoButton.addEventListener("click", undoSourceEdit);
 redoButton.addEventListener("click", redoSourceEdit);
+clearSavedButton.addEventListener("click", () => {
+    void clearSavedSourceDocument();
+});
 mustElement("downloadSvgBtn").addEventListener("click", () => {
     downloadBlob("svgraph-source.svg", new Blob([source.value], { type: "image/svg+xml;charset=utf-8" }));
 });

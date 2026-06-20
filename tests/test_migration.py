@@ -893,12 +893,14 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert 'id="downloadDrawingMlBtn"' in html
     assert 'id="undoBtn"' in html
     assert 'id="redoBtn"' in html
+    assert 'id="clearSavedBtn"' in html
     assert 'mustElement<HTMLButtonElement>("downloadSvgBtn")' in source
     assert 'mustElement<HTMLButtonElement>("downloadSVGraphBtn")' in source
     assert 'mustElement<HTMLButtonElement>("downloadSidecarBtn")' in source
     assert 'mustElement<HTMLButtonElement>("downloadDrawingMlBtn")' in source
     assert 'mustElement<HTMLButtonElement>("undoBtn")' in source
     assert 'mustElement<HTMLButtonElement>("redoBtn")' in source
+    assert 'mustElement<HTMLButtonElement>("clearSavedBtn")' in source
     for generated in [source, app_js]:
         assert 'downloadBlob("svgraph-source.svg"' in generated
         assert "function setSourceValue" in generated
@@ -909,6 +911,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function openDocumentDb" in generated
         assert "function saveSourceDocument" in generated
         assert "function loadSourceDocument" in generated
+        assert "function clearSavedSourceDocument" in generated
         assert '"svgraph-documents"' in generated
         assert '"active-svg"' in generated
         assert 'downloadText("svgraph.json"' in generated
@@ -1093,6 +1096,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser assistant patch apply support",
         "browser SVG source undo/redo history",
         "browser IndexedDB persistence",
+        "control for clearing the saved IndexedDB SVG source document",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog
@@ -1290,6 +1294,7 @@ def test_web_editor_design_uses_browser_only_svgraph_contract() -> None:
         "apply validated SVGraph patch operations back into the canonical SVG source",
         "SVG source undo/redo history",
         "persists the active SVG source document in IndexedDB",
+        "control for clearing the saved document",
         "`SVGraphDocument`",
         "`SVGraphPresentation` projection",
         "`svgraph-presentation` view",
