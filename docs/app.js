@@ -52,6 +52,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <rect id="css-colors" x="740" y="615" width="120" height="50" style="color:orange;fill:currentColor;stroke:hsl(210 100% 50%)"/>
     <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-linecap:round;stroke-linejoin:bevel"/>
+    <text id="rich-text" x="330" y="660" style="font-size:24;font-family:Arial;fill:#111827">Rich <tspan style="fill:#dc2626;font-weight:700">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline"> blue</tspan></text>
     <rect id="gradient-fill" x="900" y="615" width="120" height="50" style="fill:url(#linear-fallback);stroke:url(#radial-fallback)"/>
     <circle id="pattern-fill" cx="1080" cy="640" r="32" style="fill:url(#pattern-fallback);stroke:#334155"/>
     <use href="#reused-chip" class="accent-use" x="360" y="400"/>
@@ -464,6 +465,8 @@ function elementToShape(element, matrix, style, id) {
     if (tag === "text") {
         const fontSize = style.fontSize ?? 18;
         const [x, y] = point(matrix, num(element, "x"), num(element, "y"));
+        const runs = textRuns(element, style);
+        const text = runs.map((run) => run.text).join("").trim();
         return {
             id,
             kind: "text",
@@ -471,13 +474,16 @@ function elementToShape(element, matrix, style, id) {
             data,
             x,
             y: y - fontSize,
-            width: Math.max(80, (element.textContent || "").trim().length * fontSize * 0.62),
+            width: Math.max(80, text.length * fontSize * 0.62),
             height: fontSize * 1.35,
-            text: (element.textContent || "").trim(),
+            text,
             fill: style.fill ?? "#111827",
             fontSize,
             fontFamily: style.fontFamily || "Aptos",
             bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
+            italic: isItalic(style),
+            underline: hasUnderline(style),
+            runs,
         };
     }
     if (tag === "polygon" || tag === "polyline") {
@@ -581,6 +587,55 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = []) {
         rows: yEdges.slice(1).map((edge, index) => edge - (yEdges[index] || 0)),
         cells: tableCells,
     };
+}
+function textRuns(element, inheritedStyle) {
+    const runs = [];
+    const append = (text, style) => {
+        if (!text)
+            return;
+        runs.push({
+            text,
+            fill: style.fill ?? "#111827",
+            fillAlpha: style.fillAlpha ?? null,
+            fontSize: style.fontSize ?? inheritedStyle.fontSize ?? 18,
+            fontFamily: style.fontFamily || inheritedStyle.fontFamily || "Aptos",
+            bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
+            italic: isItalic(style),
+            underline: hasUnderline(style),
+        });
+    };
+    for (const node of Array.from(element.childNodes)) {
+        if (node.nodeType === Node.TEXT_NODE) {
+            append(node.textContent || "", inheritedStyle);
+        }
+        else if (node.nodeType === Node.ELEMENT_NODE && localName(node) === "tspan") {
+            const style = computedStyle(node, inheritedStyle);
+            append((node.textContent || ""), style);
+        }
+    }
+    if (!runs.length)
+        append(element.textContent || "", inheritedStyle);
+    const first = runs.findIndex((run) => run.text.trim());
+    let last = -1;
+    for (let index = runs.length - 1; index >= 0; index -= 1) {
+        if (runs[index]?.text.trim()) {
+            last = index;
+            break;
+        }
+    }
+    if (first < 0 || last < 0)
+        return [];
+    return runs.slice(first, last + 1).map((run, index, sliced) => ({
+        ...run,
+        text: index === 0 ? run.text.trimStart() : index === sliced.length - 1 ? run.text.trimEnd() : run.text,
+    })).filter((run) => run.text.length > 0);
+}
+function isItalic(style) {
+    const value = (style.fontStyle || "").trim().toLowerCase();
+    return value === "italic" || value.startsWith("oblique");
+}
+function hasUnderline(style) {
+    return (style.textDecoration || "").toLowerCase().split(/\s+/).includes("underline");
 }
 function markRelationConnectors(shapes) {
     const boxes = shapes.filter((shape) => ["rect", "ellipse", "text", "freeform"].includes(shape.kind));
@@ -769,8 +824,22 @@ function connectorXml(shape) {
     return `<p:cxnSp><p:nvCxnSpPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvCxnSpPr>${cxn}</p:cNvCxnSpPr><p:nvPr/></p:nvCxnSpPr><p:spPr><a:xfrm><a:off x="${emu(x)}" y="${emu(y)}"/><a:ext cx="${emu(width)}" cy="${emu(height)}"/></a:xfrm><a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:noFill/>${lineStyleXml(shape.stroke, shape.strokeWidth, lineOptions(shape, { head: true, tail: shape.markerStart }))}</p:spPr></p:cxnSp>`;
 }
 function textXml(shape) {
-    const body = `<p:txBody><a:bodyPr wrap="none"/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="${Math.round(shape.fontSize * 100)}"${shape.bold ? ' b="1"' : ""}>${solidColorXml(shape.fill)}<a:latin typeface="${xml(shape.fontFamily)}"/></a:rPr><a:t>${xml(shape.text)}</a:t></a:r></a:p></p:txBody>`;
+    const runs = (shape.runs.length ? shape.runs : [{
+            text: shape.text,
+            fill: shape.fill,
+            fillAlpha: null,
+            fontSize: shape.fontSize,
+            fontFamily: shape.fontFamily,
+            bold: shape.bold,
+            italic: shape.italic,
+            underline: shape.underline,
+        }]).map(textRunXml).join("");
+    const body = `<p:txBody><a:bodyPr wrap="none"/><a:lstStyle/><a:p>${runs}</a:p></p:txBody>`;
     return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, "rect", "<a:noFill/><a:ln><a:noFill/></a:ln>", body);
+}
+function textRunXml(run) {
+    const attrs = ` lang="en-US" sz="${Math.round(run.fontSize * 100)}"${run.bold ? ' b="1"' : ""}${run.italic ? ' i="1"' : ""}${run.underline ? ' u="sng"' : ""}`;
+    return `<a:r><a:rPr${attrs}>${solidColorXml(run.fill, run.fillAlpha)}<a:latin typeface="${xml(run.fontFamily)}"/></a:rPr><a:t>${xml(run.text)}</a:t></a:r>`;
 }
 function tableXml(shape) {
     const grid = shape.columns.map((width) => `<a:gridCol w="${emu(width)}"/>`).join("");
@@ -1142,6 +1211,8 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
     const fontSize = value("font-size");
     const fontFamily = value("font-family");
     const fontWeight = value("font-weight");
+    const fontStyle = value("font-style");
+    const textDecoration = value("text-decoration-line") ?? value("text-decoration");
     const clipPath = value("clip-path");
     const marker = value("marker");
     const markerStart = value("marker-start");
@@ -1187,6 +1258,10 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
         next.fontFamily = fontFamily.replace(/^['"]|['"]$/g, "");
     if (fontWeight != null)
         next.fontWeight = fontWeight;
+    if (fontStyle != null)
+        next.fontStyle = fontStyle;
+    if (textDecoration != null)
+        next.textDecoration = textDecoration;
     if (clipPath != null)
         next.clipPath = clipPath.trim();
     if (marker != null) {
