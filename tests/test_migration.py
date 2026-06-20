@@ -702,12 +702,19 @@ def test_release_checklist_rebuilds_and_packages_svgraph_web_editor() -> None:
 
 
 def test_release_checklist_smokes_canonical_svgraph_pptx_export() -> None:
-    release = (Path(__file__).resolve().parents[1] / "RELEASE.md").read_text(encoding="utf-8")
+    root = Path(__file__).resolve().parents[1]
+    release = (root / "RELEASE.md").read_text(encoding="utf-8")
+    workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
     assert "tmp/release-venv/bin/svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml" in release
     assert "tmp/release-venv/bin/svgraph svg2pptx examples/sample.svg -o tmp/release-smoke.pptx" in release
     assert "python -m zipfile --test tmp/release-smoke.pptx" in release
     assert "tmp/release-venv/bin/svg2pptx examples/" not in release
+    for source in [release, workflow]:
+        assert "from svgraph.pptx import svg_to_pptx_bytes" in source
+        assert '"ppt/slideMasters/slideMaster2.xml" in names' in source
+        assert '"ppt/slideLayouts/slideLayout2.xml" in names' in source
+        assert 'Target="../slideLayouts/slideLayout2.xml"' in source
 
 
 def test_release_checklist_smokes_all_canonical_svgraph_report_commands() -> None:
@@ -1017,6 +1024,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "generated PPTX slide master and layout part expansion from SVGraph presentation metadata and nodes",
         "generated PPTX slide relationship routing to declared SVGraph slide layout parts",
         "browser PPTX export parity for SVGraph presentation slide master and layout package parts",
+        "release and CI wheel smoke coverage for multi-master SVGraph PPTX packages",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog

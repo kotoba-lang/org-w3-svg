@@ -40,6 +40,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added generated PPTX slide master and layout part expansion from SVGraph presentation metadata and nodes.
 - Added generated PPTX slide relationship routing to declared SVGraph slide layout parts.
 - Added browser PPTX export parity for SVGraph presentation slide master and layout package parts.
+- Added release and CI wheel smoke coverage for multi-master SVGraph PPTX packages.
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.

@@ -243,6 +243,26 @@ PY
 tmp/release-venv/bin/svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml
 tmp/release-venv/bin/svgraph svg2pptx examples/sample.svg -o tmp/release-smoke.pptx
 python -m zipfile --test tmp/release-smoke.pptx
+tmp/release-venv/bin/python - <<'PY'
+import io
+import zipfile
+
+from svgraph.pptx import svg_to_pptx_bytes
+
+svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+  <metadata>{"presentation":{"masters":[{"id":"brand"}],"layouts":[{"id":"title"}]}}</metadata>
+  <g data-kind="slide-master"/>
+  <g data-kind="slide-layout"/>
+  <g data-kind="slide"><rect width="100" height="80"/></g>
+  <g data-kind="slide"><ellipse cx="100" cy="80" rx="50" ry="30"/></g>
+</svg>"""
+with zipfile.ZipFile(io.BytesIO(svg_to_pptx_bytes(svg))) as pptx:
+    assert pptx.testzip() is None
+    names = set(pptx.namelist())
+    assert "ppt/slideMasters/slideMaster2.xml" in names
+    assert "ppt/slideLayouts/slideLayout2.xml" in names
+    assert 'Target="../slideLayouts/slideLayout2.xml"' in pptx.read("ppt/slides/_rels/slide2.xml.rels").decode("utf-8")
+PY
 ```
 
 ## Tag and publish
