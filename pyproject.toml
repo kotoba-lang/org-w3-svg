@@ -1,7 +1,7 @@
 [project]
 name = "drawingml-svg"
 version = "0.1.0"
-description = "Small, dependency-free converter between DrawingML shape fragments and SVG."
+description = "Small, dependency-free converter between SVG, SVGraph, DrawingML, and PPTX."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -9,7 +9,7 @@ license-files = ["LICENSE"]
 authors = [
   { name = "Jun Kawasaki", email = "jun784@gmail.com" },
 ]
-keywords = ["drawingml", "svg", "ooxml", "converter"]
+keywords = ["drawingml", "svg", "svgraph", "ooxml", "pptx", "converter"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
