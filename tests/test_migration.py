@@ -912,6 +912,11 @@ def test_web_runtime_accepts_canonical_svgraph_presentation_metadata_keys() -> N
         assert "application/vnd.openxmlformats-officedocument.presentationml.slide+xml" in generated
         assert "const masters = templates(nodes, rootMeta.masters ?? null, \"slide-master\")" in generated
         assert "const masterParts = (masters.length ? masters : [null]).map" in generated
+        assert "presentation.masters.length" in generated
+        assert "presentation.layouts.length" in generated
+        assert "contentTypes(slideXmls.length, masterCount, layoutCount)" in generated
+        assert "presentationRels(slideXmls.length, masterCount)" in generated
+        assert "slideLayoutRel(layoutIndex)" in generated
 
 
 def test_pages_typescript_build_targets_committed_svgraph_artifact() -> None:
@@ -1011,6 +1016,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "generated PPTX content type regression coverage aligned with the SVGraph presentation package blueprint",
         "generated PPTX slide master and layout part expansion from SVGraph presentation metadata and nodes",
         "generated PPTX slide relationship routing to declared SVGraph slide layout parts",
+        "browser PPTX export parity for SVGraph presentation slide master and layout package parts",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog

@@ -505,7 +505,7 @@ function svgToPptx(svgText) {
     const slides = declaredSlides(root);
     const selectedSlides = slides.length ? slides : [root];
     const slideXmls = selectedSlides.map((slide, index) => buildSlideXml(slide, index + 1));
-    return writePptx(slideXmls, svgraph.presentation.slide_size);
+    return writePptx(slideXmls, svgraph.presentation);
 }
 const coverageSupportedElements = new Set([
     "a",
@@ -3119,23 +3119,31 @@ function blipAlphaXml(value) {
         return "";
     return `<a:alphaModFix amt="${Math.round(clamp(value, 0, 1) * 100000)}"/>`;
 }
-function writePptx(slideXmls, slideSize) {
+function writePptx(slideXmls, presentation) {
+    const masterCount = Math.max(1, presentation.masters.length);
+    const layoutCount = Math.max(1, presentation.layouts.length);
     const files = {
-        "[Content_Types].xml": contentTypes(slideXmls.length),
+        "[Content_Types].xml": contentTypes(slideXmls.length, masterCount, layoutCount),
         "_rels/.rels": rootRels,
         "docProps/app.xml": appProps(slideXmls.length),
         "docProps/core.xml": coreProps,
-        "ppt/presentation.xml": presentationXml(slideXmls.length, slideSize),
-        "ppt/_rels/presentation.xml.rels": presentationRels(slideXmls.length),
-        "ppt/slideMasters/slideMaster1.xml": slideMaster,
-        "ppt/slideMasters/_rels/slideMaster1.xml.rels": slideMasterRels,
-        "ppt/slideLayouts/slideLayout1.xml": slideLayout,
-        "ppt/slideLayouts/_rels/slideLayout1.xml.rels": slideLayoutRels,
+        "ppt/presentation.xml": presentationXml(slideXmls.length, presentation.slide_size, masterCount),
+        "ppt/_rels/presentation.xml.rels": presentationRels(slideXmls.length, masterCount),
         "ppt/theme/theme1.xml": themeXml,
     };
+    for (let index = 1; index <= masterCount; index += 1) {
+        const layoutIndex = Math.min(index, layoutCount);
+        files[`ppt/slideMasters/slideMaster${index}.xml`] = slideMaster;
+        files[`ppt/slideMasters/_rels/slideMaster${index}.xml.rels`] = slideMasterRels(layoutIndex);
+    }
+    for (let index = 1; index <= layoutCount; index += 1) {
+        const masterIndex = Math.min(index, masterCount);
+        files[`ppt/slideLayouts/slideLayout${index}.xml`] = slideLayout;
+        files[`ppt/slideLayouts/_rels/slideLayout${index}.xml.rels`] = slideLayoutRels(masterIndex);
+    }
     let nextMediaIndex = 1;
     slideXmls.forEach((slide, index) => {
-        const prepared = prepareSlideMedia(slide, nextMediaIndex);
+        const prepared = prepareSlideMedia(slide, nextMediaIndex, Math.min(index + 1, layoutCount));
         nextMediaIndex += Object.keys(prepared.media).length;
         files[`ppt/slides/slide${index + 1}.xml`] = prepared.xml;
         files[`ppt/slides/_rels/slide${index + 1}.xml.rels`] = prepared.rels;
@@ -3143,9 +3151,9 @@ function writePptx(slideXmls, slideSize) {
     });
     return zipStore(files);
 }
-function prepareSlideMedia(slideXml, firstMediaIndex) {
+function prepareSlideMedia(slideXml, firstMediaIndex, layoutIndex = 1) {
     const media = {};
-    const relationships = [slideLayoutRel];
+    const relationships = [slideLayoutRel(layoutIndex)];
     let nextRelId = 2;
     let nextMediaIndex = firstMediaIndex;
     const xml = slideXml.replace(/r:embed="(data:image\/(png|jpeg|jpg|gif|webp);base64,([^"]+))"/gi, (_match, _uri, kind, payload) => {
@@ -5585,26 +5593,36 @@ function xmlDecl(body) {
 const nsA = "http://schemas.openxmlformats.org/drawingml/2006/main";
 const nsP = "http://schemas.openxmlformats.org/presentationml/2006/main";
 const nsR = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-function contentTypes(slideCount) {
+function contentTypes(slideCount, masterCount = 1, layoutCount = 1) {
+    const masters = Array.from({ length: masterCount }, (_, index) => `  <Override PartName="/ppt/slideMasters/slideMaster${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>`).join("\n");
+    const layouts = Array.from({ length: layoutCount }, (_, index) => `  <Override PartName="/ppt/slideLayouts/slideLayout${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/>`).join("\n");
     const slides = Array.from({ length: slideCount }, (_, index) => `  <Override PartName="/ppt/slides/slide${index + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join("\n");
-    return xmlDecl(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Default Extension="webp" ContentType="image/webp"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slides}</Types>`);
+    return xmlDecl(`<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Default Extension="webp" ContentType="image/webp"/><Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/>${masters}${layouts}<Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slides}</Types>`);
 }
 function appProps(slideCount) {
     return xmlDecl(`<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes"><Application>SVGraph web</Application><PresentationFormat>On-screen Show (16:9)</PresentationFormat><Slides>${slideCount}</Slides></Properties>`);
 }
-function presentationXml(slideCount, [width, height]) {
-    const ids = Array.from({ length: slideCount }, (_, index) => `<p:sldId id="${256 + index}" r:id="rId${index + 2}"/>`).join("");
-    return xmlDecl(`<p:presentation xmlns:a="${nsA}" xmlns:r="${nsR}" xmlns:p="${nsP}"><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${ids}</p:sldIdLst><p:sldSz cx="${emu(width)}" cy="${emu(height)}" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
+function presentationXml(slideCount, [width, height], masterCount = 1) {
+    const masterIds = Array.from({ length: masterCount }, (_, index) => `<p:sldMasterId id="${2147483648 + index}" r:id="rId${index + 1}"/>`).join("");
+    const ids = Array.from({ length: slideCount }, (_, index) => `<p:sldId id="${256 + index}" r:id="rId${masterCount + index + 1}"/>`).join("");
+    return xmlDecl(`<p:presentation xmlns:a="${nsA}" xmlns:r="${nsR}" xmlns:p="${nsP}"><p:sldMasterIdLst>${masterIds}</p:sldMasterIdLst><p:sldIdLst>${ids}</p:sldIdLst><p:sldSz cx="${emu(width)}" cy="${emu(height)}" type="screen16x9"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`);
 }
-function presentationRels(slideCount) {
-    const slides = Array.from({ length: slideCount }, (_, index) => `<Relationship Id="rId${index + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${index + 1}.xml"/>`).join("");
-    return xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster1.xml"/>${slides}<Relationship Id="rId${slideCount + 2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/></Relationships>`);
+function presentationRels(slideCount, masterCount = 1) {
+    const masters = Array.from({ length: masterCount }, (_, index) => `<Relationship Id="rId${index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="slideMasters/slideMaster${index + 1}.xml"/>`).join("");
+    const slides = Array.from({ length: slideCount }, (_, index) => `<Relationship Id="rId${masterCount + index + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide" Target="slides/slide${index + 1}.xml"/>`).join("");
+    return xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${masters}${slides}<Relationship Id="rId${masterCount + slideCount + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="theme/theme1.xml"/></Relationships>`);
 }
 const rootRels = xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/></Relationships>`);
 const coreProps = xmlDecl(`<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>SVGraph web export</dc:title><dc:creator>SVGraph web</dc:creator><cp:lastModifiedBy>SVGraph web</cp:lastModifiedBy></cp:coreProperties>`);
-const slideLayoutRel = `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/>`;
-const slideMasterRels = xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
-const slideLayoutRels = xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`);
+function slideLayoutRel(layoutIndex = 1) {
+    return `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout${layoutIndex}.xml"/>`;
+}
+function slideMasterRels(layoutIndex = 1) {
+    return xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout" Target="../slideLayouts/slideLayout${layoutIndex}.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme" Target="../theme/theme1.xml"/></Relationships>`);
+}
+function slideLayoutRels(masterIndex = 1) {
+    return xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster" Target="../slideMasters/slideMaster${masterIndex}.xml"/></Relationships>`);
+}
 const slideMaster = xmlDecl(`<p:sldMaster xmlns:a="${nsA}" xmlns:r="${nsR}" xmlns:p="${nsP}"><p:cSld><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst><p:txStyles><p:titleStyle/><p:bodyStyle/><p:otherStyle/></p:txStyles></p:sldMaster>`);
 const slideLayout = xmlDecl(`<p:sldLayout xmlns:a="${nsA}" xmlns:r="${nsR}" xmlns:p="${nsP}" type="blank" preserve="1"><p:cSld name="Blank"><p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr/></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`);
 const themeXml = xmlDecl(`<a:theme xmlns:a="${nsA}" name="SVGraph web"><a:themeElements><a:clrScheme name="SVGraph"><a:dk1><a:srgbClr val="111827"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="1F2937"/></a:dk2><a:lt2><a:srgbClr val="F9FAFB"/></a:lt2><a:accent1><a:srgbClr val="1D4ED8"/></a:accent1><a:accent2><a:srgbClr val="15803D"/></a:accent2><a:accent3><a:srgbClr val="DC2626"/></a:accent3><a:accent4><a:srgbClr val="7C3AED"/></a:accent4><a:accent5><a:srgbClr val="0891B2"/></a:accent5><a:accent6><a:srgbClr val="EA580C"/></a:accent6><a:hlink><a:srgbClr val="2563EB"/></a:hlink><a:folHlink><a:srgbClr val="9333EA"/></a:folHlink></a:clrScheme><a:fontScheme name="SVGraph"><a:majorFont><a:latin typeface="Aptos Display"/></a:majorFont><a:minorFont><a:latin typeface="Aptos"/></a:minorFont></a:fontScheme><a:fmtScheme name="SVGraph"><a:fillStyleLst/><a:lnStyleLst/><a:effectStyleLst/><a:bgFillStyleLst/></a:fmtScheme></a:themeElements></a:theme>`);
