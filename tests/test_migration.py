@@ -644,6 +644,8 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
     assert "tmp/wheel-svgraph.json" in workflow
     assert "tmp/wheel-svgraph-presentation.json" in workflow
     assert "tmp/wheel-legacy-svgraph.json" in workflow
+    assert 'part_types = {part["kind"]: part["content_type"] for part in presentation["parts"]}' in workflow
+    assert 'part["content_type"] == "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"' in workflow
 
 
 def test_release_checklist_rebuilds_and_packages_svgraph_web_editor() -> None:
@@ -726,6 +728,17 @@ def test_release_checklist_smokes_all_canonical_svgraph_report_commands() -> Non
     assert set(expected_smokes) <= set(visible_commands)
     for smoke in expected_smokes.values():
         assert smoke in release
+
+    for expected in [
+        'presentation = json.loads(Path("tmp/release-svgraph-presentation.json").read_text(encoding="utf-8"))',
+        'part_types = {part["kind"]: part["content_type"] for part in presentation["parts"]}',
+        'part_types["presentation"] == "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"',
+        'part_types["slide-master"] == "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"',
+        'part_types["slide-layout"] == "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"',
+        'part_types["theme"] == "application/vnd.openxmlformats-officedocument.theme+xml"',
+        'part["content_type"] == "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"',
+    ]:
+        assert expected in release
 
     assert "tmp/release-venv/bin/svgraph --version" in release
     assert "tmp/release-venv/bin/python -m svgraph --version" in release
@@ -992,6 +1005,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "canonical `svgraph` distribution version lookup",
         "browser SVGraph presentation package part content types",
         "SVGraph presentation package part schema documentation",
+        "release and CI generated presentation JSON package part content types",
     ]:
         assert expected in changelog
 

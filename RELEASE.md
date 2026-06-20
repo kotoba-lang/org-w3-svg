@@ -222,6 +222,24 @@ tmp/release-venv/bin/svgraph analyze examples/coverage.svg
 tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json
 tmp/release-venv/bin/drawingml-svg examples/svgraph.svg > tmp/release-legacy-svgraph.json
 tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
+python - <<'PY'
+import json
+from pathlib import Path
+
+presentation = json.loads(Path("tmp/release-svgraph-presentation.json").read_text(encoding="utf-8"))
+part_types = {part["kind"]: part["content_type"] for part in presentation["parts"]}
+assert presentation["kind"] == "svgraph-presentation"
+assert presentation["slide_size"] == [1280.0, 720.0]
+assert part_types["presentation"] == "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
+assert part_types["slide-master"] == "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
+assert part_types["slide-layout"] == "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
+assert part_types["theme"] == "application/vnd.openxmlformats-officedocument.theme+xml"
+assert any(
+    part["kind"] == "slide"
+    and part["content_type"] == "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+    for part in presentation["parts"]
+)
+PY
 tmp/release-venv/bin/svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml
 tmp/release-venv/bin/svgraph svg2pptx examples/sample.svg -o tmp/release-smoke.pptx
 python -m zipfile --test tmp/release-smoke.pptx

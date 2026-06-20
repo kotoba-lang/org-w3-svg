@@ -342,6 +342,16 @@ jobs:
           assert len(presentation["slides"]) == 2
           assert presentation["slide_size"] == [1280.0, 720.0]
           assert {part["kind"] for part in presentation["parts"]} >= {"presentation", "slide", "slide-master", "slide-layout", "theme"}
+          part_types = {part["kind"]: part["content_type"] for part in presentation["parts"]}
+          assert part_types["presentation"] == "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"
+          assert part_types["slide-master"] == "application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"
+          assert part_types["slide-layout"] == "application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"
+          assert part_types["theme"] == "application/vnd.openxmlformats-officedocument.theme+xml"
+          assert any(
+              part["kind"] == "slide"
+              and part["content_type"] == "application/vnd.openxmlformats-officedocument.presentationml.slide+xml"
+              for part in presentation["parts"]
+          )
           PY
           tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml
           test -s tmp/wheel-smoke.xml

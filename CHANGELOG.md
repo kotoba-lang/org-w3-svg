@@ -33,6 +33,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Removed legacy distribution fallback from canonical `svgraph` distribution version lookup.
 - Added browser SVGraph presentation package part content types to align the web projection with the Python package blueprint.
 - Added SVGraph presentation package part schema documentation for `part_name`, `content_type`, `kind`, and source-node provenance.
+- Added release and CI generated presentation JSON package part content types smoke checks.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
 - Added deprecation warnings that point retained legacy executable aliases to their canonical `svgraph` commands.
