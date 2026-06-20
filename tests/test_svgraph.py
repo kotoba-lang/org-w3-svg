@@ -57,6 +57,18 @@ def test_cli_alias_help_writes_command_help(monkeypatch, capsys, executable: str
     assert "Input file. Reads stdin when omitted." in captured.out
 
 
+def test_legacy_executable_accepts_direct_svgraph_input(monkeypatch, tmp_path, capsys) -> None:
+    source = tmp_path / "input.svg"
+    source.write_text('<svg xmlns="http://www.w3.org/2000/svg"><rect data-kind="table"/></svg>', encoding="utf-8")
+    monkeypatch.setattr("sys.argv", ["drawingml-svg", str(source)])
+
+    assert cli_main() == 0
+    captured = capsys.readouterr()
+
+    assert '"kind": "svgraph"' in captured.out
+    assert "executable 'drawingml-svg' is deprecated; use 'svgraph'" in captured.err
+
+
 def test_cli_help_lists_svgraph_commands_and_hides_legacy_aliases(capsys) -> None:
     with pytest.raises(SystemExit) as excinfo:
         cli_main(["--help"])

@@ -250,14 +250,18 @@ jobs:
           assert svg_to_svgraph("<svg><rect data-kind='table'/></svg>").kind == "svgraph"
           PY
           tmp/wheel-venv/bin/svgraph examples/svgraph.svg > tmp/wheel-svgraph.json
+          tmp/wheel-venv/bin/drawingml-svg examples/svgraph.svg > tmp/wheel-legacy-svgraph.json
           tmp/wheel-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/wheel-svgraph-presentation.json
           python - <<'PY'
           import json
           from pathlib import Path
 
           svgraph = json.loads(Path("tmp/wheel-svgraph.json").read_text(encoding="utf-8"))
+          legacy_svgraph = json.loads(Path("tmp/wheel-legacy-svgraph.json").read_text(encoding="utf-8"))
           presentation = json.loads(Path("tmp/wheel-svgraph-presentation.json").read_text(encoding="utf-8"))
           assert svgraph["kind"] == "svgraph"
+          assert legacy_svgraph["kind"] == "svgraph"
+          assert legacy_svgraph["presentation"]["kind"] == "svgraph-presentation"
           assert svgraph["presentation"]["kind"] == "svgraph-presentation"
           assert presentation["kind"] == "svgraph-presentation"
           assert len(presentation["slides"]) == 2

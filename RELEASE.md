@@ -42,6 +42,7 @@ assert svg_to_svgraph("<svg><rect data-kind='table'/></svg>").kind == "svgraph"
 PY
 tmp/release-venv/bin/svgraph analyze examples/coverage.svg
 tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json
+tmp/release-venv/bin/drawingml-svg examples/svgraph.svg > tmp/release-legacy-svgraph.json
 tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
 tmp/release-venv/bin/svgraph svg2dml examples/sample.svg -o tmp/release-smoke.xml
 ```

@@ -35,6 +35,8 @@ def main(argv: list[str] | None = None) -> int:
             sub.add_argument("-o", "--output", help="Output file. Writes stdout when omitted.")
 
     args = parser.parse_args(argv)
+    if not argv_was_provided and Path(sys.argv[0]).name == "drawingml-svg":
+        _warn_legacy_executable(parser, "drawingml-svg", "svgraph")
     try:
         source = _read_text(args.input)
         if args.command == "svg2dml":
@@ -82,7 +84,7 @@ def _normalize_argv(argv: list[str] | None) -> list[str] | None:
     if argv is not None:
         return argv
     invoked_as = Path(sys.argv[0]).name
-    if invoked_as == "svgraph" and sys.argv[1:] and sys.argv[1] not in {*VISIBLE_COMMANDS, *LEGACY_COMMANDS}:
+    if invoked_as in {"svgraph", "drawingml-svg"} and sys.argv[1:] and sys.argv[1] not in {*VISIBLE_COMMANDS, *LEGACY_COMMANDS}:
         if sys.argv[1] not in {"--version", "-h", "--help"}:
             return ["svgraph", *sys.argv[1:]]
     if invoked_as in {"svg2dml", "dml2svg", "svg2pptx", "drawingml-svg-analyze"}:
@@ -121,6 +123,13 @@ def _write_text(path: str | None, text: str) -> None:
 def _warn_legacy_command(parser: argparse.ArgumentParser, command: str, replacement: str) -> None:
     parser._print_message(
         f"{parser.prog}: warning: '{command}' is deprecated; use '{replacement}'.\n",
+        sys.stderr,
+    )
+
+
+def _warn_legacy_executable(parser: argparse.ArgumentParser, executable: str, replacement: str) -> None:
+    parser._print_message(
+        f"{parser.prog}: warning: executable '{executable}' is deprecated; use '{replacement}'.\n",
         sys.stderr,
     )
 
