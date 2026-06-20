@@ -7,6 +7,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 ## Unreleased
 
 - Renamed the SVG semantic graph model and presentation projection to SVGraph across the Python API, CLI, package metadata, README, ADR, examples, and browser editor.
+- Renamed the Python distribution metadata and wheel/sdist artifacts from `drawingml-svg` to `svgraph`, keeping legacy console and import compatibility surfaces.
 - Renamed the public repository and Pages site to `com-junkawasaki/svgraph`, and aligned web package names, generated PPTX metadata, generated DrawingML/SVG object names, and smoke artifact filenames with SVGraph branding.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.

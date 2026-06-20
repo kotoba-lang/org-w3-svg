@@ -90,6 +90,7 @@ def test_project_metadata_exposes_public_repository_links() -> None:
     metadata = tomllib.loads((_project_root() / "pyproject.toml").read_text(encoding="utf-8"))
     project = metadata["project"]
 
+    assert project["name"] == "svgraph"
     assert project["scripts"]["svgraph"] == "svgraph.cli:main"
     assert project["scripts"]["drawingml-svg"] == "svgraph.cli:main"
     assert "Typing :: Typed" in project["classifiers"]
@@ -101,9 +102,9 @@ def test_project_metadata_exposes_public_repository_links() -> None:
 
 
 def test_generated_distribution_metadata_preserves_svgraph_identity() -> None:
-    pkg_info = _project_root() / "src" / "drawingml_svg.egg-info" / "PKG-INFO"
-    entry_points = _project_root() / "src" / "drawingml_svg.egg-info" / "entry_points.txt"
-    top_level = _project_root() / "src" / "drawingml_svg.egg-info" / "top_level.txt"
+    pkg_info = _project_root() / "src" / "svgraph.egg-info" / "PKG-INFO"
+    entry_points = _project_root() / "src" / "svgraph.egg-info" / "entry_points.txt"
+    top_level = _project_root() / "src" / "svgraph.egg-info" / "top_level.txt"
     if not pkg_info.exists() or not entry_points.exists() or not top_level.exists():
         pytest.skip("egg-info metadata has not been generated")
 
@@ -112,6 +113,7 @@ def test_generated_distribution_metadata_preserves_svgraph_identity() -> None:
     entry_point_text = entry_points.read_text(encoding="utf-8")
     top_level_names = set(top_level.read_text(encoding="utf-8").splitlines())
 
+    assert metadata["Name"] == "svgraph"
     assert "Homepage, https://github.com/com-junkawasaki/svgraph" in project_urls
     assert "Repository, https://github.com/com-junkawasaki/svgraph" in project_urls
     assert "Issues, https://github.com/com-junkawasaki/svgraph/issues" in project_urls
@@ -165,6 +167,7 @@ def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     assert "examples/complex.svg -o tmp/svgraph-complex.pptx" in release
     assert "python -m zipfile --test tmp/svgraph-complex.pptx" in release
     assert "python -m build --sdist --wheel -o tmp/dist" in release
+    assert "tmp/dist/svgraph-*.whl" in release
     assert "svgraph --version" in release
     assert "svgraph examples/svgraph.svg > tmp/release-svgraph.json" in release
     assert "svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json" in release

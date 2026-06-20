@@ -70,9 +70,12 @@ def main(argv: list[str] | None = None) -> int:
 
 def _package_version() -> str:
     try:
-        return version("drawingml-svg")
+        return version("svgraph")
     except PackageNotFoundError:
-        return "0+unknown"
+        try:
+            return version("drawingml-svg")
+        except PackageNotFoundError:
+            return "0+unknown"
 
 
 def _normalize_argv(argv: list[str] | None) -> list[str] | None:

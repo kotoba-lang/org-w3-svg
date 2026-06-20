@@ -1,6 +1,6 @@
 # Release checklist
 
-Use this checklist when publishing a new `svgraph` release. The Python package distribution is still named `drawingml-svg` for compatibility.
+Use this checklist when publishing a new `svgraph` release.
 
 ## Before tagging
 
@@ -26,7 +26,7 @@ python -m build --sdist --wheel -o tmp/dist
 
 ```bash
 python -m venv tmp/release-venv
-tmp/release-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
+tmp/release-venv/bin/python -m pip install tmp/dist/svgraph-*.whl
 tmp/release-venv/bin/svgraph --version
 tmp/release-venv/bin/drawingml-svg --version
 tmp/release-venv/bin/svgraph analyze examples/coverage.svg

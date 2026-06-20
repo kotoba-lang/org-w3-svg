@@ -1,5 +1,5 @@
 [project]
-name = "drawingml-svg"
+name = "svgraph"
 version = "0.1.0"
 description = "Small, dependency-free converter between SVG, SVGraph, DrawingML, and PPTX."
 readme = "README.md"
