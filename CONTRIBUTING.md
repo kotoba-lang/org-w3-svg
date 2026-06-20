@@ -17,6 +17,7 @@ Run these before opening a pull request:
 ```bash
 ruff check .
 npm ci
+npm run check:web
 npm run build:web
 git diff --exit-code docs/app.js
 PYTHONPATH=src python -m pytest -q

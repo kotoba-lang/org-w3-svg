@@ -20,6 +20,7 @@ jobs:
 
       - name: Build browser TypeScript
         run: |
+          npm run check:web
           npm run build:web
           git diff --exit-code docs/app.js
 

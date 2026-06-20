@@ -428,6 +428,7 @@ def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> No
 
     for source in [contributing, pr_template]:
         assert "PYTHONPATH=src python -m pytest -q" in source
+        assert "npm run check:web" in source
         assert "npm run build:web" in source
         assert "PYTHONPATH=src python -m svgraph analyze examples/coverage.svg" in source
         assert "tmp/svgraph-coverage.pptx" in source
@@ -584,6 +585,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
     assert "node-version: \"24\"" in workflow
     assert "run: npm ci" in workflow
+    assert "npm run check:web" in workflow
     assert "npm run build:web" in workflow
     assert "git diff --exit-code docs/app.js" in workflow
 

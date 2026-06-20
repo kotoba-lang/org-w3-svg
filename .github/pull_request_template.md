@@ -12,6 +12,7 @@
 ## Testing
 
 - [ ] `ruff check .`
+- [ ] `npm run check:web`
 - [ ] `npm run build:web`
 - [ ] `git diff --exit-code docs/app.js`
 - [ ] `PYTHONPATH=src python -m pytest -q`
