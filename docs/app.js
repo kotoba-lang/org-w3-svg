@@ -27,6 +27,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <foreignObject id="html-table" x="90" y="150" width="620" height="250">
       <body xmlns="http://www.w3.org/1999/xhtml">
         <table cellpadding="6">
+          <caption style="font-size:18px;color:#2563eb">HTML metrics <strong>native</strong></caption>
           <colgroup>
             <col style="width:35%"/>
             <col style="width:25%"/>
@@ -411,10 +412,10 @@ function extractShapes(root) {
             return;
         }
         if (tag === "foreignObject") {
-            const table = tableFromForeignObject(element, ownMatrix, nextId, ownStyle, css);
-            if (table) {
-                shapes.push(table);
-                nextId += 1;
+            const tableShapes = shapesFromForeignObject(element, ownMatrix, nextId, ownStyle, css);
+            if (tableShapes.length) {
+                shapes.push(...tableShapes);
+                nextId += tableShapes.length;
             }
             return;
         }
@@ -657,21 +658,31 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = []) {
         cells: tableCells,
     };
 }
-function tableFromForeignObject(element, matrix, id, inheritedStyle, css = []) {
+function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = []) {
     const table = Array.from(element.querySelectorAll("table")).find((item) => localName(item) === "table");
     if (!table)
-        return null;
+        return [];
     const rows = htmlTableRows(table);
     if (!rows.length)
-        return null;
+        return [];
     const columnCount = htmlTableColumnCount(rows);
     if (columnCount <= 0)
-        return null;
+        return [];
     const box = transformedBox(matrix, num(element, "x"), num(element, "y"), num(element, "width"), num(element, "height"));
     if (box.width <= 0 || box.height <= 0)
-        return null;
+        return [];
+    const tableStyle = htmlElementStyle(table, inheritedStyle, css);
+    const caption = htmlTableCaption(table);
+    const captionStyle = caption ? htmlElementStyle(caption, tableStyle, css) : null;
+    const captionText = caption ? htmlCellText(caption) : "";
+    const captionHeight = htmlCaptionHeight(captionText, captionStyle, box.height);
+    const captionBottom = htmlCaptionSide(caption, css) === "bottom";
+    const tableId = captionText && !captionBottom ? id + 1 : id;
+    const captionId = captionText && !captionBottom ? id : id + 1;
+    const tableY = box.y + (captionText && !captionBottom ? captionHeight : 0);
+    const tableHeight = Math.max(1, box.height - captionHeight);
     const columns = htmlTableColumns(table, columnCount, box.width);
-    const rowHeights = htmlTableRowHeights(rows, box.height);
+    const rowHeights = htmlTableRowHeights(rows, tableHeight);
     const occupied = Array.from({ length: rows.length }, () => Array(columnCount).fill(false));
     const cells = [];
     rows.forEach((row, rowIndex) => {
@@ -703,18 +714,22 @@ function tableFromForeignObject(element, matrix, id, inheritedStyle, css = []) {
         }
     });
     if (!cells.length)
-        return null;
-    return {
-        id,
+        return [];
+    const tableShape = {
+        id: tableId,
         kind: "table",
         name: element.getAttribute("id") || table.getAttribute("id") || "foreignObject-table",
         data: dataAttrs(attrs(element)),
         x: box.x,
-        y: box.y,
+        y: tableY,
         columns,
         rows: rowHeights,
         cells,
     };
+    if (!caption || !captionText || !captionStyle || captionHeight <= 0)
+        return [tableShape];
+    const captionShape = htmlCaptionShape(caption, captionStyle, captionId, box.x, captionBottom ? box.y + tableHeight : box.y, box.width, captionHeight, css);
+    return captionBottom ? [tableShape, captionShape] : [captionShape, tableShape];
 }
 function tableCellStyle(style, header) {
     const border = tableBorderFromStyle(style);
@@ -744,6 +759,51 @@ function htmlTableRows(table) {
 }
 function htmlRowCells(row) {
     return Array.from(row.children).filter((item) => ["td", "th"].includes(localName(item)));
+}
+function htmlTableCaption(table) {
+    return Array.from(table.children).find((item) => localName(item) === "caption") ?? null;
+}
+function htmlCaptionSide(caption, css) {
+    if (!caption)
+        return "top";
+    const value = htmlCssValue(caption, "caption-side", css);
+    return value?.trim().toLowerCase() === "bottom" ? "bottom" : "top";
+}
+function htmlCaptionHeight(text, style, tableHeight) {
+    if (!text || tableHeight <= 0)
+        return 0;
+    const fontSize = style?.fontSize ?? 14;
+    return Math.min(Math.max(1, fontSize * 1.4), tableHeight / 3);
+}
+function htmlCaptionShape(caption, style, id, x, y, width, height, css) {
+    const runs = htmlTextRuns(caption, style, css);
+    const text = runs.map((run) => run.text).join("");
+    return {
+        id,
+        kind: "text",
+        name: caption.getAttribute("id") || "caption",
+        data: dataAttrs(attrs(caption)),
+        x,
+        y,
+        width,
+        height,
+        text,
+        fill: style.color ?? "#000000",
+        fontSize: style.fontSize ?? 14,
+        fontFamily: style.fontFamily || "Aptos",
+        bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
+        italic: isItalic(style),
+        fontVariant: style.fontVariant ?? null,
+        underline: hasUnderline(style),
+        strike: hasStrike(style),
+        baselineShift: style.baselineShift ?? null,
+        letterSpacing: style.letterSpacing ?? null,
+        rotation: null,
+        direction: style.direction ?? null,
+        anchor: "middle",
+        baseline: "middle",
+        runs,
+    };
 }
 function htmlTableColumnCount(rows) {
     const occupancy = [];
@@ -804,7 +864,13 @@ function htmlElementStyle(element, inheritedStyle, css) {
     const padding = value("padding") ?? element.getAttribute("cellpadding");
     const textAlign = value("text-align") ?? element.getAttribute("align");
     const verticalAlign = value("vertical-align") ?? element.getAttribute("valign");
+    const fontSize = value("font-size");
+    const fontFamily = value("font-family");
     const fontWeight = value("font-weight");
+    const fontStyle = value("font-style");
+    const fontVariant = value("font-variant");
+    const textDecoration = value("text-decoration-line") ?? value("text-decoration");
+    const direction = value("direction");
     if (color != null)
         next.color = parseCssColor(color, next) ?? next.color ?? null;
     if (background != null) {
@@ -835,8 +901,22 @@ function htmlElementStyle(element, inheritedStyle, css) {
     next.tableBorderRight = htmlSideBorder(element, "right", currentBorder, next);
     next.tableBorderTop = htmlSideBorder(element, "top", currentBorder, next);
     next.tableBorderBottom = htmlSideBorder(element, "bottom", currentBorder, next);
+    if (fontSize != null)
+        next.fontSize = parseLength(fontSize, next.fontSize ?? 14);
+    if (fontFamily != null)
+        next.fontFamily = fontFamily.replace(/^['"]|['"]$/g, "");
     if (fontWeight != null)
         next.fontWeight = fontWeight;
+    if (["strong", "b"].includes(localName(element)))
+        next.fontWeight = "bold";
+    if (fontStyle != null)
+        next.fontStyle = fontStyle;
+    if (fontVariant != null)
+        next.fontVariant = normalizeFontVariant(fontVariant);
+    if (textDecoration != null)
+        next.textDecoration = textDecoration;
+    if (direction != null)
+        next.direction = normalizeTextDirection(direction);
     return next;
 }
 function htmlSideBorder(element, side, fallback, style) {
@@ -911,8 +991,70 @@ function htmlCssLength(value, basis) {
 function htmlStyleValue(element, name) {
     return styleDeclarations(element.getAttribute("style"))[name] ?? null;
 }
+function htmlCssValue(element, name, css) {
+    return styleDeclarations(element.getAttribute("style"))[name] ?? element.getAttribute(name) ?? matchingCssDeclarations(element, css)[name] ?? null;
+}
 function htmlCellText(cell) {
     return (cell.textContent || "").replace(/\s+/g, " ").trim();
+}
+function htmlTextRuns(element, inheritedStyle, css) {
+    const runs = [];
+    const appendNode = (node, style) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            const text = (node.textContent || "").replace(/\s+/g, " ");
+            if (text)
+                runs.push(htmlTextRun(text, style));
+            return;
+        }
+        if (node.nodeType !== Node.ELEMENT_NODE)
+            return;
+        const child = node;
+        const childStyle = htmlElementStyle(child, style, css);
+        for (const item of Array.from(child.childNodes))
+            appendNode(item, childStyle);
+    };
+    for (const node of Array.from(element.childNodes))
+        appendNode(node, inheritedStyle);
+    return trimHtmlTextRuns(runs);
+}
+function htmlTextRun(text, style) {
+    return {
+        text,
+        preserveSpace: false,
+        fill: style.color ?? style.fill ?? "#000000",
+        fillAlpha: style.fillAlpha ?? null,
+        fontSize: style.fontSize ?? 14,
+        fontFamily: style.fontFamily || "Aptos",
+        bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
+        italic: isItalic(style),
+        fontVariant: style.fontVariant ?? null,
+        underline: hasUnderline(style),
+        strike: hasStrike(style),
+        baselineShift: style.baselineShift ?? null,
+        letterSpacing: style.letterSpacing ?? null,
+    };
+}
+function trimHtmlTextRuns(runs) {
+    let first = -1;
+    let last = -1;
+    for (let index = 0; index < runs.length; index += 1) {
+        if (runs[index]?.text.trim()) {
+            first = index;
+            break;
+        }
+    }
+    for (let index = runs.length - 1; index >= 0; index -= 1) {
+        if (runs[index]?.text.trim()) {
+            last = index;
+            break;
+        }
+    }
+    if (first < 0 || last < 0)
+        return [];
+    return runs.slice(first, last + 1).map((run, index, sliced) => ({
+        ...run,
+        text: index === 0 ? run.text.trimStart() : index === sliced.length - 1 ? run.text.trimEnd() : run.text,
+    })).filter((run) => run.text.length > 0);
 }
 function textRuns(element, inheritedStyle) {
     const runs = [];
