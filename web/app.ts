@@ -242,6 +242,7 @@ type ImageShape = BaseShape & {
   width: number;
   height: number;
   href: string;
+  srcRect: [number, number, number, number] | null;
 };
 
 type TableShape = BaseShape & {
@@ -462,7 +463,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <path id="arc-path" d="M 640 520 A 90 55 0 0 1 820 520 A 90 55 0 0 1 640 520" style="fill:#fef3c7;stroke:#a16207;stroke-width:5"/>
     <rect id="geometry-lengths" x="calc(50% - 80px)" y="42%" width="10%" height="8%" style="fill:#ecfccb;stroke:#4d7c0f;stroke-width:2pt"/>
     <line id="marked-line" x1="980" y1="185" x2="1130" y2="260" style="stroke:#7c3aed;stroke-width:8;marker-end:url(#arrow)"/>
-    <image id="pixel" x="980" y="340" width="96" height="96" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
+    <image id="pixel" x="980" y="340" width="96" height="48" preserveAspectRatio="xMidYMid slice" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
     <circle class="css-circle" cx="1130" cy="388" r="48"/>
     <rect id="clipped-bar" x="930" y="500" width="250" height="70" style="fill:#fecaca;stroke:#991b1b;clip-path:url(#bar-clip)"/>
     <ellipse id="bbox-clipped-ellipse" cx="1090" cy="560" rx="80" ry="50" style="fill:#ede9fe;stroke:#6d28d9;clip-path:url(#bbox-clip)"/>
@@ -1026,7 +1027,15 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
   if (tag === "image") {
     const href = element.getAttribute("href") || element.getAttribute("xlink:href") || "";
     if (supportedDataImage(href)) {
-      const box = transformedBox(matrix, geom(element, "x", "x", viewport), geom(element, "y", "y", viewport), geom(element, "width", "x", viewport), geom(element, "height", "y", viewport));
+      const imageFit = imagePreserveAspectRatioRect(
+        geom(element, "x", "x", viewport),
+        geom(element, "y", "y", viewport),
+        geom(element, "width", "x", viewport),
+        geom(element, "height", "y", viewport),
+        href,
+        element.getAttribute("preserveAspectRatio"),
+      );
+      const box = transformedBox(matrix, imageFit.x, imageFit.y, imageFit.width, imageFit.height);
       return {
         id,
         kind: "image",
@@ -1037,6 +1046,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
         width: box.width,
         height: box.height,
         href,
+        srcRect: imageFit.srcRect,
       };
     }
   }
@@ -2291,7 +2301,19 @@ function freeformXml(shape: FreeformShape): string {
 }
 
 function imageXml(shape: ImageShape): string {
-  return `<p:pic><p:nvPicPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${xml(shape.href)}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${emu(shape.x)}" y="${emu(shape.y)}"/><a:ext cx="${emu(shape.width)}" cy="${emu(shape.height)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+  const srcRect = shape.srcRect ? srcRectXml(shape.srcRect) : "";
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${xml(shape.href)}"/>${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${emu(shape.x)}" y="${emu(shape.y)}"/><a:ext cx="${emu(shape.width)}" cy="${emu(shape.height)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+}
+
+function srcRectXml(rect: [number, number, number, number]): string {
+  const [left, top, right, bottom] = rect;
+  const attrs = [
+    left ? `l="${left}"` : "",
+    top ? `t="${top}"` : "",
+    right ? `r="${right}"` : "",
+    bottom ? `b="${bottom}"` : "",
+  ].filter(Boolean).join(" ");
+  return attrs ? `<a:srcRect ${attrs}/>` : "";
 }
 
 function spXml(id: number, name: string, x: number, y: number, width: number, height: number, prst: string, style: string, body: string, rotation: number | null = null): string {
@@ -3958,6 +3980,110 @@ function parseAbsoluteLength(value: string | null, fallback = Number.NaN): numbe
 
 function supportedDataImage(value: string): boolean {
   return /^data:image\/(?:png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/=\s]+$/i.test(value);
+}
+
+function imagePreserveAspectRatioRect(x: number, y: number, width: number, height: number, href: string, value: string | null): { x: number; y: number; width: number; height: number; srcRect: [number, number, number, number] | null } {
+  if (!value) return { x, y, width, height, srcRect: null };
+  const [align, meetOrSlice] = parsePreserveAspectRatio(value);
+  if (align === "none") return { x, y, width, height, srcRect: null };
+  const intrinsic = dataImageDimensions(href);
+  if (!intrinsic || intrinsic.width <= 0 || intrinsic.height <= 0 || width <= 0 || height <= 0) return { x, y, width, height, srcRect: null };
+  if (meetOrSlice === "slice") return { x, y, width, height, srcRect: imageSliceSrcRect(intrinsic.width, intrinsic.height, width, height, align) };
+  const scale = Math.min(width / intrinsic.width, height / intrinsic.height);
+  const renderedWidth = intrinsic.width * scale;
+  const renderedHeight = intrinsic.height * scale;
+  return {
+    x: x + aspectAlignmentOffset(align.slice(1, 4), width - renderedWidth),
+    y: y + aspectAlignmentOffset(align.slice(5, 8), height - renderedHeight),
+    width: renderedWidth,
+    height: renderedHeight,
+    srcRect: null,
+  };
+}
+
+function imageSliceSrcRect(imageWidth: number, imageHeight: number, viewportWidth: number, viewportHeight: number, align: string): [number, number, number, number] | null {
+  const imageAspect = imageWidth / imageHeight;
+  const viewportAspect = viewportWidth / viewportHeight;
+  if (numbersClose(imageAspect, viewportAspect)) return null;
+  if (imageAspect > viewportAspect) {
+    const crop = 1 - viewportAspect / imageAspect;
+    const [before, after] = alignedCrop(crop, align.slice(1, 4));
+    return [Math.round(before * 100000), 0, Math.round(after * 100000), 0];
+  }
+  const crop = 1 - imageAspect / viewportAspect;
+  const [before, after] = alignedCrop(crop, align.slice(5, 8));
+  return [0, Math.round(before * 100000), 0, Math.round(after * 100000)];
+}
+
+function alignedCrop(total: number, alignment: string): [number, number] {
+  if (alignment === "Min") return [0, total];
+  if (alignment === "Max") return [total, 0];
+  return [total / 2, total / 2];
+}
+
+function dataImageDimensions(uri: string): { width: number; height: number } | null {
+  const match = uri.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,([A-Za-z0-9+/=\s]+)$/i);
+  if (!match) return null;
+  const kind = match[1]!.toLowerCase();
+  const bytes = base64Bytes(match[2] || "");
+  if (kind === "png") return pngDimensions(bytes);
+  if (kind === "gif") return bytes.length >= 10 ? { width: le16(bytes, 6), height: le16(bytes, 8) } : null;
+  if (kind === "webp") return webpDimensions(bytes);
+  return jpegDimensions(bytes);
+}
+
+function pngDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  return bytes.length >= 24 && ascii(bytes, 12, 4) === "IHDR" ? { width: be32(bytes, 16), height: be32(bytes, 20) } : null;
+}
+
+function jpegDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  let index = 2;
+  while (index + 9 < bytes.length && bytes[index - 2] === 0xff && bytes[index - 1] === 0xd8) {
+    if (bytes[index] !== 0xff) return null;
+    const marker = bytes[index + 1]!;
+    index += 2;
+    if (marker === 0xd9 || marker === 0xda) break;
+    if (index + 2 > bytes.length) return null;
+    const length = be16(bytes, index);
+    if (length < 2 || index + length > bytes.length) return null;
+    if ((marker >= 0xc0 && marker <= 0xc3) || (marker >= 0xc5 && marker <= 0xc7) || (marker >= 0xc9 && marker <= 0xcb) || (marker >= 0xcd && marker <= 0xcf)) {
+      return { height: be16(bytes, index + 3), width: be16(bytes, index + 5) };
+    }
+    index += length;
+  }
+  return null;
+}
+
+function webpDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  if (bytes.length < 30 || ascii(bytes, 0, 4) !== "RIFF" || ascii(bytes, 8, 4) !== "WEBP") return null;
+  const chunk = ascii(bytes, 12, 4);
+  if (chunk === "VP8X" && bytes.length >= 30) return { width: le24(bytes, 24) + 1, height: le24(bytes, 27) + 1 };
+  if (chunk === "VP8 " && bytes.length >= 30) return { width: le16(bytes, 26) & 0x3fff, height: le16(bytes, 28) & 0x3fff };
+  if (chunk === "VP8L" && bytes.length >= 25) {
+    const value = bytes[21]! | (bytes[22]! << 8) | (bytes[23]! << 16) | (bytes[24]! << 24);
+    return { width: (value & 0x3fff) + 1, height: ((value >> 14) & 0x3fff) + 1 };
+  }
+  return null;
+}
+
+function ascii(bytes: Uint8Array, start: number, length: number): string {
+  return String.fromCharCode(...bytes.slice(start, start + length));
+}
+
+function be16(bytes: Uint8Array, offset: number): number {
+  return (bytes[offset]! << 8) | bytes[offset + 1]!;
+}
+
+function be32(bytes: Uint8Array, offset: number): number {
+  return ((bytes[offset]! << 24) | (bytes[offset + 1]! << 16) | (bytes[offset + 2]! << 8) | bytes[offset + 3]!) >>> 0;
+}
+
+function le16(bytes: Uint8Array, offset: number): number {
+  return bytes[offset]! | (bytes[offset + 1]! << 8);
+}
+
+function le24(bytes: Uint8Array, offset: number): number {
+  return bytes[offset]! | (bytes[offset + 1]! << 8) | (bytes[offset + 2]! << 16);
 }
 
 function edges(values: number[]): number[] {
