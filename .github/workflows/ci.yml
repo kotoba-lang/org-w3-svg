@@ -212,6 +212,21 @@ jobs:
           tmp/wheel-venv/bin/drawingml-svg-analyze --version
           tmp/wheel-venv/bin/drawingml-svg analyze examples/coverage.svg
           tmp/wheel-venv/bin/drawingml-svg-analyze examples/coverage.svg
+          tmp/wheel-venv/bin/drawingml-svg svgraph examples/svgraph.svg > tmp/wheel-svgraph.json
+          tmp/wheel-venv/bin/drawingml-svg svgraph-presentation examples/svgraph.svg > tmp/wheel-svgraph-presentation.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          svgraph = json.loads(Path("tmp/wheel-svgraph.json").read_text(encoding="utf-8"))
+          presentation = json.loads(Path("tmp/wheel-svgraph-presentation.json").read_text(encoding="utf-8"))
+          assert svgraph["kind"] == "svgraph"
+          assert svgraph["presentation"]["kind"] == "svgraph-presentation"
+          assert presentation["kind"] == "svgraph-presentation"
+          assert len(presentation["slides"]) == 2
+          assert presentation["slide_size"] == [1280.0, 720.0]
+          assert {part["kind"] for part in presentation["parts"]} >= {"presentation", "slide", "slide-master", "slide-layout", "theme"}
+          PY
           tmp/wheel-venv/bin/svg2dml examples/sample.svg -o tmp/wheel-smoke.xml
           test -s tmp/wheel-smoke.xml
           tmp/wheel-venv/bin/svg2pptx examples/sample.svg -o tmp/wheel-smoke.pptx

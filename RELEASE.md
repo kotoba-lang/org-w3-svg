@@ -29,6 +29,8 @@ python -m venv tmp/release-venv
 tmp/release-venv/bin/python -m pip install tmp/dist/drawingml_svg-*.whl
 tmp/release-venv/bin/drawingml-svg --version
 tmp/release-venv/bin/drawingml-svg analyze examples/coverage.svg
+tmp/release-venv/bin/drawingml-svg svgraph examples/svgraph.svg > tmp/release-svgraph.json
+tmp/release-venv/bin/drawingml-svg svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
 tmp/release-venv/bin/svg2dml examples/sample.svg -o tmp/release-smoke.xml
 ```
 
