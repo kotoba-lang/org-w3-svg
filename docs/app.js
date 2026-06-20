@@ -7,6 +7,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     table.cascade-table td { background-color: #e0f2fe; color: #0c4a6e; }
     #cascade-cell { background-color: #fef3c7; color: #78350f; border-left: 4px solid #d97706 !important; }
     .cascade-table tr > * { background-color: #fee2e2; color: #991b1b; }
+    table.col-fill col.hot { background-color: #dbeafe; }
   </style>
   <g id="cover" data-kind="slide" data-title="PPTXSVG Cover">
     <rect width="1280" height="720" fill="#f8fafc"/>
@@ -61,6 +62,20 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
           <tr>
             <td style="background-color:#ffffff;color:#111827;border:1px solid #94a3b8">Gap A</td>
             <td style="background-color:#e0f2fe;color:#0c4a6e;border:1px solid #0284c7">Gap B</td>
+          </tr>
+        </table>
+      </body>
+    </foreignObject>
+    <foreignObject id="col-bg-html-table" x="760" y="340" width="360" height="90">
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <table class="col-fill">
+          <colgroup style="background:#dcfce7">
+            <col class="hot"/>
+            <col/>
+          </colgroup>
+          <tr>
+            <td>Column</td>
+            <td>Group</td>
           </tr>
         </table>
       </body>
@@ -812,6 +827,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
     const dataHeight = spaced ? Math.max(1, tableHeight - spacing[1] * (rows.length + 1)) : tableHeight;
     const dataColumns = htmlTableColumns(table, columnCount, dataWidth);
     const dataRows = htmlTableRowHeights(rows, dataHeight);
+    const columnBackgrounds = htmlTableColumnBackgrounds(table, columnCount, css);
     const columns = spaced ? interleaveSpacers(dataColumns, spacing[0]) : dataColumns;
     const rowHeights = spaced ? interleaveSpacers(dataRows, spacing[1]) : dataRows;
     const occupied = Array.from({ length: rows.length }, () => Array(columnCount).fill(false));
@@ -833,6 +849,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
             }
             const style = htmlTableCellStyle(cellElement, table, inheritedStyle, css);
             const runs = htmlTextRuns(cellElement, style, css);
+            const fill = htmlTableCellFill(cellElement, table, columnBackgrounds[column] ?? [], css) ?? style.fill ?? "#ffffff";
             cells.push({
                 row: spaced ? rowIndex * 2 + 1 : rowIndex,
                 col: spaced ? column * 2 + 1 : column,
@@ -840,7 +857,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
                 rowSpan,
                 text: runs.length ? runs.map((run) => run.text).join("") : htmlCellText(cellElement),
                 runs,
-                fill: style.fill ?? "#ffffff",
+                fill,
                 ...tableCellStyle(style, localName(cellElement) === "th"),
             });
             column += colSpan;
@@ -1029,6 +1046,64 @@ function htmlTableColumns(table, count, width) {
     const missing = Math.max(0, count - explicit.filter((item) => item != null).length);
     const fallback = missing ? Math.max(1, (width - fixedTotal) / missing) : Math.max(1, width / count);
     return Array.from({ length: count }, (_, index) => explicit[index] ?? fallback);
+}
+function htmlTableColumnBackgrounds(table, count, css) {
+    const backgrounds = [];
+    for (const child of Array.from(table.children)) {
+        const tag = localName(child);
+        const colgroupFill = tag === "colgroup" ? htmlElementBackgroundFill(child, css) : null;
+        const cols = tag === "colgroup"
+            ? Array.from(child.children).filter((item) => localName(item) === "col")
+            : tag === "col" ? [child] : [];
+        for (const col of cols) {
+            const layers = [htmlElementBackgroundFill(col, css), colgroupFill].filter((item) => item != null);
+            const span = Math.max(1, htmlSpan(col, "span"));
+            for (let index = 0; index < span; index += 1)
+                backgrounds.push(layers);
+            if (backgrounds.length >= count)
+                break;
+        }
+        if (backgrounds.length >= count)
+            break;
+    }
+    while (backgrounds.length < count)
+        backgrounds.push([]);
+    return backgrounds.slice(0, count);
+}
+function htmlTableCellFill(cell, table, columnBackgrounds, css) {
+    const ancestors = htmlAncestorsBetween(table, cell);
+    const row = findLastElement(ancestors, (item) => localName(item) === "tr");
+    const rowGroup = findLastElement(ancestors, (item) => ["thead", "tbody", "tfoot"].includes(localName(item)));
+    const candidates = [
+        htmlElementBackgroundFill(cell, css),
+        row ? htmlElementBackgroundFill(row, css) : null,
+        rowGroup ? htmlElementBackgroundFill(rowGroup, css) : null,
+        ...columnBackgrounds,
+        htmlElementBackgroundFill(table, css),
+    ];
+    return candidates.find((item) => item != null) ?? null;
+}
+function findLastElement(items, predicate) {
+    for (let index = items.length - 1; index >= 0; index -= 1) {
+        const item = items[index];
+        if (predicate(item))
+            return item;
+    }
+    return null;
+}
+function htmlAncestorsBetween(root, element) {
+    const ancestors = [];
+    let current = element.parentElement;
+    while (current && current !== root) {
+        ancestors.push(current);
+        current = current.parentElement;
+    }
+    return ancestors;
+}
+function htmlElementBackgroundFill(element, css) {
+    const declarations = resolvedCascadedDeclarations(element, css, {}, htmlAttributeAliases(element));
+    const background = declarations["background-color"] ?? declarations["background"] ?? element.getAttribute("bgcolor");
+    return parseCssColor(background, {}) ?? null;
 }
 function htmlTableRowHeights(rows, height) {
     const explicit = rows.map((row) => htmlCssLength(htmlStyleValue(row, "height") ?? row.getAttribute("height"), height));
