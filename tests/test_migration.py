@@ -266,6 +266,24 @@ def test_pages_typescript_build_targets_committed_svgraph_artifact() -> None:
     assert 'downloadBlob("svgraph-web.pptx"' in app_js
 
 
+def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
+    root = Path(__file__).resolve().parents[1]
+    package_metadata = json.loads((root / "package.json").read_text(encoding="utf-8"))
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+
+    assert "`web/app.ts` builds SVGraph" in readme
+    assert "`docs/app.js` is the compiled Pages artifact." in readme
+    assert "Python or server APIs" in readme
+    assert "npm ci" in readme
+    assert "npm run build:web" in readme
+    assert package_metadata["scripts"]["build:web"] == "tsc -p tsconfig.web.json"
+    assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
+    assert "node-version: \"24\"" in workflow
+    assert "run: npm ci" in workflow
+    assert "run: npm run build:web" in workflow
+
+
 def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
     root = Path(__file__).resolve().parents[1]
     unexpected: list[str] = []
