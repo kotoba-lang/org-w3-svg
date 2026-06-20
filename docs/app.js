@@ -208,6 +208,8 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <text id="preserve-text" x="90" y="355" xml:space="preserve" style="font-size:22;font-family:Arial;fill:#64748b">  padded  <tspan style="fill:#0f766e"> kept </tspan></text>
     <text id="length-text" x="735" y="95" textLength="170" lengthAdjust="spacing" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
     <text id="length-glyphs-text" x="735" y="125" textLength="170" lengthAdjust=" SPACINGANDGLYPHS " style="font-size:22;font-family:Arial;fill:#334155;letter-spacing:NORMAL">Glyph fit</text>
+    <text id="word-spacing-text" x="735" y="155" word-spacing="8px" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
+    <g id="inherited-word-spacing" word-spacing="8px"><text x="735" y="185" style="font-size:22;font-family:Arial;fill:#334155">Inherited gap</text></g>
     <text id="font-shorthand" class="font-short-title" x="760" y="135">Font short</text>
     <text id="rtl-text" x="560" y="95" direction="rtl" style="font-size:22;font-family:Arial;fill:#0f766e">RTL
 line</text>
@@ -1363,7 +1365,7 @@ function coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, re
     if (name === "vector-effect")
         return normalizeVectorEffect(value) != null;
     if (name === "word-spacing")
-        return normalizeSpacingLength(value, style.fontSize ?? rootFontSize) != null;
+        return wordSpacingHasNoEffect(element, tag, value) || wordSpacingIsSupported(element, tag, value, style);
     if (name === "writing-mode")
         return ["horizontal-tb", "lr", "lr-tb", "rl", "rl-tb"].includes(normalized);
     return false;
@@ -1562,6 +1564,29 @@ function textLengthIsSupported(element, tag, value, style, lengthAdjustValue = s
         return false;
     const text = element.textContent || "";
     return !text.includes("\n") && text.trim().length > 1;
+}
+function wordSpacingHasNoEffect(element, tag, value) {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "normal")
+        return true;
+    const length = normalizeSpacingLength(value, rootFontSize);
+    if (length === 0)
+        return true;
+    if (tag === "text" || tag === "tspan")
+        return !/[ \t\f\v]/.test(element.textContent || "");
+    return false;
+}
+function wordSpacingIsSupported(element, tag, value, style) {
+    if (tag !== "text" && tag !== "tspan")
+        return false;
+    if (style.letterSpacing != null || style.textLength != null)
+        return false;
+    const spacing = normalizeSpacingLength(value, style.fontSize ?? rootFontSize);
+    if (spacing == null)
+        return false;
+    const text = element.textContent || "";
+    const line = text.trim();
+    return !text.includes("\n") && line.length > 1 && wordGapCount(line) > 0;
 }
 function addCoverageCount(counts, key) {
     counts[key] = (counts[key] ?? 0) + 1;
