@@ -648,6 +648,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "published sdist",
         "`slide_size` and `text_styles`",
         "`slideSize` and `textStyles`",
+        "GitHub Actions, Python, and npm/web dependency update pull requests",
     ]:
         assert expected in changelog
 

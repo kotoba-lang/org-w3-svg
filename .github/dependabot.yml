@@ -17,3 +17,12 @@ updates:
       - "dependencies"
       - "python"
     open-pull-requests-limit: 5
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "web"
+    open-pull-requests-limit: 5

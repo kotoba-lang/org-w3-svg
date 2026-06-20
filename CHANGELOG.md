@@ -22,7 +22,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added deprecated compatibility aliases for the pre-SVGraph `drawingml_svg.ir` APIs and hidden CLI aliases, with warnings that point to `svgraph.model`, `svgraph`, and `svgraph-presentation`.
 - Added migration guard tests that keep legacy names out of top-level APIs, Pages artifacts, and non-compatibility code paths.
 - Added OSS project guidance, including contributing, security, code of conduct, issue templates, PR template, and README status links.
-- Added Dependabot configuration for GitHub Actions and Python dependency update pull requests.
+- Added Dependabot configuration for GitHub Actions, Python, and npm/web dependency update pull requests.
 - Added a release checklist covering changelog, version, local checks, PPTX smoke verification, wheel smoke checks, and GitHub release notes.
 - Expanded DrawingML preset coverage for common polygons, arrows, symbols, flowchart shapes, ribbons, callouts, and action buttons.
 - Added CLI `--version` support for the main command and console-script aliases.

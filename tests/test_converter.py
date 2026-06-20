@@ -273,9 +273,11 @@ def test_dependabot_tracks_actions_and_python_dependencies() -> None:
     assert dependabot.startswith("version: 2\n")
     assert dependabot.count('package-ecosystem: "github-actions"') == 1
     assert dependabot.count('package-ecosystem: "pip"') == 1
-    assert dependabot.count('directory: "/"') == 2
-    assert dependabot.count('interval: "weekly"') == 2
+    assert dependabot.count('package-ecosystem: "npm"') == 1
+    assert dependabot.count('directory: "/"') == 3
+    assert dependabot.count('interval: "weekly"') == 3
     assert 'open-pull-requests-limit: 5' in dependabot
+    assert '- "web"' in dependabot
 
 
 def test_cli_analyze_writes_json_to_stdout(tmp_path, capsys) -> None:
