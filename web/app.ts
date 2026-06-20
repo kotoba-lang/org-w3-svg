@@ -601,6 +601,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       .relative-font .em-text { font-size: 1.5em; }
       .relative-font .calc-text { font-size: calc(8px + 4px); }
       .font-short-title { font: italic small-caps 700 18px/1.2 "Aptos Display", Arial, sans-serif; fill: #111827; }
+      .css-positioned-text { x: 900px; y: 412px; dx: 6px; dy: 4px; }
     </style>
     <rect width="1280" height="720" fill="#ffffff" stroke="none"/>
     <text x="90" y="90" style="font-size:40;font-family:Arial;font-weight:700;fill:#17202a">Browser SVG coverage</text>
@@ -642,6 +643,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <text id="font-shorthand" class="font-short-title" x="760" y="135">Font short</text>
     <text id="rtl-text" x="560" y="95" direction="rtl" style="font-size:22;font-family:Arial;fill:#0f766e">RTL
 line</text>
+    <text class="css-positioned-text" style="font-size:18;font-family:Arial;fill:#1d4ed8">CSS text position</text>
     <text id="tspan-position" style="font-size:18;font-family:Arial;fill:#334155"><tspan x="900" y="455" dx="10" dy="5">From tspan</tspan><tspan x="900" dy="28">Next line</tspan></text>
     <g class="relative-font" fill="#111827" font-family="Arial">
       <text class="em-text" x="560" y="135">Em</text>
@@ -2077,7 +2079,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
     const textMetricScale = matrixScale(matrix);
     const textStyle = scaledTextMetricsStyle(paintStyle, textMetricScale);
     const fontSize = textStyle.fontSize ?? 18;
-    const [textX, textY] = svgTextPosition(element, viewport);
+    const [textX, textY] = svgTextPosition(element, viewport, css, paintStyle);
     const [x, y] = point(matrix, textX, textY);
     const runs = textRuns(element, paintStyle, viewport, textMetricScale, css, refs);
     const text = runs.map((run) => run.text).join("").trim();
@@ -3354,7 +3356,7 @@ function textRuns(element: Element, inheritedStyle: SvgStyle, viewport: Viewport
       const tspan = node as Element;
       const style = computedStyle(tspan, inheritedStyle, css, refs, viewport);
       const preserveSpace = rootPreserveSpace || xmlSpacePreserve(tspan);
-      append((node.textContent || ""), style, preserveSpace, runs.length > 0 && tspanStartsNewLine(tspan, viewport));
+      append((node.textContent || ""), style, preserveSpace, runs.length > 0 && tspanStartsNewLine(tspan, viewport, css, inheritedStyle));
     }
   }
   if (!runs.length) append(element.textContent || "", inheritedStyle, rootPreserveSpace);
@@ -3373,18 +3375,20 @@ function textRuns(element: Element, inheritedStyle: SvgStyle, viewport: Viewport
   })).filter((run) => run.text.length > 0);
 }
 
-function svgTextPosition(element: Element, viewport: Viewport): [number, number] {
-  let x = optionalGeom(element, "x", "x", viewport);
-  let y = optionalGeom(element, "y", "y", viewport);
-  let dx = firstOptionalGeom(element, "dx", "x", viewport);
-  let dy = firstOptionalGeom(element, "dy", "y", viewport);
+function svgTextPosition(element: Element, viewport: Viewport, css: CssRule[] = [], inheritedStyle: SvgStyle = {}): [number, number] {
+  const declarations = resolvedCascadedDeclarations(element, css, inheritedStyle);
+  let x = optionalCascadedGeom(element, declarations, "x", "x", viewport);
+  let y = optionalCascadedGeom(element, declarations, "y", "y", viewport);
+  let dx = firstOptionalCascadedGeom(element, declarations, "dx", "x", viewport);
+  let dy = firstOptionalCascadedGeom(element, declarations, "dy", "y", viewport);
   if (x != null && y != null) return [x + (dx ?? 0), y + (dy ?? 0)];
   for (const child of Array.from(element.children)) {
     if (localName(child) !== "tspan") continue;
-    x ??= optionalGeom(child, "x", "x", viewport);
-    y ??= optionalGeom(child, "y", "y", viewport);
-    dx ??= firstOptionalGeom(child, "dx", "x", viewport);
-    dy ??= firstOptionalGeom(child, "dy", "y", viewport);
+    const childDeclarations = resolvedCascadedDeclarations(child, css, inheritedStyle);
+    x ??= optionalCascadedGeom(child, childDeclarations, "x", "x", viewport);
+    y ??= optionalCascadedGeom(child, childDeclarations, "y", "y", viewport);
+    dx ??= firstOptionalCascadedGeom(child, childDeclarations, "dx", "x", viewport);
+    dy ??= firstOptionalCascadedGeom(child, childDeclarations, "dy", "y", viewport);
     if (x != null && y != null) break;
   }
   return [(x ?? 0) + (dx ?? 0), (y ?? 0) + (dy ?? 0)];
@@ -3411,9 +3415,10 @@ function firstTextTspan(element: Element): Element | null {
   return null;
 }
 
-function tspanStartsNewLine(tspan: Element, viewport: Viewport): boolean {
-  if (tspan.hasAttribute("x") || tspan.hasAttribute("y")) return true;
-  const dy = firstOptionalGeom(tspan, "dy", "y", viewport);
+function tspanStartsNewLine(tspan: Element, viewport: Viewport, css: CssRule[] = [], inheritedStyle: SvgStyle = {}): boolean {
+  const declarations = resolvedCascadedDeclarations(tspan, css, inheritedStyle);
+  if (cascadedGeomValue(tspan, declarations, "x") != null || cascadedGeomValue(tspan, declarations, "y") != null) return true;
+  const dy = firstOptionalCascadedGeom(tspan, declarations, "dy", "y", viewport);
   return dy != null && Math.abs(dy) > 0.001;
 }
 
@@ -4437,6 +4442,25 @@ function optionalGeom(element: Element, name: string, axis: "x" | "y" | "diag", 
 
 function firstOptionalGeom(element: Element, name: string, axis: "x" | "y" | "diag", viewport: Viewport): number | null {
   const value = element.getAttribute(name);
+  if (value == null) return null;
+  const first = value.trim().split(/[\s,]+/, 1)[0] || "";
+  const parsed = parseCssLength(first, percentageBasis(axis, viewport), Number.NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function cascadedGeomValue(element: Element, declarations: Record<string, string>, name: string): string | null {
+  return declarations[name] ?? element.getAttribute(name);
+}
+
+function optionalCascadedGeom(element: Element, declarations: Record<string, string>, name: string, axis: "x" | "y" | "diag", viewport: Viewport): number | null {
+  const value = cascadedGeomValue(element, declarations, name);
+  if (value == null) return null;
+  const parsed = parseCssLength(value, percentageBasis(axis, viewport), Number.NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function firstOptionalCascadedGeom(element: Element, declarations: Record<string, string>, name: string, axis: "x" | "y" | "diag", viewport: Viewport): number | null {
+  const value = cascadedGeomValue(element, declarations, name);
   if (value == null) return null;
   const first = value.trim().split(/[\s,]+/, 1)[0] || "";
   const parsed = parseCssLength(first, percentageBasis(axis, viewport), Number.NaN);
