@@ -128,6 +128,8 @@ def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     assert "examples/complex.svg -o tmp/drawingml-svg-complex.pptx" in release
     assert "python -m zipfile --test tmp/drawingml-svg-complex.pptx" in release
     assert "python -m build --sdist --wheel -o tmp/dist" in release
+    assert "svgraph --version" in release
+    assert "svgraph examples/svgraph.svg > tmp/release-svgraph.json" in release
     assert "drawingml-svg --version" in release
     assert "drawingml-svg analyze examples/coverage.svg" in release
     assert "svg2dml examples/sample.svg -o tmp/release-smoke.xml" in release

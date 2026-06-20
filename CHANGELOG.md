@@ -7,6 +7,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 ## Unreleased
 
 - Renamed the SVG semantic graph model and presentation projection to SVGraph across the Python API, CLI, package metadata, README, ADR, examples, and browser editor.
+- Added the canonical `svgraph` console script, with `svgraph input.svg` emitting SVGraph JSON directly while keeping `drawingml-svg` as a compatibility entry point.
 - Added deprecated compatibility aliases for the pre-SVGraph `drawingml_svg.ir` APIs and hidden CLI aliases, with warnings that point to `drawingml_svg.svgraph`, `svgraph`, and `svgraph-presentation`.
 - Added migration guard tests that keep legacy names out of top-level APIs, Pages artifacts, and non-compatibility code paths.
 - Added OSS project guidance, including contributing, security, code of conduct, issue templates, PR template, and README status links.
