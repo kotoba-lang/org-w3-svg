@@ -5931,14 +5931,25 @@ function pngDimensions(bytes) {
     return bytes.length >= 24 && ascii(bytes, 12, 4) === "IHDR" ? { width: be32(bytes, 16), height: be32(bytes, 20) } : null;
 }
 function jpegDimensions(bytes) {
+    if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8)
+        return null;
     let index = 2;
-    while (index + 9 < bytes.length && bytes[index - 2] === 0xff && bytes[index - 1] === 0xd8) {
-        if (bytes[index] !== 0xff)
+    while (index + 9 <= bytes.length) {
+        if (bytes[index] !== 0xff) {
+            index += 1;
+            continue;
+        }
+        index += 1;
+        while (index < bytes.length && bytes[index] === 0xff)
+            index += 1;
+        if (index >= bytes.length)
             return null;
-        const marker = bytes[index + 1];
-        index += 2;
+        const marker = bytes[index];
+        index += 1;
         if (marker === 0xd9 || marker === 0xda)
             break;
+        if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7))
+            continue;
         if (index + 2 > bytes.length)
             return null;
         const length = be16(bytes, index);

@@ -1098,6 +1098,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "cascadedGeom(element, declarations, \"cx\", \"x\", viewport)" in generated
         assert "cascadedGeom(element, declarations, \"x1\", \"x\", viewport)" in generated
         assert "imagePreserveAspectRatioRect(" in generated
+        assert "function jpegDimensions" in generated
+        assert "while (index + 9 <= bytes.length)" in generated
+        assert "marker >= 0xd0 && marker <= 0xd7" in generated
         assert "cascadedGeom(element, declarations, \"height\", \"y\", viewport)" in generated
         assert "css-image-frame" in generated
         assert 'style="x:90px;y:465px;width:360px;height:90px"' in generated
@@ -1395,6 +1398,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser negative `stroke-width` fallback",
         "browser negative SVG rect radius fallback",
         "browser marker export with arrow-like SVG marker references",
+        "browser JPEG intrinsic-size detection with segmented JPEG files",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",
