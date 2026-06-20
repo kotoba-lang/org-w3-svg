@@ -985,8 +985,10 @@ def test_web_runtime_accepts_canonical_svgraph_presentation_metadata_keys() -> N
         assert "slideMaster(presentation.text_styles)" in generated
         assert "function textStyleXml" in generated
         assert "Aptos Display" in generated
-        assert '"customXml/item1.xml": svgraphPresentationSidecar(presentation)' in generated
+        assert "writePptx(slideXmls, svgraph.presentation, svgText)" in generated
+        assert '"customXml/item1.xml": svgraphPresentationSidecar(presentation, sourceSvg)' in generated
         assert "function svgraphPresentationSidecar" in generated
+        assert "source_svg: sourceSvg" in generated
         assert "relationships/customXml" in generated
 
 
@@ -1100,6 +1102,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser DrawingML fragment download",
         "browser SVG source download",
         "browser SVGraph sidecar JSON download",
+        "browser PPTX custom XML `source_svg` preservation",
         "browser assistant patch proposal validation",
         "browser assistant patch diff preview",
         "browser assistant patch apply support",

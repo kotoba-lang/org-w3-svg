@@ -841,7 +841,7 @@ function svgToPptx(svgText) {
     const slides = declaredSlides(root);
     const selectedSlides = slides.length ? slides : [root];
     const slideXmls = selectedSlides.map((slide, index) => buildSlideXml(slide, index + 1));
-    return writePptx(slideXmls, svgraph.presentation);
+    return writePptx(slideXmls, svgraph.presentation, svgText);
 }
 function svgToDrawingMl(svgText) {
     const parser = new DOMParser();
@@ -3471,7 +3471,7 @@ function blipAlphaXml(value) {
         return "";
     return `<a:alphaModFix amt="${Math.round(clamp(value, 0, 1) * 100000)}"/>`;
 }
-function writePptx(slideXmls, presentation) {
+function writePptx(slideXmls, presentation, sourceSvg) {
     const masterCount = Math.max(1, presentation.masters.length);
     const layoutCount = Math.max(1, presentation.layouts.length);
     const files = {
@@ -3479,7 +3479,7 @@ function writePptx(slideXmls, presentation) {
         "_rels/.rels": rootRels(true),
         "docProps/app.xml": appProps(slideXmls.length),
         "docProps/core.xml": coreProps,
-        "customXml/item1.xml": svgraphPresentationSidecar(presentation),
+        "customXml/item1.xml": svgraphPresentationSidecar(presentation, sourceSvg),
         "ppt/presentation.xml": presentationXml(slideXmls.length, presentation.slide_size, masterCount),
         "ppt/_rels/presentation.xml.rels": presentationRels(slideXmls.length, masterCount),
         "ppt/theme/theme1.xml": themeXml,
@@ -6031,8 +6031,8 @@ function rootRels(hasCustomXml = false) {
     const customXml = hasCustomXml ? '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="customXml/item1.xml"/>' : "";
     return xmlDecl(`<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>${customXml}</Relationships>`);
 }
-function svgraphPresentationSidecar(presentation) {
-    const payload = xml(JSON.stringify(presentation));
+function svgraphPresentationSidecar(presentation, sourceSvg) {
+    const payload = xml(JSON.stringify({ ...presentation, source_svg: sourceSvg }));
     return xmlDecl(`<svgraph:presentation xmlns:svgraph="https://com-junkawasaki.github.io/svgraph/schema/presentation" version="1"><svgraph:json>${payload}</svgraph:json></svgraph:presentation>`);
 }
 const coreProps = xmlDecl(`<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>SVGraph web export</dc:title><dc:creator>SVGraph web</dc:creator><cp:lastModifiedBy>SVGraph web</cp:lastModifiedBy></cp:coreProperties>`);
