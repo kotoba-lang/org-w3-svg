@@ -280,6 +280,31 @@ def test_readme_lists_all_legacy_console_compatibility_aliases() -> None:
         assert executable in readme
 
 
+def test_readme_cli_block_covers_every_visible_svgraph_command() -> None:
+    root = Path(__file__).resolve().parents[1]
+    cli_source = (root / "src" / "svgraph" / "cli.py").read_text(encoding="utf-8")
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    cli_section = readme.split("## CLI", maxsplit=1)[1].split("## PPTX smoke test", maxsplit=1)[0]
+    visible_commands = _literal_assignment(cli_source, "VISIBLE_COMMANDS")
+
+    documented_commands = {
+        "svg2dml": "svgraph svg2dml input.svg -o shape.xml",
+        "dml2svg": "svgraph dml2svg shape.xml -o shape.svg",
+        "svg2pptx": "svgraph svg2pptx deck.svg -o deck.pptx",
+        "analyze": "svgraph analyze input.svg",
+        "svgraph": "svgraph input.svg",
+        "svgraph-presentation": "svgraph svgraph-presentation input.svg",
+    }
+
+    assert set(documented_commands) == set(visible_commands)
+    for command in visible_commands:
+        assert documented_commands[command] in cli_section
+
+    assert "python -m svgraph --version" in cli_section
+    assert "drawingml-svg" not in cli_section.split("```bash", maxsplit=1)[1].split("```", maxsplit=1)[0]
+    assert "pptxsvg" not in cli_section
+
+
 def test_generated_distribution_metadata_preserves_legacy_compatibility_entry_points() -> None:
     root = Path(__file__).resolve().parents[1]
     pkg_info = root / "src" / "svgraph.egg-info" / "PKG-INFO"
@@ -331,6 +356,29 @@ def test_release_checklist_smokes_canonical_svgraph_pptx_export() -> None:
     assert "tmp/release-venv/bin/svgraph svg2pptx examples/sample.svg -o tmp/release-smoke.pptx" in release
     assert "python -m zipfile --test tmp/release-smoke.pptx" in release
     assert "tmp/release-venv/bin/svg2pptx" not in release
+
+
+def test_release_checklist_smokes_all_canonical_svgraph_report_commands() -> None:
+    root = Path(__file__).resolve().parents[1]
+    cli_source = (root / "src" / "svgraph" / "cli.py").read_text(encoding="utf-8")
+    release = (root / "RELEASE.md").read_text(encoding="utf-8")
+    visible_commands = _literal_assignment(cli_source, "VISIBLE_COMMANDS")
+
+    expected_smokes = {
+        "analyze": "tmp/release-venv/bin/svgraph analyze examples/coverage.svg",
+        "svgraph": "tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json",
+        "svgraph-presentation": (
+            "tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg"
+            " > tmp/release-svgraph-presentation.json"
+        ),
+    }
+
+    assert set(expected_smokes) <= set(visible_commands)
+    for smoke in expected_smokes.values():
+        assert smoke in release
+
+    assert "tmp/release-venv/bin/svgraph --version" in release
+    assert "tmp/release-venv/bin/python -m svgraph --version" in release
 
 
 def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> None:
