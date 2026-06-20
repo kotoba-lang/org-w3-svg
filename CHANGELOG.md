@@ -69,6 +69,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added browser `svgraph-sidecar.json` source restoration by embedding `source_svg` and accepting sidecar JSON in the Open flow.
 - Added browser Open flow error reporting for invalid SVG/sidecar JSON files.
 - Added browser PPTX export support for SVG `text-decoration-style` underline mapping, including wavy underline, on normal text and `tspan` runs.
+- Added browser PPTX export support for inherited SVG underline style, color, and thickness details.
 - Added Python PPTX custom XML `source_svg` preservation so generated packages carry the editable SVG source alongside SVGraph presentation metadata.
 - Added browser PPTX custom XML `source_svg` preservation so browser-generated packages match Python source recovery metadata.
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.

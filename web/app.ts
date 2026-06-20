@@ -636,6 +636,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     </g>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;text-decoration-style:wavy;letter-spacing:2px;text-transform:none"> blue</tspan></text>
     <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;stroke:#ffffff;stroke-width:1;stroke-opacity:.5;text-anchor:middle;dominant-baseline:middle;text-decoration-line:underline;text-decoration-style:dashed;text-decoration-color:#dc2626;text-decoration-thickness:3px">Centered</text>
+    <text id="decoration-inherit" x="560" y="700" style="font-size:18;font-family:Arial;fill:#0f172a;text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:#dc2626;text-decoration-thickness:2px">Inherited <tspan style="text-decoration-style:inherit;text-decoration-color:inherit;text-decoration-thickness:inherit">decor</tspan></text>
     <text id="preserve-text" x="90" y="355" xml:space="preserve" style="font-size:22;font-family:Arial;fill:#64748b">  padded  <tspan style="fill:#0f766e"> kept </tspan></text>
     <text id="length-text" x="735" y="95" textLength="170" lengthAdjust="spacing" style="font-size:22;font-family:Arial;fill:#334155">Wide gap</text>
     <text id="font-shorthand" class="font-short-title" x="760" y="135">Font short</text>
@@ -4589,6 +4590,12 @@ function cssValueFromStyle(style: SvgStyle, name: string): string | null {
     case "text-decoration":
     case "text-decoration-line":
       return style.textDecoration ?? null;
+    case "text-decoration-style":
+      return underlineStyle(style);
+    case "text-decoration-color":
+      return style.textDecorationColor ?? null;
+    case "text-decoration-thickness":
+      return style.textDecorationThickness == null ? null : String(style.textDecorationThickness);
     case "text-transform":
       return style.textTransform ?? null;
     case "text-anchor":
