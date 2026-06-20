@@ -33,6 +33,14 @@ licenseInfo.name: MIT License
 python - <<'PY'
 from urllib.request import urlopen
 
+for url in [
+    "https://github.com/com-junkawasaki/svgraph",
+    "https://github.com/com-junkawasaki/svgraph/issues",
+    "https://github.com/com-junkawasaki/svgraph/actions/workflows/ci.yml",
+]:
+    with urlopen(url, timeout=20) as response:
+        assert response.status == 200
+
 html = urlopen("https://com-junkawasaki.github.io/svgraph/", timeout=20).read().decode("utf-8")
 app_js = urlopen("https://com-junkawasaki.github.io/svgraph/app.js", timeout=20).read().decode("utf-8")
 for expected in [

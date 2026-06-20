@@ -612,6 +612,10 @@ def test_release_checklist_smokes_published_svgraph_pages_site() -> None:
     release = (Path(__file__).resolve().parents[1] / "RELEASE.md").read_text(encoding="utf-8")
 
     for expected in [
+        '"https://github.com/com-junkawasaki/svgraph"',
+        '"https://github.com/com-junkawasaki/svgraph/issues"',
+        '"https://github.com/com-junkawasaki/svgraph/actions/workflows/ci.yml"',
+        "assert response.status == 200",
         'urlopen("https://com-junkawasaki.github.io/svgraph/", timeout=20)',
         'urlopen("https://com-junkawasaki.github.io/svgraph/app.js", timeout=20)',
         '"<title>SVGraph Editor</title>"',

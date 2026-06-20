@@ -32,6 +32,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added a release checklist smoke for the published SVGraph Pages site.
 - Expanded published Pages smoke coverage to validate the live `app.js` artifact for canonical SVGraph controls and legacy-name exclusions.
 - Added canonical GitHub repository and issue tracker links to the published SVGraph Pages editor header.
+- Added release checklist HTTP smoke coverage for the canonical GitHub repository, issue tracker, and CI workflow URLs.
 - Expanded release checklist coverage for public repository description, MIT license metadata, and SVGraph topics.
 - Expanded published Pages title, description, Open Graph, and Twitter metadata smoke coverage.
 - Expanded release package metadata URLs for Homepage, Repository, Documentation, and Issues smoke coverage.
