@@ -612,10 +612,14 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
             "PresentationML/PPTX, and browser-only web editing."
         ) in source
         assert "Keywords: drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter" in source
+        assert "Project-URL: Homepage, https://github.com/com-junkawasaki/svgraph" in source
+        assert "Project-URL: Repository, https://github.com/com-junkawasaki/svgraph" in source
         assert "Project-URL: Documentation, https://com-junkawasaki.github.io/svgraph/" in source
+        assert "Project-URL: Issues, https://github.com/com-junkawasaki/svgraph/issues" in source
         assert 'pyproject["project"]["name"] == "svgraph"' in source
         assert 'pyproject["project"]["description"] == "Small, dependency-free SVG presentation graph toolkit' in source
         assert '"presentationml", "pptx", "web"' in source
+        assert 'pyproject["project"]["urls"] == {' in source
         assert 'web_package["name"] == "svgraph-web"' in source
         assert 'web_package["version"] == pyproject["project"]["version"]' in source
         assert (
@@ -971,6 +975,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "GitHub Actions, Python, and npm/web dependency update pull requests",
         "public repository description, MIT license metadata, and SVGraph topics",
         "published Pages title, description, Open Graph, and Twitter metadata",
+        "release package metadata URLs for Homepage, Repository, Documentation, and Issues",
     ]:
         assert expected in changelog
 

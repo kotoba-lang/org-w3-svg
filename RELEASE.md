@@ -118,7 +118,10 @@ for expected in [
 assert "Name: svgraph" in wheel_metadata
 assert "Summary: Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing." in wheel_metadata
 assert "Keywords: drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter" in wheel_metadata
+assert "Project-URL: Homepage, https://github.com/com-junkawasaki/svgraph" in wheel_metadata
+assert "Project-URL: Repository, https://github.com/com-junkawasaki/svgraph" in wheel_metadata
 assert "Project-URL: Documentation, https://com-junkawasaki.github.io/svgraph/" in wheel_metadata
+assert "Project-URL: Issues, https://github.com/com-junkawasaki/svgraph/issues" in wheel_metadata
 with tarfile.open(sdist_path) as sdist:
     names = set(sdist.getnames())
     root = next(name for name in names if name.endswith("/pyproject.toml")).rsplit("/", 1)[0]
@@ -128,6 +131,12 @@ with tarfile.open(sdist_path) as sdist:
 assert pyproject["project"]["name"] == "svgraph"
 assert pyproject["project"]["description"] == "Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing."
 assert {"svg", "svgraph", "drawingml", "presentationml", "pptx", "web"} <= set(pyproject["project"]["keywords"])
+assert pyproject["project"]["urls"] == {
+    "Homepage": "https://github.com/com-junkawasaki/svgraph",
+    "Repository": "https://github.com/com-junkawasaki/svgraph",
+    "Documentation": "https://com-junkawasaki.github.io/svgraph/",
+    "Issues": "https://github.com/com-junkawasaki/svgraph/issues",
+}
 assert web_package["name"] == "svgraph-web"
 assert web_package["version"] == pyproject["project"]["version"]
 assert web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."
