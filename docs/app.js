@@ -94,8 +94,8 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       <body xmlns="http://www.w3.org/1999/xhtml">
         <table>
           <tr>
-            <td style="background-color:rgba(37,99,235,0.5)">RGBA</td>
-            <td style="background:#dc262680">Hex alpha</td>
+            <td style="background-color:rgba(37,99,235,0.5);color:rgba(37,99,235,0.5)">RGBA <span style="color:#dc262680">Run</span></td>
+            <td style="background:#dc262680;color:#111827">Hex alpha</td>
           </tr>
         </table>
       </body>
@@ -794,6 +794,7 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = [], viewport = 
         fill: cell.fill,
         fillAlpha: cell.fillAlpha,
         textFill: cell.textFill,
+        textFillAlpha: cell.textFillAlpha,
         textBold: cell.textBold,
         textAlign: cell.textAlign,
         verticalAlign: cell.verticalAlign,
@@ -916,6 +917,7 @@ function tableCellStyle(style, header) {
     const border = tableBorderFromStyle(style);
     return {
         textFill: style.color ?? style.fill ?? "#111827",
+        textFillAlpha: style.color ? (style.colorAlpha ?? null) : (style.fillAlpha ?? null),
         textBold: header || ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
         textAlign: style.tableCellTextAlign ?? (header ? "center" : null),
         verticalAlign: style.tableCellVerticalAlign ?? "middle",
@@ -1226,8 +1228,10 @@ function htmlElementStyle(element, inheritedStyle, css) {
     const textDecorationThickness = value("text-decoration-thickness");
     const direction = value("direction");
     const letterSpacing = value("letter-spacing");
-    if (color != null)
+    if (color != null) {
         next.color = parseCssColor(color, next) ?? next.color ?? null;
+        next.colorAlpha = cssColorAlpha(color);
+    }
     if (background != null) {
         next.fill = parseCssColor(background, next);
         next.fillAlpha = cssColorAlpha(background);
@@ -1284,6 +1288,7 @@ function htmlElementStyle(element, inheritedStyle, css) {
     const fontTagColor = tag === "font" ? element.getAttribute("color") : null;
     if (fontTagColor != null) {
         next.color = parseCssColor(fontTagColor, next) ?? next.color ?? null;
+        next.colorAlpha = cssColorAlpha(fontTagColor);
     }
     if (fontSize != null)
         next.fontSize = parseFontSize(fontSize, next.fontSize ?? 14);
@@ -1495,7 +1500,7 @@ function htmlTextRun(text, style) {
         breakBefore: false,
         preserveSpace: false,
         fill: style.color ?? style.fill ?? "#000000",
-        fillAlpha: style.fillAlpha ?? null,
+        fillAlpha: style.color ? (style.colorAlpha ?? null) : (style.fillAlpha ?? null),
         stroke: style.stroke ?? null,
         strokeAlpha: style.strokeAlpha ?? null,
         strokeWidth: style.strokeWidth ?? 1,
@@ -2162,7 +2167,7 @@ function tableCellTextXml(cell) {
     if (cell.runs.length)
         return cell.runs.map(textRunXml).join("");
     const attrs = ` lang="en-US" sz="1400"${cell.textBold ? ' b="1"' : ""}`;
-    const fill = solidColorXml(cell.textFill || "#111827");
+    const fill = solidColorXml(cell.textFill || "#111827", cell.textFillAlpha);
     return `<a:r><a:rPr${attrs}>${fill}</a:rPr><a:t>${xml(cell.text)}</a:t></a:r>`;
 }
 function tableCellBodyPrXml(cell) {
@@ -2726,8 +2731,10 @@ function computedStyle(element, inherited, css = [], refs = new Map(), viewport 
         next.display = normalizeDisplay(display);
     if (visibility != null)
         next.visibility = normalizeVisibility(visibility);
-    if (color != null)
+    if (color != null) {
         next.color = parseCssColor(color, next);
+        next.colorAlpha = cssColorAlpha(color);
+    }
     const opacityAlpha = parseAlpha(opacity);
     if (opacityAlpha != null)
         next.imageAlpha = combinedAlpha(opacityAlpha, next.imageAlpha);
