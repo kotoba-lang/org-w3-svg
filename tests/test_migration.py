@@ -848,6 +848,7 @@ def test_pages_workflow_deploys_svgraph_docs_site() -> None:
     assert "actions/deploy-pages@v4" not in workflow
     assert (root / "docs" / ".nojekyll").is_file()
     assert "<title>SVGraph Editor</title>" in html
+    assert 'accept=".svg,.json,image/svg+xml,application/json"' in html
     assert (
         'content="Browser-only SVGraph editor for converting SVG presentation graphs into editable '
         'PresentationML and PPTX."'
@@ -920,6 +921,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert 'downloadText("svgraph.json"' in generated
         assert 'downloadText("svgraph-sidecar.json"' in generated
         assert 'kind: "svgraph-sidecar"' in generated
+        assert "source_svg:" in generated
+        assert "function sourceFromOpenedFile" in generated
+        assert 'obj.kind === "svgraph-sidecar"' in generated
         assert "function buildSVGraphSidecar" in generated
         assert 'downloadBlob("svgraph-drawingml.xml"' in generated
         assert "function svgToDrawingMl" in generated
@@ -1101,6 +1105,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser IndexedDB persistence",
         "control for clearing the saved IndexedDB SVG source document",
         "browser storage status reporting",
+        "`svgraph-sidecar.json` source restoration",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog
@@ -1291,6 +1296,7 @@ def test_web_editor_design_uses_browser_only_svgraph_contract() -> None:
         "GitHub Pages loads the compiled `docs/app.js`.",
         "without Python",
         "`svgraph-sidecar.json`",
+        "can restore the editable SVG source by opening that sidecar JSON",
         "semantic sidecar with metadata, dependencies, coverage, and presentation package state",
         "DrawingML fragments and `.pptx` without Python",
         "deterministic patch proposal/validation preview",

@@ -625,10 +625,11 @@ function buildSVGraph(svgText) {
         presentation,
     };
 }
-function buildSVGraphSidecar(svgraph) {
+function buildSVGraphSidecar(svgraph, svgText = source.value) {
     return {
         kind: "svgraph-sidecar",
         version: svgraph.version,
+        source_svg: svgText,
         metadata: svgraph.metadata,
         dependencies: svgraph.dependencies,
         coverage: svgraph.coverage,
@@ -3726,6 +3727,15 @@ function downloadBlob(name, blob) {
     link.click();
     URL.revokeObjectURL(url);
 }
+function sourceFromOpenedFile(text) {
+    if (text.trimStart().startsWith("<"))
+        return text;
+    const payload = JSON.parse(text);
+    const obj = asObject(payload);
+    if (obj.kind === "svgraph-sidecar" && typeof obj.source_svg === "string")
+        return obj.source_svg;
+    throw new Error("Opened JSON does not contain svgraph-sidecar source_svg");
+}
 document.querySelectorAll(".tab").forEach((tab) => {
     tab.addEventListener("click", () => {
         state.tab = tab.dataset.tab || "summary";
@@ -3770,7 +3780,7 @@ fileInput.addEventListener("change", async () => {
     const file = fileInput.files?.[0];
     if (!file)
         return;
-    setSourceValue(await file.text());
+    setSourceValue(sourceFromOpenedFile(await file.text()));
 });
 source.addEventListener("input", recordManualSourceEdit);
 async function checkWebGpu() {

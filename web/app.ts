@@ -94,6 +94,7 @@ type SVGraphDocument = {
 type SVGraphSidecar = {
   kind: "svgraph-sidecar";
   version: string;
+  source_svg: string;
   metadata: { text?: string; json?: JsonValue };
   dependencies: Dependency[];
   coverage: SvgCoverage;
@@ -1104,10 +1105,11 @@ function buildSVGraph(svgText: string): SVGraphDocument {
   };
 }
 
-function buildSVGraphSidecar(svgraph: SVGraphDocument): SVGraphSidecar {
+function buildSVGraphSidecar(svgraph: SVGraphDocument, svgText = source.value): SVGraphSidecar {
   return {
     kind: "svgraph-sidecar",
     version: svgraph.version,
+    source_svg: svgText,
     metadata: svgraph.metadata,
     dependencies: svgraph.dependencies,
     coverage: svgraph.coverage,
@@ -4072,6 +4074,14 @@ function downloadBlob(name: string, blob: Blob): void {
   URL.revokeObjectURL(url);
 }
 
+function sourceFromOpenedFile(text: string): string {
+  if (text.trimStart().startsWith("<")) return text;
+  const payload = JSON.parse(text) as JsonValue;
+  const obj = asObject(payload);
+  if (obj.kind === "svgraph-sidecar" && typeof obj.source_svg === "string") return obj.source_svg;
+  throw new Error("Opened JSON does not contain svgraph-sidecar source_svg");
+}
+
 document.querySelectorAll<HTMLButtonElement>(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     state.tab = tab.dataset.tab || "summary";
@@ -4113,7 +4123,7 @@ mustElement<HTMLButtonElement>("downloadPptxBtn").addEventListener("click", () =
 fileInput.addEventListener("change", async () => {
   const file = fileInput.files?.[0];
   if (!file) return;
-  setSourceValue(await file.text());
+  setSourceValue(sourceFromOpenedFile(await file.text()));
 });
 source.addEventListener("input", recordManualSourceEdit);
 
