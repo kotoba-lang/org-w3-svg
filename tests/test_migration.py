@@ -599,21 +599,21 @@ def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> No
 
     for source in [contributing, pr_template]:
         assert "PYTHONPATH=src python -m pytest -q" in source
+        assert "npm ci" in source
         assert "npm run check:web" in source
         assert "npm run build:web" in source
         assert "PYTHONPATH=src python -m svgraph analyze examples/coverage.svg" in source
+        assert "PYTHONPATH=src python -m svgraph svgraph examples/svgraph.svg > tmp/svgraph.json" in source
+        assert (
+            "PYTHONPATH=src python -m svgraph svgraph-presentation examples/svgraph.svg > tmp/svgraph-presentation.json"
+            in source
+        )
         assert "tmp/svgraph-coverage.pptx" in source
         assert "python -m zipfile --test tmp/svgraph-coverage.pptx" in source
         assert "git diff --exit-code docs/app.js" in source
         assert "python -m svgraph.cli" not in source
         assert "python -m drawingml_svg" not in source
         assert "tmp/drawingml-svg-coverage.pptx" not in source
-
-    assert "PYTHONPATH=src python -m svgraph svgraph examples/svgraph.svg > tmp/svgraph.json" in contributing
-    assert (
-        "PYTHONPATH=src python -m svgraph svgraph-presentation examples/svgraph.svg > tmp/svgraph-presentation.json"
-        in contributing
-    )
 
 
 def test_pptx_exporter_uses_only_svgraph_internal_shape_prefix() -> None:
@@ -816,6 +816,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser type checking and committed Pages artifact freshness",
         "every retained compatibility console script",
         "canonical `com-junkawasaki/svgraph` private advisory URL",
+        "pull request checklist with canonical SVGraph JSON and presentation JSON smoke commands",
         "wheel metadata",
         "canonical `svgraph` surfaces",
         "canonical typed Python import package",
