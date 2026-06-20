@@ -620,6 +620,8 @@ def test_release_checklist_smokes_published_svgraph_pages_site() -> None:
         '\'property="og:url" content="https://com-junkawasaki.github.io/svgraph/"\'',
         '\'name="twitter:title" content="SVGraph Editor"\'',
         '"https://com-junkawasaki.github.io/svgraph/"',
+        '\'href="https://github.com/com-junkawasaki/svgraph"\'',
+        '\'href="https://github.com/com-junkawasaki/svgraph/issues"\'',
         '"Download SVG"',
         '"Download SVGraph"',
         '"Download Sidecar"',
@@ -954,6 +956,8 @@ def test_pages_workflow_deploys_svgraph_docs_site() -> None:
     assert '<meta property="og:title" content="SVGraph Editor" />' in html
     assert '<meta property="og:url" content="https://com-junkawasaki.github.io/svgraph/" />' in html
     assert '<meta name="twitter:title" content="SVGraph Editor" />' in html
+    assert '<a class="btn" href="https://github.com/com-junkawasaki/svgraph">GitHub</a>' in html
+    assert '<a class="btn" href="https://github.com/com-junkawasaki/svgraph/issues">Issues</a>' in html
     assert "https://com-junkawasaki.github.io/drawingml-svg" not in workflow + html
 
 

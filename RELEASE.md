@@ -42,6 +42,8 @@ for expected in [
     'property="og:url" content="https://com-junkawasaki.github.io/svgraph/"',
     'name="twitter:title" content="SVGraph Editor"',
     "https://com-junkawasaki.github.io/svgraph/",
+    'href="https://github.com/com-junkawasaki/svgraph"',
+    'href="https://github.com/com-junkawasaki/svgraph/issues"',
     "Download SVG",
     "Download SVGraph",
     "Download Sidecar",
