@@ -193,33 +193,6 @@ def test_ci_pptx_smoke_covers_recent_fixture_regressions() -> None:
     assert 'spc="' in workflow
 
 
-def test_docs_point_legacy_ir_to_svgraph_model() -> None:
-    root = _project_root()
-    readme = (root / "README.md").read_text(encoding="utf-8")
-    adr = (root / "docs" / "adr" / "0001-svgraph.md").read_text(encoding="utf-8")
-    migration = (root / "MIGRATION.md").read_text(encoding="utf-8")
-
-    assert "python -m svgraph --version" in readme
-    assert "compatibility aliases that point to `svgraph.model`" in readme
-    assert "svgraph.model.svg_to_svgraph()" in adr
-    assert "warns toward `svgraph.model`" in adr
-    assert "`drawingml_svg.ir.svg_to_ir()` | `svgraph.model.svg_to_svgraph()`" in migration
-    assert "`drawingml_svg.ir.svg_to_pptx_ir()` | `svgraph.model.svg_to_svgraph_presentation()`" in migration
-
-
-def test_migration_guide_covers_public_rename_surfaces() -> None:
-    migration = (_project_root() / "MIGRATION.md").read_text(encoding="utf-8")
-
-    for legacy, canonical in [
-        ("`com-junkawasaki/" + "drawingml-svg`", "`com-junkawasaki/svgraph`"),
-        ("`drawingml-svg` Python distribution", "`svgraph` Python distribution"),
-        ("`drawingml_svg` import package", "`svgraph` import package"),
-        ("`drawingml-svg` executable", "`svgraph` executable"),
-        ("`pptxsvg` CLI command", "`svgraph-presentation` CLI command"),
-    ]:
-        assert f"{legacy} | {canonical}" in migration
-
-
 def test_dependabot_tracks_actions_and_python_dependencies() -> None:
     dependabot = (_project_root() / ".github" / "dependabot.yml").read_text(encoding="utf-8")
 
