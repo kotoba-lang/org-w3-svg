@@ -669,6 +669,7 @@ const state: {
   undoStack: string[];
   redoStack: string[];
   lastSourceValue: string;
+  storageStatus: string;
 } = {
   tab: "summary",
   svgraph: null,
@@ -677,6 +678,7 @@ const state: {
   undoStack: [],
   redoStack: [],
   lastSourceValue: "",
+  storageStatus: "Storage idle",
 };
 
 const source = mustElement<HTMLTextAreaElement>("source");
@@ -705,7 +707,7 @@ function setSourceValue(value: string, options: { record: boolean; persist?: boo
   state.lastSourceValue = value;
   updateHistoryButtons();
   render();
-  if (options.persist !== false) void saveSourceDocument(value);
+  if (options.persist !== false) void persistSourceDocument(value);
 }
 
 function recordManualSourceEdit(): void {
@@ -715,7 +717,7 @@ function recordManualSourceEdit(): void {
   state.lastSourceValue = source.value;
   updateHistoryButtons();
   render();
-  void saveSourceDocument(source.value);
+  void persistSourceDocument(source.value);
 }
 
 function undoSourceEdit(): void {
@@ -726,7 +728,7 @@ function undoSourceEdit(): void {
   state.lastSourceValue = previous;
   updateHistoryButtons();
   render();
-  void saveSourceDocument(previous);
+  void persistSourceDocument(previous);
 }
 
 function redoSourceEdit(): void {
@@ -737,12 +739,26 @@ function redoSourceEdit(): void {
   state.lastSourceValue = next;
   updateHistoryButtons();
   render();
-  void saveSourceDocument(next);
+  void persistSourceDocument(next);
 }
 
 function updateHistoryButtons(): void {
   undoButton.disabled = state.undoStack.length === 0;
   redoButton.disabled = state.redoStack.length === 0;
+}
+
+function setStorageStatus(value: string): void {
+  state.storageStatus = value;
+  if (state.svgraph) renderPanel();
+}
+
+async function persistSourceDocument(value: string): Promise<void> {
+  try {
+    await saveSourceDocument(value);
+    setStorageStatus("Saved active SVG source to IndexedDB");
+  } catch (error) {
+    setStorageStatus(`Storage save failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function openDocumentDb(): Promise<IDBDatabase> {
@@ -789,6 +805,15 @@ async function clearSavedSourceDocument(): Promise<void> {
     transaction.onerror = () => reject(transaction.error);
   });
   db.close();
+}
+
+async function clearSavedSourceDocumentWithStatus(): Promise<void> {
+  try {
+    await clearSavedSourceDocument();
+    setStorageStatus("Cleared saved SVG source from IndexedDB");
+  } catch (error) {
+    setStorageStatus(`Storage clear failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
 }
 
 function localName(node: Element): string {
@@ -3973,6 +3998,7 @@ function renderPanel(): void {
         <div class="metric"><strong>${state.presentation.guides.length + state.presentation.rulers.length}</strong><span>guides/rulers</span></div>
       </div>
       ${warningCount ? `<div class="notice">${escapeHtml(coverageSummary(coverage))}</div>` : ""}
+      <div class="notice">${escapeHtml(state.storageStatus)}</div>
       <div class="list">
         ${nodes.slice(0, 12).map((node) => `<div class="item"><div class="item-title">${escapeHtml(node.node_id)} · ${escapeHtml(node.tag)}</div><div class="item-meta">${escapeHtml(JSON.stringify(node.data))}</div></div>`).join("")}
       </div>`;
@@ -4061,7 +4087,7 @@ mustElement<HTMLButtonElement>("sampleBtn").addEventListener("click", () => {
 undoButton.addEventListener("click", undoSourceEdit);
 redoButton.addEventListener("click", redoSourceEdit);
 clearSavedButton.addEventListener("click", () => {
-  void clearSavedSourceDocument();
+  void clearSavedSourceDocumentWithStatus();
 });
 mustElement<HTMLButtonElement>("downloadSvgBtn").addEventListener("click", () => {
   downloadBlob("svgraph-source.svg", new Blob([source.value], { type: "image/svg+xml;charset=utf-8" }));
@@ -4108,7 +4134,12 @@ async function checkWebGpu(): Promise<void> {
 
 setSourceValue(sampleSvg, { record: false, persist: false });
 void loadSourceDocument().then((saved) => {
-  if (saved) setSourceValue(saved, { record: false, persist: false });
+  if (saved) {
+    setSourceValue(saved, { record: false, persist: false });
+    setStorageStatus("Restored active SVG source from IndexedDB");
+  }
+}).catch((error) => {
+  setStorageStatus(`Storage restore failed: ${error instanceof Error ? error.message : String(error)}`);
 });
 void checkWebGpu();
 

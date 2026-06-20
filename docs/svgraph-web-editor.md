@@ -22,7 +22,7 @@ Current implementation status:
 - The browser Assistant panel shows deterministic patch diff preview rows for SVGraph data and metadata edits before applying future LLM suggestions.
 - The browser Assistant panel can apply validated SVGraph patch operations back into the canonical SVG source as `data-*` attributes and `<metadata>` JSON.
 - The browser keeps SVG source undo/redo history across manual edits, file/sample loads, and assistant patch application.
-- The browser persists the active SVG source document in IndexedDB, restores it on reload without a server, and provides a control for clearing the saved document.
+- The browser persists the active SVG source document in IndexedDB, restores it on reload without a server, provides a control for clearing the saved document, and reports storage status in the UI.
 - The Python converter remains the fuller reference implementation for complex SVG features such as paths, images, advanced CSS, clipping, markers, and richer table extraction.
 
 ## Product Shape

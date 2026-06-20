@@ -908,6 +908,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function undoSourceEdit" in generated
         assert "function redoSourceEdit" in generated
         assert "function updateHistoryButtons" in generated
+        assert "storageStatus" in generated
+        assert "function setStorageStatus" in generated
+        assert "function persistSourceDocument" in generated
         assert "function openDocumentDb" in generated
         assert "function saveSourceDocument" in generated
         assert "function loadSourceDocument" in generated
@@ -1097,6 +1100,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser SVG source undo/redo history",
         "browser IndexedDB persistence",
         "control for clearing the saved IndexedDB SVG source document",
+        "browser storage status reporting",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog
@@ -1295,6 +1299,7 @@ def test_web_editor_design_uses_browser_only_svgraph_contract() -> None:
         "SVG source undo/redo history",
         "persists the active SVG source document in IndexedDB",
         "control for clearing the saved document",
+        "reports storage status in the UI",
         "`SVGraphDocument`",
         "`SVGraphPresentation` projection",
         "`svgraph-presentation` view",
