@@ -33,6 +33,25 @@ def test_compatibility_package_top_level_exports_match_svgraph_api() -> None:
     assert drawingml_svg.__all__ == svgraph_package.__all__
 
 
+def test_compatibility_submodules_export_canonical_svgraph_callables() -> None:
+    import drawingml_svg.converter
+    import drawingml_svg.coverage
+    import drawingml_svg.pptx
+    import drawingml_svg.svgraph
+    import svgraph.converter
+    import svgraph.coverage
+    import svgraph.model
+    import svgraph.pptx
+
+    assert drawingml_svg.converter.svg_to_drawingml is svgraph.converter.svg_to_drawingml
+    assert drawingml_svg.converter.drawingml_to_svg is svgraph.converter.drawingml_to_svg
+    assert drawingml_svg.coverage.analyze_svg is svgraph.coverage.analyze_svg
+    assert drawingml_svg.pptx.svg_to_pptx is svgraph.pptx.svg_to_pptx
+    assert drawingml_svg.pptx.svg_to_pptx_bytes is svgraph.pptx.svg_to_pptx_bytes
+    assert drawingml_svg.svgraph.svg_to_svgraph is svgraph.model.svg_to_svgraph
+    assert drawingml_svg.svgraph.svg_to_svgraph_presentation is svgraph.model.svg_to_svgraph_presentation
+
+
 @pytest.mark.parametrize("executable", ["svg2dml", "dml2svg", "svg2pptx", "drawingml-svg-analyze"])
 def test_cli_alias_version_writes_installed_package_version(monkeypatch, capsys, executable: str) -> None:
     monkeypatch.setattr("sys.argv", [executable, "--version"])
