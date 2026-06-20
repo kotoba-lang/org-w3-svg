@@ -896,6 +896,39 @@ def test_svg_to_pptx_bytes_writes_presentation_text_styles_to_slide_master() -> 
     assert '<p:otherStyle><a:lvl1pPr><a:defRPr sz="2400">' in master
 
 
+def test_svg_to_pptx_bytes_preserves_svgraph_presentation_sidecar() -> None:
+    pptx_data = svg_to_pptx_bytes(
+        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+          <metadata>{"presentation": {
+            "guides": [{"id": "safe-left", "orientation": "vertical", "position": 96}],
+            "rulers": [{"id": "x", "orientation": "horizontal", "origin": 0, "spacing": 16}],
+            "textStyles": {"title": {"fontFamily": "Aptos Display", "fontSize": 48}}
+          }}</metadata>
+          <g id="slide-a" data-kind="slide"><rect width="200" height="120" fill="#ccfbf1"/></g>
+        </svg>"""
+    )
+
+    with zipfile.ZipFile(io.BytesIO(pptx_data)) as pptx:
+        names = set(pptx.namelist())
+        content_types = ET.fromstring(pptx.read("[Content_Types].xml"))
+        root_rels = pptx.read("_rels/.rels").decode("utf-8")
+        sidecar = ET.fromstring(pptx.read("customXml/item1.xml"))
+
+    overrides = {
+        override.get("PartName"): override.get("ContentType")
+        for override in content_types.findall("{http://schemas.openxmlformats.org/package/2006/content-types}Override")
+    }
+    payload = json.loads(sidecar.findtext("{https://com-junkawasaki.github.io/svgraph/schema/presentation}json") or "{}")
+
+    assert "customXml/item1.xml" in names
+    assert overrides["/customXml/item1.xml"] == "application/xml"
+    assert 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"' in root_rels
+    assert payload["kind"] == "svgraph-presentation"
+    assert payload["guides"][0]["guide_id"] == "safe-left"
+    assert payload["rulers"][0]["ruler_id"] == "x"
+    assert payload["text_styles"][0]["role"] == "title"
+
+
 def test_svgraph_semantic_relation_and_table_export_as_native_pptx_objects() -> None:
     pptx_data = svg_to_pptx_bytes((_project_root() / "examples" / "svgraph.svg").read_text(encoding="utf-8"))
 

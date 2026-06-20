@@ -3,8 +3,10 @@ from __future__ import annotations
 import base64
 import binascii
 import io
+import json
 import re
 import zipfile
+from dataclasses import asdict
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
@@ -40,6 +42,7 @@ def svg_to_pptx_bytes(svg_text: str) -> bytes:
             master_count=max(1, len(presentation.masters)),
             layout_count=max(1, len(presentation.layouts)),
             text_styles=presentation.text_styles,
+            custom_xml=_svgraph_presentation_sidecar(presentation),
         )
         return buffer.getvalue()
 
@@ -267,6 +270,7 @@ def write_pptx(
     master_count: int = 1,
     layout_count: int = 1,
     text_styles: tuple[SVGraphTextStyle, ...] = (),
+    custom_xml: str | None = None,
 ) -> None:
     slide_xmls = [slide_xml] if isinstance(slide_xml, bytes) else slide_xml
     master_count = max(1, master_count)
@@ -285,9 +289,10 @@ def write_pptx(
         output_path.parent.mkdir(parents=True, exist_ok=True)
     target = output if isinstance(output, io.BytesIO) else output_path
     assert target is not None
+    has_custom_xml = custom_xml is not None
     with zipfile.ZipFile(target, "w", compression=zipfile.ZIP_DEFLATED) as pptx:
-        pptx.writestr("[Content_Types].xml", _content_types(len(slide_xmls), master_count, layout_count))
-        pptx.writestr("_rels/.rels", ROOT_RELS)
+        pptx.writestr("[Content_Types].xml", _content_types(len(slide_xmls), master_count, layout_count, has_custom_xml))
+        pptx.writestr("_rels/.rels", _root_rels(has_custom_xml))
         pptx.writestr("docProps/app.xml", _app_props(len(slide_xmls)))
         pptx.writestr("docProps/core.xml", CORE_PROPS)
         pptx.writestr("ppt/presentation.xml", _presentation(len(slide_xmls), slide_size, master_count))
@@ -307,6 +312,8 @@ def write_pptx(
             pptx.writestr(f"ppt/slides/_rels/slide{index}.xml.rels", rels)
         for path, data in media:
             pptx.writestr(path, data)
+        if custom_xml is not None:
+            pptx.writestr("customXml/item1.xml", custom_xml)
 
 
 def prepare_slide_media(slide_xml: bytes) -> tuple[bytes, str, list[tuple[str, bytes]]]:
@@ -415,7 +422,12 @@ def _parse_data_image(value: str) -> tuple[str, bytes] | None:
     return extension, data
 
 
-def _content_types(slide_count: int, master_count: int = 1, layout_count: int = 1) -> str:
+def _content_types(
+    slide_count: int,
+    master_count: int = 1,
+    layout_count: int = 1,
+    has_custom_xml: bool = False,
+) -> str:
     master_overrides = "\n".join(
         f'  <Override PartName="/ppt/slideMasters/slideMaster{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/>'
         for index in range(1, master_count + 1)
@@ -427,6 +439,11 @@ def _content_types(slide_count: int, master_count: int = 1, layout_count: int = 
     slide_overrides = "\n".join(
         f'  <Override PartName="/ppt/slides/slide{index}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>'
         for index in range(1, slide_count + 1)
+    )
+    custom_xml_override = (
+        '  <Override PartName="/customXml/item1.xml" ContentType="application/xml"/>'
+        if has_custom_xml
+        else ""
     )
     return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
@@ -443,6 +460,7 @@ def _content_types(slide_count: int, master_count: int = 1, layout_count: int = 
 {layout_overrides}
   <Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>
 {slide_overrides}
+{custom_xml_override}
 </Types>"""
 
 
@@ -499,12 +517,37 @@ def _presentation_rels(slide_count: int, master_count: int = 1) -> str:
 </Relationships>"""
 
 
-ROOT_RELS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+def _root_rels(has_custom_xml: bool = False) -> str:
+    custom_xml_rel = (
+        '\n  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml" Target="customXml/item1.xml"/>'
+        if has_custom_xml
+        else ""
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="ppt/presentation.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/>
   <Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/extended-properties" Target="docProps/app.xml"/>
+{custom_xml_rel}
 </Relationships>"""
+
+
+ROOT_RELS = _root_rels()
+
+
+def _svgraph_presentation_sidecar(presentation: object) -> str:
+    payload = json.dumps(asdict(presentation), ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<svgraph:presentation xmlns:svgraph="https://com-junkawasaki.github.io/svgraph/schema/presentation" version="1">'
+        f"<svgraph:json>{_xml_text(payload)}</svgraph:json>"
+        "</svgraph:presentation>"
+    )
+
+
+def _xml_text(value: str) -> str:
+    return value.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
 
 CORE_PROPS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"
