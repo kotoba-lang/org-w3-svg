@@ -897,8 +897,7 @@ def test_svg_to_pptx_bytes_writes_presentation_text_styles_to_slide_master() -> 
 
 
 def test_svg_to_pptx_bytes_preserves_svgraph_presentation_sidecar() -> None:
-    pptx_data = svg_to_pptx_bytes(
-        """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
+    svg = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
           <metadata>{"presentation": {
             "guides": [{"id": "safe-left", "orientation": "vertical", "position": 96}],
             "rulers": [{"id": "x", "orientation": "horizontal", "origin": 0, "spacing": 16}],
@@ -906,7 +905,7 @@ def test_svg_to_pptx_bytes_preserves_svgraph_presentation_sidecar() -> None:
           }}</metadata>
           <g id="slide-a" data-kind="slide"><rect width="200" height="120" fill="#ccfbf1"/></g>
         </svg>"""
-    )
+    pptx_data = svg_to_pptx_bytes(svg)
 
     with zipfile.ZipFile(io.BytesIO(pptx_data)) as pptx:
         names = set(pptx.namelist())
@@ -927,6 +926,7 @@ def test_svg_to_pptx_bytes_preserves_svgraph_presentation_sidecar() -> None:
     assert payload["guides"][0]["guide_id"] == "safe-left"
     assert payload["rulers"][0]["ruler_id"] == "x"
     assert payload["text_styles"][0]["role"] == "title"
+    assert payload["source_svg"] == svg
 
 
 def test_svgraph_semantic_relation_and_table_export_as_native_pptx_objects() -> None:

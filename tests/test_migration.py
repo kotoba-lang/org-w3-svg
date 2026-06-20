@@ -1131,12 +1131,14 @@ def test_python_pptx_exporter_preserves_svgraph_sidecar_metadata() -> None:
     source = (root / "src" / "svgraph" / "pptx.py").read_text(encoding="utf-8")
     tests = (root / "tests" / "test_converter.py").read_text(encoding="utf-8")
 
-    assert "custom_xml=_svgraph_presentation_sidecar(presentation)" in source
-    assert "def _svgraph_presentation_sidecar" in source
+    assert "custom_xml=_svgraph_presentation_sidecar(presentation, svg_text)" in source
+    assert "def _svgraph_presentation_sidecar(presentation: object, source_svg: str)" in source
+    assert 'payload_dict["source_svg"] = source_svg' in source
     assert '"https://com-junkawasaki.github.io/svgraph/schema/presentation"' in source
     assert 'Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"' in source
     assert "test_svg_to_pptx_bytes_preserves_svgraph_presentation_sidecar" in tests
     assert "customXml/item1.xml" in tests
+    assert 'payload["source_svg"] == svg' in tests
 
 
 def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
@@ -1285,6 +1287,7 @@ def test_readme_documents_svgraph_presentation_package_part_contract() -> None:
         "slide master/layout/theme parts",
         "generated `/ppt/slides/slideN.xml` parts",
         "custom XML sidecar part",
+        "Generated PPTX custom XML also preserves `source_svg`",
     ]:
         assert expected in readme
 

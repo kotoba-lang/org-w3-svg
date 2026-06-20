@@ -42,7 +42,7 @@ def svg_to_pptx_bytes(svg_text: str) -> bytes:
             master_count=max(1, len(presentation.masters)),
             layout_count=max(1, len(presentation.layouts)),
             text_styles=presentation.text_styles,
-            custom_xml=_svgraph_presentation_sidecar(presentation),
+            custom_xml=_svgraph_presentation_sidecar(presentation, svg_text),
         )
         return buffer.getvalue()
 
@@ -535,8 +535,10 @@ def _root_rels(has_custom_xml: bool = False) -> str:
 ROOT_RELS = _root_rels()
 
 
-def _svgraph_presentation_sidecar(presentation: object) -> str:
-    payload = json.dumps(asdict(presentation), ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+def _svgraph_presentation_sidecar(presentation: object, source_svg: str) -> str:
+    payload_dict = asdict(presentation)
+    payload_dict["source_svg"] = source_svg
+    payload = json.dumps(payload_dict, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
     return (
         '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
         '<svgraph:presentation xmlns:svgraph="https://com-junkawasaki.github.io/svgraph/schema/presentation" version="1">'
