@@ -1091,6 +1091,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "resolvedCascadedDeclarations(stop, css, gradientStyle)" in generated
         assert "const stopOpacityAlpha = parseAlpha(stopOpacity)" in generated
         assert "combinedAlpha(stopOpacityAlpha, colorAlpha) !== 0" in generated
+        assert "textRuns(element, paintStyle, viewport, textMetricScale, css, refs)" in generated
+        assert "computedStyle(tspan, inheritedStyle, css, refs, viewport)" in generated
+        assert "textRotation(element, textStyle, css, refs, viewport)" in generated
         assert "function zeroAngle" in generated
         assert "function textHasNoKerningPairs" in generated
         assert 'name === "font-kerning"' in generated
@@ -1333,6 +1336,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser gradient paint-server fallback colors with inherited stop color, opacity, and currentColor context",
         "browser SVG `href` resolution with namespace-aware legacy `xlink:href` handling",
         "browser paint-server fallback colors with CSS cascade rules for gradient stops and pattern children",
+        "browser text run export with CSS cascade rules for `tspan` styling, rotation, anchor, and baseline fallback",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",

@@ -1630,7 +1630,7 @@ function extractShapes(root) {
             }
             return;
         }
-        const rawShape = tag === "svg" || visibilityHidden ? null : elementToShape(element, ownMatrix, ownStyle, nextId, childViewport);
+        const rawShape = tag === "svg" || visibilityHidden ? null : elementToShape(element, ownMatrix, ownStyle, nextId, childViewport, css, refs);
         const clip = combineClips(activeClip, rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport));
         const shape = applyClip(rawShape, clip);
         if (shape) {
@@ -1646,7 +1646,7 @@ function extractShapes(root) {
         walk(child, rootMatrix, rootStyle, new Set(), viewport);
     return extractSvgTables(shapes);
 }
-function elementToShape(element, matrix, style, id, viewport) {
+function elementToShape(element, matrix, style, id, viewport, css = [], refs = new Map()) {
     const tag = localName(element);
     const data = dataAttrs(attrs(element));
     const name = element.getAttribute("id") || tag;
@@ -1724,13 +1724,13 @@ function elementToShape(element, matrix, style, id, viewport) {
         const fontSize = textStyle.fontSize ?? 18;
         const [textX, textY] = svgTextPosition(element, viewport);
         const [x, y] = point(matrix, textX, textY);
-        const runs = textRuns(element, paintStyle, viewport, textMetricScale);
+        const runs = textRuns(element, paintStyle, viewport, textMetricScale, css, refs);
         const text = runs.map((run) => run.text).join("").trim();
         const width = Math.max(80 * textMetricScale, textStyle.textLength ?? text.length * fontSize * 0.62 + wordSpacingExtra(textStyle, text));
         const height = fontSize * 1.35;
-        const anchor = textStyle.textAnchor ?? firstPositionedTspanAnchor(element, textStyle);
-        const baseline = textStyle.textBaseline ?? firstPositionedTspanBaseline(element, textStyle);
-        const rotation = textRotation(element, textStyle);
+        const anchor = textStyle.textAnchor ?? firstPositionedTspanAnchor(element, textStyle, css, refs, viewport);
+        const baseline = textStyle.textBaseline ?? firstPositionedTspanBaseline(element, textStyle, css, refs, viewport);
+        const rotation = textRotation(element, textStyle, css, refs, viewport);
         return {
             id,
             kind: "text",
@@ -3009,7 +3009,7 @@ function trimHtmlTextRuns(runs) {
         text: index === 0 ? run.text.trimStart() : index === sliced.length - 1 ? run.text.trimEnd() : run.text,
     })).filter((run) => run.text.length > 0);
 }
-function textRuns(element, inheritedStyle, viewport = defaultViewport(), metricScale = 1) {
+function textRuns(element, inheritedStyle, viewport = defaultViewport(), metricScale = 1, css = [], refs = new Map()) {
     const runs = [];
     const rootPreserveSpace = xmlSpacePreserve(element);
     const append = (text, style, preserveSpace, breakBefore = false) => {
@@ -3048,7 +3048,7 @@ function textRuns(element, inheritedStyle, viewport = defaultViewport(), metricS
         }
         else if (node.nodeType === Node.ELEMENT_NODE && localName(node) === "tspan") {
             const tspan = node;
-            const style = computedStyle(tspan, inheritedStyle);
+            const style = computedStyle(tspan, inheritedStyle, css, refs, viewport);
             const preserveSpace = rootPreserveSpace || xmlSpacePreserve(tspan);
             append((node.textContent || ""), style, preserveSpace, runs.length > 0 && tspanStartsNewLine(tspan, viewport));
         }
@@ -3089,21 +3089,21 @@ function svgTextPosition(element, viewport) {
     }
     return [(x ?? 0) + (dx ?? 0), (y ?? 0) + (dy ?? 0)];
 }
-function firstPositionedTspanAnchor(element, inheritedStyle) {
+function firstPositionedTspanAnchor(element, inheritedStyle, css = [], refs = new Map(), viewport = defaultViewport()) {
     if (element.hasAttribute("x") || element.hasAttribute("y") || (element.childNodes[0]?.nodeType === Node.TEXT_NODE && (element.childNodes[0].textContent || "").trim()))
         return null;
     const first = firstTextTspan(element);
     if (!first || !first.hasAttribute("x") || !first.hasAttribute("y"))
         return null;
-    return computedStyle(first, inheritedStyle).textAnchor ?? null;
+    return computedStyle(first, inheritedStyle, css, refs, viewport).textAnchor ?? null;
 }
-function firstPositionedTspanBaseline(element, inheritedStyle) {
+function firstPositionedTspanBaseline(element, inheritedStyle, css = [], refs = new Map(), viewport = defaultViewport()) {
     if (element.hasAttribute("x") || element.hasAttribute("y") || (element.childNodes[0]?.nodeType === Node.TEXT_NODE && (element.childNodes[0].textContent || "").trim()))
         return null;
     const first = firstTextTspan(element);
     if (!first || !first.hasAttribute("x") || !first.hasAttribute("y"))
         return null;
-    return computedStyle(first, inheritedStyle).textBaseline ?? null;
+    return computedStyle(first, inheritedStyle, css, refs, viewport).textBaseline ?? null;
 }
 function firstTextTspan(element) {
     for (const child of Array.from(element.children)) {
@@ -3260,13 +3260,13 @@ function singleTextRotation(value, text = null) {
         return null;
     return first;
 }
-function textRotation(element, style) {
+function textRotation(element, style, css = [], refs = new Map(), viewport = defaultViewport()) {
     if (style.rotate != null)
         return style.rotate;
     for (const child of Array.from(element.children)) {
         if (localName(child) !== "tspan")
             continue;
-        const childStyle = computedStyle(child, style);
+        const childStyle = computedStyle(child, style, css, refs, viewport);
         if (childStyle.rotate != null)
             return childStyle.rotate;
     }
