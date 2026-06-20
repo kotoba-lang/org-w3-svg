@@ -743,6 +743,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     lock_metadata = json.loads(package_lock)
     html = (root / "docs" / "index.html").read_text(encoding="utf-8")
     source = (root / "web" / "app.ts").read_text(encoding="utf-8")
+    app_js = (root / "docs" / "app.js").read_text(encoding="utf-8")
 
     assert '"name": "svgraph-web"' in package_json
     assert '"name": "svgraph-web"' in package_lock
@@ -761,9 +762,12 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "<title>SVGraph Editor</title>" in html
     assert 'id="downloadSVGraphBtn"' in html
     assert 'mustElement<HTMLButtonElement>("downloadSVGraphBtn")' in source
-    assert 'downloadText("svgraph-presentation.json"' in source
+    for generated in [source, app_js]:
+        assert 'downloadText("svgraph.json"' in generated
+        assert 'downloadText("svgraph-presentation.json"' in generated
+        assert 'downloadBlob("svgraph-web.pptx"' in generated
 
-    combined = "\n".join([package_json, package_lock, html, source])
+    combined = "\n".join([package_json, package_lock, html, source, app_js])
     assert "drawingml-" + "svg-web" not in combined
     assert "PPTXSVG" not in combined
     assert "presentation IR" not in combined

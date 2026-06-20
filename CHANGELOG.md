@@ -15,6 +15,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.
 - Aligned release checklist source distribution checks with packaged SVGraph docs, governance files, examples, and browser editor sources.
 - Strengthened release and CI source distribution checks so `svgraph-web` and Python package versions stay synchronized.
+- Strengthened web editor artifact-name guards for SVGraph JSON, presentation JSON, and PPTX downloads.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
 - Added deprecation warnings that point retained legacy executable aliases to their canonical `svgraph` commands.
