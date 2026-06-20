@@ -53,6 +53,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-linecap:round;stroke-linejoin:bevel"/>
     <text id="rich-text" x="330" y="660" style="font-size:24;font-family:Arial;fill:#111827">Rich <tspan style="fill:#dc2626;font-weight:700">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline"> blue</tspan></text>
+    <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;text-anchor:middle;dominant-baseline:middle">Centered</text>
     <rect id="gradient-fill" x="900" y="615" width="120" height="50" style="fill:url(#linear-fallback);stroke:url(#radial-fallback)"/>
     <circle id="pattern-fill" cx="1080" cy="640" r="32" style="fill:url(#pattern-fallback);stroke:#334155"/>
     <use href="#reused-chip" class="accent-use" x="360" y="400"/>
@@ -467,15 +468,19 @@ function elementToShape(element, matrix, style, id) {
         const [x, y] = point(matrix, num(element, "x"), num(element, "y"));
         const runs = textRuns(element, style);
         const text = runs.map((run) => run.text).join("").trim();
+        const width = Math.max(80, text.length * fontSize * 0.62);
+        const height = fontSize * 1.35;
+        const anchor = style.textAnchor ?? null;
+        const baseline = style.textBaseline ?? null;
         return {
             id,
             kind: "text",
             name,
             data,
-            x,
-            y: y - fontSize,
-            width: Math.max(80, text.length * fontSize * 0.62),
-            height: fontSize * 1.35,
+            x: anchor === "middle" ? x - width / 2 : anchor === "end" ? x - width : x,
+            y: baseline === "middle" ? y - height / 2 : baseline === "text-after-edge" ? y - height : y - fontSize,
+            width,
+            height,
             text,
             fill: style.fill ?? "#111827",
             fontSize,
@@ -483,6 +488,8 @@ function elementToShape(element, matrix, style, id) {
             bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
             italic: isItalic(style),
             underline: hasUnderline(style),
+            anchor,
+            baseline,
             runs,
         };
     }
@@ -636,6 +643,20 @@ function isItalic(style) {
 }
 function hasUnderline(style) {
     return (style.textDecoration || "").toLowerCase().split(/\s+/).includes("underline");
+}
+function normalizeTextAnchor(value) {
+    const normalized = value.trim().toLowerCase();
+    return ["start", "middle", "end"].includes(normalized) ? normalized : null;
+}
+function normalizeTextBaseline(value) {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "middle" || normalized === "central")
+        return "middle";
+    if (normalized === "text-after-edge" || normalized === "ideographic")
+        return "text-after-edge";
+    if (normalized === "text-before-edge" || normalized === "hanging")
+        return "text-before-edge";
+    return null;
 }
 function markRelationConnectors(shapes) {
     const boxes = shapes.filter((shape) => ["rect", "ellipse", "text", "freeform"].includes(shape.kind));
@@ -833,13 +854,31 @@ function textXml(shape) {
             bold: shape.bold,
             italic: shape.italic,
             underline: shape.underline,
+            anchor: shape.anchor,
+            baseline: shape.baseline,
         }]).map(textRunXml).join("");
-    const body = `<p:txBody><a:bodyPr wrap="none"/><a:lstStyle/><a:p>${runs}</a:p></p:txBody>`;
+    const body = `<p:txBody><a:bodyPr wrap="none"${textBaselineAnchorXml(shape.baseline)}/><a:lstStyle/><a:p>${paragraphAlignXml(shape.anchor)}${runs}</a:p></p:txBody>`;
     return spXml(shape.id, shape.name, shape.x, shape.y, shape.width, shape.height, "rect", "<a:noFill/><a:ln><a:noFill/></a:ln>", body);
 }
 function textRunXml(run) {
     const attrs = ` lang="en-US" sz="${Math.round(run.fontSize * 100)}"${run.bold ? ' b="1"' : ""}${run.italic ? ' i="1"' : ""}${run.underline ? ' u="sng"' : ""}`;
     return `<a:r><a:rPr${attrs}>${solidColorXml(run.fill, run.fillAlpha)}<a:latin typeface="${xml(run.fontFamily)}"/></a:rPr><a:t>${xml(run.text)}</a:t></a:r>`;
+}
+function paragraphAlignXml(anchor) {
+    if (anchor === "middle")
+        return '<a:pPr algn="ctr"/>';
+    if (anchor === "end")
+        return '<a:pPr algn="r"/>';
+    return "";
+}
+function textBaselineAnchorXml(baseline) {
+    if (baseline === "middle")
+        return ' anchor="ctr"';
+    if (baseline === "text-after-edge")
+        return ' anchor="b"';
+    if (baseline === "text-before-edge")
+        return ' anchor="t"';
+    return "";
 }
 function tableXml(shape) {
     const grid = shape.columns.map((width) => `<a:gridCol w="${emu(width)}"/>`).join("");
@@ -1213,6 +1252,8 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
     const fontWeight = value("font-weight");
     const fontStyle = value("font-style");
     const textDecoration = value("text-decoration-line") ?? value("text-decoration");
+    const textAnchor = value("text-anchor");
+    const textBaseline = value("dominant-baseline") ?? value("alignment-baseline");
     const clipPath = value("clip-path");
     const marker = value("marker");
     const markerStart = value("marker-start");
@@ -1262,6 +1303,10 @@ function computedStyle(element, inherited, css = [], refs = new Map()) {
         next.fontStyle = fontStyle;
     if (textDecoration != null)
         next.textDecoration = textDecoration;
+    if (textAnchor != null)
+        next.textAnchor = normalizeTextAnchor(textAnchor);
+    if (textBaseline != null)
+        next.textBaseline = normalizeTextBaseline(textBaseline);
     if (clipPath != null)
         next.clipPath = clipPath.trim();
     if (marker != null) {
