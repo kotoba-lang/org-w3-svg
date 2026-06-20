@@ -30,6 +30,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Expanded release package metadata URLs for Homepage, Repository, Documentation, and Issues smoke coverage.
 - Added wheel license expression and license file metadata guards.
 - Added canonical `svgraph.model` explicit exports and guards against legacy IR aliases leaking from the model surface.
+- Removed legacy distribution fallback from canonical `svgraph` distribution version lookup.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
 - Added deprecation warnings that point retained legacy executable aliases to their canonical `svgraph` commands.

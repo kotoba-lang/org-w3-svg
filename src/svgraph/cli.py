@@ -79,10 +79,7 @@ def _package_version() -> str:
         source_tree_version = _source_tree_version()
         if source_tree_version is not None:
             return source_tree_version
-        try:
-            return version("drawingml-svg")
-        except PackageNotFoundError:
-            return "0+unknown"
+        return "0+unknown"
 
 
 def _source_tree_version() -> str | None:

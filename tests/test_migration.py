@@ -403,8 +403,8 @@ def test_module_execution_is_canonical_svgraph_entry_point() -> None:
     assert "python -m svgraph --version" in readme
     assert "python -m svgraph --version" in migration
     assert 'version("svgraph")' in cli_source
+    assert 'version("drawingml-svg")' not in cli_source
     assert 'project.get("name") != "svgraph"' in cli_source
-    assert '"drawingml-svg"' in cli_source
     assert "python -m drawingml_svg" not in readme
     assert "python -m drawingml_svg" not in migration
 
@@ -982,6 +982,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "release package metadata URLs for Homepage, Repository, Documentation, and Issues",
         "wheel license expression and license file metadata",
         "canonical `svgraph.model` explicit exports",
+        "canonical `svgraph` distribution version lookup",
     ]:
         assert expected in changelog
 
