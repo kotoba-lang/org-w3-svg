@@ -350,6 +350,7 @@ type SvgStyle = {
   markerStart?: boolean;
   markerEnd?: boolean;
   clipPath?: string | null;
+  overflow?: string | null;
   transform?: string | null;
   transformOrigin?: string | null;
   vectorEffect?: string | null;
@@ -535,6 +536,9 @@ line</text>
     <use id="context-paint-use" href="#context-badge" x="455" y="600" width="80" height="40" fill="#123456" stroke="#abcdef"/>
     <svg id="nested-viewbox" x="610" y="385" width="80" height="40" viewBox="0 0 20 10" preserveAspectRatio="none">
       <rect x="50%" y="50%" width="25%" height="50%" fill="#0f766e" stroke="#064e3b" stroke-width="1"/>
+    </svg>
+    <svg id="nested-overflow" x="1120" y="610" width="80" height="40" viewBox="0 0 20 10" overflow="hidden">
+      <rect id="nested-overflow-rect" x="-5" y="-5" width="30" height="20" fill="#fee2e2" stroke="#991b1b" stroke-width="1"/>
     </svg>
     <g transform="translate(90 390) scale(1.5)">
       <rect id="scaled" width="160" height="80" style="fill:#dbeafe;stroke:#2563eb"/>
@@ -871,7 +875,7 @@ function extractShapes(root: Element): Shape[] {
   const viewport = svgViewport(scopeRoot);
   const rootMatrix = localName(scopeRoot) === "svg" ? viewBoxMatrix(scopeRoot, renderedSvgViewport(scopeRoot, viewport)) : [1, 0, 0, 1, 0, 0] as Matrix;
   let nextId = 2;
-  const walk = (element: Element, matrix: Matrix, inheritedStyle: SvgStyle, refStack: Set<string>, currentViewport: Viewport) => {
+  const walk = (element: Element, matrix: Matrix, inheritedStyle: SvgStyle, refStack: Set<string>, currentViewport: Viewport, activeClip: Box | null = null) => {
     const tag = localName(element);
     if (tag === "metadata" || tag === "defs" || tag === "style") return;
     const ownStyle = computedStyle(element, inheritedStyle, css, refs, currentViewport);
@@ -879,9 +883,12 @@ function extractShapes(root: Element): Shape[] {
     const visibilityHidden = ownStyle.visibility === "hidden" || ownStyle.visibility === "collapse";
     let ownMatrix = multiply(matrix, styleTransformMatrix(element, ownStyle, currentViewport));
     let childViewport = currentViewport;
+    let childClip = activeClip;
     if (tag === "svg") {
       childViewport = renderedSvgViewport(element, currentViewport);
-      ownMatrix = multiply(multiply(ownMatrix, [1, 0, 0, 1, geom(element, "x", "x", currentViewport), geom(element, "y", "y", currentViewport)]), viewBoxMatrix(element, childViewport));
+      const positionedMatrix = multiply(ownMatrix, [1, 0, 0, 1, geom(element, "x", "x", currentViewport), geom(element, "y", "y", currentViewport)]);
+      childClip = combineClips(activeClip, svgViewportClip(element, ownStyle, positionedMatrix, childViewport));
+      ownMatrix = multiply(positionedMatrix, viewBoxMatrix(element, childViewport));
     }
     if (tag === "use") {
       const href = element.getAttribute("href") || element.getAttribute("xlink:href") || "";
@@ -894,13 +901,13 @@ function extractShapes(root: Element): Shape[] {
           refViewport = useViewport(ref, element, currentViewport);
           useMatrix = multiply(useMatrix, viewBoxMatrix(ref, refViewport, element.getAttribute("preserveAspectRatio")));
         }
-        walk(ref, useMatrix, ownStyle, new Set([...refStack, refId]), refViewport);
+        walk(ref, useMatrix, ownStyle, new Set([...refStack, refId]), refViewport, activeClip);
       }
       return;
     }
     if (tag === "switch") {
       const selected = switchSelectedChild(element);
-      if (selected) walk(selected, ownMatrix, ownStyle, refStack, childViewport);
+      if (selected) walk(selected, ownMatrix, ownStyle, refStack, childViewport, childClip);
       return;
     }
     if (!visibilityHidden && tag === "g" && (element.getAttribute("data-kind") === "table" || element.getAttribute("data-role") === "table")) {
@@ -920,13 +927,13 @@ function extractShapes(root: Element): Shape[] {
       return;
     }
     const rawShape = tag === "svg" || visibilityHidden ? null : elementToShape(element, ownMatrix, ownStyle, nextId, childViewport);
-    const clip = rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport);
+    const clip = combineClips(activeClip, rectClipBounds(rawShape, ownStyle, refs, ownMatrix, childViewport));
     const shape = applyClip(rawShape, clip);
     if (shape) {
       shapes.push(shape);
       nextId += 1;
     }
-    for (const child of Array.from(element.children)) walk(child, ownMatrix, ownStyle, refStack, childViewport);
+    for (const child of Array.from(element.children)) walk(child, ownMatrix, ownStyle, refStack, childViewport, childClip);
   };
   const baseStyle = scopeRoot === root ? {} : computedStyle(scopeRoot, {}, css, refs, viewport);
   const rootStyle = computedStyle(root, baseStyle, css, refs, viewport);
@@ -2082,6 +2089,17 @@ function rectClipBounds(shape: Shape | null, style: SvgStyle, refs: Map<string, 
   return box.width > 0 && box.height > 0 ? box : null;
 }
 
+function svgViewportClip(element: Element, style: SvgStyle, positionedMatrix: Matrix, viewport: Viewport): Box | null {
+  if (style.overflow !== "hidden") return null;
+  const box = transformedBox(positionedMatrix, 0, 0, viewport.width, viewport.height);
+  return box.width > 0 && box.height > 0 ? box : null;
+}
+
+function combineClips(a: Box | null, b: Box | null): Box | null {
+  if (a && b) return intersectBox(a, b);
+  return a ?? b;
+}
+
 function clipTargetBox(shape: Shape | null): Box | null {
   if (!shape) return null;
   if (shape.kind === "rect" || shape.kind === "ellipse" || shape.kind === "text" || shape.kind === "image") {
@@ -2903,6 +2921,7 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   const direction = value("direction");
   const pathLength = declarations.pathLength ?? null;
   const clipPath = value("clip-path");
+  const overflow = value("overflow");
   const transform = value("transform");
   const transformOrigin = value("transform-origin");
   const vectorEffect = value("vector-effect");
@@ -2967,6 +2986,7 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   if (direction != null) next.direction = normalizeTextDirection(direction);
   if (pathLength != null) next.pathLength = normalizePathLength(pathLength);
   if (clipPath != null) next.clipPath = clipPath.trim();
+  if (overflow != null) next.overflow = normalizeOverflow(overflow);
   if (transform != null) next.transform = transform.trim();
   if (transformOrigin != null) next.transformOrigin = transformOrigin.trim();
   if (vectorEffect != null) next.vectorEffect = normalizeVectorEffect(vectorEffect);
@@ -3186,6 +3206,8 @@ function cssValueFromStyle(style: SvgStyle, name: string): string | null {
       return style.direction ?? null;
     case "pathLength":
       return style.pathLength == null ? null : String(style.pathLength);
+    case "overflow":
+      return style.overflow ?? null;
     case "transform":
       return style.transform ?? null;
     case "transform-origin":
@@ -3696,6 +3718,11 @@ function normalizeVisibility(value: string): string | null {
   if (normalized === "hidden" || normalized === "collapse") return normalized;
   if (normalized === "visible") return "visible";
   return null;
+}
+
+function normalizeOverflow(value: string): string | null {
+  const normalized = value.trim().toLowerCase().split(/\s+/).join(" ");
+  return ["hidden", "clip", "scroll", "auto"].includes(normalized) ? "hidden" : normalized === "visible" ? "visible" : null;
 }
 
 function normalizeStrokeDasharray(value: string, basis = rootFontSize): string | null {
