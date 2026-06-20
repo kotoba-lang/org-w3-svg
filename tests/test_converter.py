@@ -153,6 +153,18 @@ def test_readme_project_links_point_to_packaged_docs() -> None:
         assert f"include {doc}" in manifest
 
 
+def test_readme_python_examples_use_canonical_svgraph_imports() -> None:
+    readme = (_project_root() / "README.md").read_text(encoding="utf-8")
+    python_blocks = re.findall(r"```python\n(.*?)\n```", readme, flags=re.S)
+
+    assert python_blocks
+    assert any("from svgraph import" in block for block in python_blocks)
+    for block in python_blocks:
+        compile(block, "README.md python example", "exec")
+        assert "from " + "drawingml_svg" not in block
+        assert "import " + "drawingml_svg" not in block
+
+
 def test_examples_use_canonical_svgraph_package_and_artifact_names() -> None:
     make_pptx = (_project_root() / "examples" / "make_pptx.py").read_text(encoding="utf-8")
 
