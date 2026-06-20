@@ -14,6 +14,37 @@ from svgraph.cli import main as cli_main
 from svgraph.model import svg_svgraph_presentation_to_json, svg_svgraph_to_json
 
 
+def test_svgraph_model_exports_only_canonical_svgraph_surface() -> None:
+    import svgraph.model
+
+    assert svgraph.model.__all__ == [
+        "SVGraphDependency",
+        "SVGraphDocument",
+        "SVGraphGuide",
+        "SVGraphNode",
+        "SVGraphPackagePart",
+        "SVGraphPresentation",
+        "SVGraphRuler",
+        "SVGraphSlide",
+        "SVGraphTemplate",
+        "SVGraphTextStyle",
+        "svg_svgraph_presentation_to_json",
+        "svg_svgraph_to_json",
+        "svg_to_svgraph",
+        "svg_to_svgraph_presentation",
+    ]
+    for legacy_name in [
+        "SvgIRDocument",
+        "SvgIRNode",
+        "SvgIRPresentation",
+        "svg_ir_to_json",
+        "svg_pptx_ir_to_json",
+        "svg_to_ir",
+        "svg_to_pptx_ir",
+    ]:
+        assert legacy_name not in svgraph.model.__all__
+
+
 def test_svgraph_package_is_canonical_api_surface() -> None:
     assert svgraph_package.svg_to_svgraph is svg_to_svgraph
     assert svgraph_package.svg_to_svgraph_presentation is svg_to_svgraph_presentation

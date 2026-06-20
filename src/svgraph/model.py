@@ -113,6 +113,24 @@ class SVGraphTextStyle:
     node_id: str | None = None
 
 
+__all__ = [
+    "SVGraphDependency",
+    "SVGraphDocument",
+    "SVGraphGuide",
+    "SVGraphNode",
+    "SVGraphPackagePart",
+    "SVGraphPresentation",
+    "SVGraphRuler",
+    "SVGraphSlide",
+    "SVGraphTemplate",
+    "SVGraphTextStyle",
+    "svg_svgraph_presentation_to_json",
+    "svg_svgraph_to_json",
+    "svg_to_svgraph",
+    "svg_to_svgraph_presentation",
+]
+
+
 def svg_to_svgraph(svg_text: str) -> SVGraphDocument:
     """Parse SVG into SVGraph, the metadata-preserving SVG graph model."""
     root = ET.fromstring(svg_text)

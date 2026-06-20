@@ -981,6 +981,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "published Pages title, description, Open Graph, and Twitter metadata",
         "release package metadata URLs for Homepage, Repository, Documentation, and Issues",
         "wheel license expression and license file metadata",
+        "canonical `svgraph.model` explicit exports",
     ]:
         assert expected in changelog
 
@@ -1014,6 +1015,7 @@ def test_drawingml_svg_modules_are_compatibility_wrappers() -> None:
 def test_legacy_ir_module_keeps_only_pre_svgraph_alias_exports() -> None:
     root = Path(__file__).resolve().parents[1]
     source = (root / "src" / "drawingml_svg" / "ir.py").read_text(encoding="utf-8")
+    model_source = (root / "src" / "svgraph" / "model.py").read_text(encoding="utf-8")
     migration = (root / "MIGRATION.md").read_text(encoding="utf-8")
 
     assert _literal_all(source) == [
@@ -1041,6 +1043,30 @@ def test_legacy_ir_module_keeps_only_pre_svgraph_alias_exports() -> None:
         "svg_svgraph_presentation_to_json",
     ]:
         assert f'"{unexpected}"' not in source
+    assert _literal_all(model_source) == [
+        "SVGraphDependency",
+        "SVGraphDocument",
+        "SVGraphGuide",
+        "SVGraphNode",
+        "SVGraphPackagePart",
+        "SVGraphPresentation",
+        "SVGraphRuler",
+        "SVGraphSlide",
+        "SVGraphTemplate",
+        "SVGraphTextStyle",
+        "svg_svgraph_presentation_to_json",
+        "svg_svgraph_to_json",
+        "svg_to_svgraph",
+        "svg_to_svgraph_presentation",
+    ]
+    for legacy_name in [
+        "SvgIRDocument",
+        "svg_ir_to_json",
+        "svg_pptx_ir_to_json",
+        "svg_to_ir",
+        "svg_to_pptx_ir",
+    ]:
+        assert f'"{legacy_name}"' not in model_source
     assert '_warn_legacy("svg_to_ir()", "svgraph.model.svg_to_svgraph()")' in source
     assert '_warn_legacy("svg_to_pptx_ir()", "svgraph.model.svg_to_svgraph_presentation()")' in source
     assert "legacy `drawingml_svg.ir` module intentionally exports only pre-SVGraph `SvgIR*` aliases" in migration
