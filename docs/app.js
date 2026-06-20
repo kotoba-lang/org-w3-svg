@@ -90,6 +90,16 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
         </table>
       </body>
     </foreignObject>
+    <foreignObject id="alpha-html-table" x="90" y="465" width="360" height="90">
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <table>
+          <tr>
+            <td style="background-color:rgba(37,99,235,0.5)">RGBA</td>
+            <td style="background:#dc262680">Hex alpha</td>
+          </tr>
+        </table>
+      </body>
+    </foreignObject>
   </g>
   <g id="coverage-slide" data-kind="slide" data-title="Browser SVG Coverage" style="stroke:#334155;stroke-width:4;fill:#fde68a">
     <defs>
@@ -764,6 +774,7 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = [], viewport = 
             width: geom(rect, "width", "x", viewport),
             height: geom(rect, "height", "y", viewport),
             fill: style.fill ?? "#ffffff",
+            fillAlpha: style.fillAlpha ?? null,
             ...tableCellStyle(style, false),
         };
     });
@@ -781,6 +792,7 @@ function tableFromGroup(group, matrix, id, inheritedStyle, css = [], viewport = 
         text: cell.text,
         runs: [],
         fill: cell.fill,
+        fillAlpha: cell.fillAlpha,
         textFill: cell.textFill,
         textBold: cell.textBold,
         textAlign: cell.textAlign,
@@ -865,7 +877,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
             }
             const style = htmlTableCellStyle(cellElement, table, inheritedStyle, css);
             const runs = htmlTextRuns(cellElement, style, css);
-            const fill = htmlTableCellFill(cellElement, table, columnBackgrounds[column] ?? [], css) ?? style.fill ?? "#ffffff";
+            const fill = htmlTableCellFill(cellElement, table, columnBackgrounds[column] ?? [], css) ?? { color: style.fill ?? "#ffffff", alpha: style.fillAlpha ?? null };
             cells.push({
                 row: spaced ? rowIndex * 2 + 1 : rowIndex,
                 col: spaced ? column * 2 + 1 : column,
@@ -873,7 +885,8 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
                 rowSpan,
                 text: runs.length ? runs.map((run) => run.text).join("") : htmlCellText(cellElement),
                 runs,
-                fill,
+                fill: fill.color,
+                fillAlpha: fill.alpha,
                 ...tableCellStyle(style, localName(cellElement) === "th"),
             });
             column += colSpan;
@@ -971,6 +984,7 @@ function htmlTableSpacerCells(columnCount, rowCount, dataCells, tableStyle) {
                 text: "",
                 runs: [],
                 fill,
+                fillAlpha: tableStyle.fillAlpha ?? null,
                 ...tableCellStyle(spacerStyle, false),
             });
         }
@@ -1170,7 +1184,8 @@ function htmlAncestorsBetween(root, element) {
 function htmlElementBackgroundFill(element, css) {
     const declarations = resolvedCascadedDeclarations(element, css, {}, htmlAttributeAliases(element));
     const background = declarations["background-color"] ?? declarations["background"] ?? element.getAttribute("bgcolor");
-    return parseCssColor(background, {}) ?? null;
+    const color = parseCssColor(background, {});
+    return color == null ? null : { color, alpha: cssColorAlpha(background) };
 }
 function htmlTableRowHeights(rows, height) {
     const explicit = rows.map((row) => htmlCssLength(htmlStyleValue(row, "height") ?? row.getAttribute("height"), height));
@@ -2114,7 +2129,7 @@ function tableXml(shape) {
             const origin = Boolean(cell && cell.row === rowIndex && cell.col === colIndex);
             const text = origin && cell?.text ? tableCellTextXml(cell) : "";
             const borders = origin ? tableBorderXml(cell) : "";
-            return `<a:tc${attrs}><a:txBody>${tableCellBodyPrXml(cell)}<a:lstStyle/><a:p>${tableCellParagraphPrXml(cell)}${text}</a:p></a:txBody><a:tcPr>${fillXml(cell?.fill || "#ffffff")}${borders}</a:tcPr></a:tc>`;
+            return `<a:tc${attrs}><a:txBody>${tableCellBodyPrXml(cell)}<a:lstStyle/><a:p>${tableCellParagraphPrXml(cell)}${text}</a:p></a:txBody><a:tcPr>${fillXml(cell?.fill || "#ffffff", cell?.fillAlpha ?? null)}${borders}</a:tcPr></a:tc>`;
         })
             .join("");
         return `<a:tr h="${emu(height)}">${cells}</a:tr>`;

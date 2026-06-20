@@ -282,6 +282,7 @@ type TableCell = {
   text: string;
   runs: TextRun[];
   fill: string | null;
+  fillAlpha: number | null;
   textFill: string | null;
   textBold: boolean;
   textAlign: string | null;
@@ -307,6 +308,11 @@ type TableBorder = {
   strokeMiterlimit: number | null;
   strokeDasharray: string | null;
   compound: string | null;
+};
+
+type HtmlFill = {
+  color: string;
+  alpha: number | null;
 };
 
 type Matrix = [number, number, number, number, number, number];
@@ -473,6 +479,16 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
           <tr>
             <td>Aligned</td>
             <td>Frame</td>
+          </tr>
+        </table>
+      </body>
+    </foreignObject>
+    <foreignObject id="alpha-html-table" x="90" y="465" width="360" height="90">
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <table>
+          <tr>
+            <td style="background-color:rgba(37,99,235,0.5)">RGBA</td>
+            <td style="background:#dc262680">Hex alpha</td>
           </tr>
         </table>
       </body>
@@ -1178,6 +1194,7 @@ function tableFromGroup(group: Element, matrix: Matrix, id: number, inheritedSty
       width: geom(rect, "width", "x", viewport),
       height: geom(rect, "height", "y", viewport),
       fill: style.fill ?? "#ffffff",
+      fillAlpha: style.fillAlpha ?? null,
       ...tableCellStyle(style, false),
     };
   });
@@ -1194,6 +1211,7 @@ function tableFromGroup(group: Element, matrix: Matrix, id: number, inheritedSty
     text: cell.text,
     runs: [],
     fill: cell.fill,
+    fillAlpha: cell.fillAlpha,
     textFill: cell.textFill,
     textBold: cell.textBold,
     textAlign: cell.textAlign,
@@ -1272,7 +1290,7 @@ function shapesFromForeignObject(element: Element, matrix: Matrix, id: number, i
       }
       const style = htmlTableCellStyle(cellElement, table, inheritedStyle, css);
       const runs = htmlTextRuns(cellElement, style, css);
-      const fill = htmlTableCellFill(cellElement, table, columnBackgrounds[column] ?? [], css) ?? style.fill ?? "#ffffff";
+      const fill = htmlTableCellFill(cellElement, table, columnBackgrounds[column] ?? [], css) ?? { color: style.fill ?? "#ffffff", alpha: style.fillAlpha ?? null };
       cells.push({
         row: spaced ? rowIndex * 2 + 1 : rowIndex,
         col: spaced ? column * 2 + 1 : column,
@@ -1280,7 +1298,8 @@ function shapesFromForeignObject(element: Element, matrix: Matrix, id: number, i
         rowSpan,
         text: runs.length ? runs.map((run) => run.text).join("") : htmlCellText(cellElement),
         runs,
-        fill,
+        fill: fill.color,
+        fillAlpha: fill.alpha,
         ...tableCellStyle(style, localName(cellElement) === "th"),
       });
       column += colSpan;
@@ -1304,7 +1323,7 @@ function shapesFromForeignObject(element: Element, matrix: Matrix, id: number, i
   return captionBottom ? [tableShape, captionShape] : [captionShape, tableShape];
 }
 
-function tableCellStyle(style: SvgStyle, header: boolean): Omit<TableCell, "row" | "col" | "colSpan" | "rowSpan" | "text" | "runs" | "fill"> {
+function tableCellStyle(style: SvgStyle, header: boolean): Omit<TableCell, "row" | "col" | "colSpan" | "rowSpan" | "text" | "runs" | "fill" | "fillAlpha"> {
   const border = tableBorderFromStyle(style);
   return {
     textFill: style.color ?? style.fill ?? "#111827",
@@ -1379,6 +1398,7 @@ function htmlTableSpacerCells(columnCount: number, rowCount: number, dataCells: 
         text: "",
         runs: [],
         fill,
+        fillAlpha: tableStyle.fillAlpha ?? null,
         ...tableCellStyle(spacerStyle, false),
       });
     }
@@ -1522,8 +1542,8 @@ function htmlMarginShorthandSide(value: string | null, side: "top" | "right" | "
   return { top, right, bottom, left }[side] ?? null;
 }
 
-function htmlTableColumnBackgrounds(table: Element, count: number, css: CssRule[]): string[][] {
-  const backgrounds: string[][] = [];
+function htmlTableColumnBackgrounds(table: Element, count: number, css: CssRule[]): HtmlFill[][] {
+  const backgrounds: HtmlFill[][] = [];
   for (const child of Array.from(table.children)) {
     const tag = localName(child);
     const colgroupFill = tag === "colgroup" ? htmlElementBackgroundFill(child, css) : null;
@@ -1531,7 +1551,7 @@ function htmlTableColumnBackgrounds(table: Element, count: number, css: CssRule[
       ? Array.from(child.children).filter((item) => localName(item) === "col")
       : tag === "col" ? [child] : [];
     for (const col of cols) {
-      const layers = [htmlElementBackgroundFill(col, css), colgroupFill].filter((item): item is string => item != null);
+      const layers = [htmlElementBackgroundFill(col, css), colgroupFill].filter((item): item is HtmlFill => item != null);
       const span = Math.max(1, htmlSpan(col, "span"));
       for (let index = 0; index < span; index += 1) backgrounds.push(layers);
       if (backgrounds.length >= count) break;
@@ -1542,7 +1562,7 @@ function htmlTableColumnBackgrounds(table: Element, count: number, css: CssRule[
   return backgrounds.slice(0, count);
 }
 
-function htmlTableCellFill(cell: Element, table: Element, columnBackgrounds: string[], css: CssRule[]): string | null {
+function htmlTableCellFill(cell: Element, table: Element, columnBackgrounds: HtmlFill[], css: CssRule[]): HtmlFill | null {
   const ancestors = htmlAncestorsBetween(table, cell);
   const row = findLastElement(ancestors, (item) => localName(item) === "tr");
   const rowGroup = findLastElement(ancestors, (item) => ["thead", "tbody", "tfoot"].includes(localName(item)));
@@ -1553,7 +1573,7 @@ function htmlTableCellFill(cell: Element, table: Element, columnBackgrounds: str
     ...columnBackgrounds,
     htmlElementBackgroundFill(table, css),
   ];
-  return candidates.find((item): item is string => item != null) ?? null;
+  return candidates.find((item): item is HtmlFill => item != null) ?? null;
 }
 
 function findLastElement(items: Element[], predicate: (item: Element) => boolean): Element | null {
@@ -1574,10 +1594,11 @@ function htmlAncestorsBetween(root: Element, element: Element): Element[] {
   return ancestors;
 }
 
-function htmlElementBackgroundFill(element: Element, css: CssRule[]): string | null {
+function htmlElementBackgroundFill(element: Element, css: CssRule[]): HtmlFill | null {
   const declarations = resolvedCascadedDeclarations(element, css, {}, htmlAttributeAliases(element));
   const background = declarations["background-color"] ?? declarations["background"] ?? element.getAttribute("bgcolor");
-  return parseCssColor(background, {}) ?? null;
+  const color = parseCssColor(background, {});
+  return color == null ? null : { color, alpha: cssColorAlpha(background) };
 }
 
 function htmlTableRowHeights(rows: Element[], height: number): number[] {
@@ -2458,7 +2479,7 @@ function tableXml(shape: TableShape): string {
           const origin = Boolean(cell && cell.row === rowIndex && cell.col === colIndex);
           const text = origin && cell?.text ? tableCellTextXml(cell) : "";
           const borders = origin ? tableBorderXml(cell) : "";
-          return `<a:tc${attrs}><a:txBody>${tableCellBodyPrXml(cell)}<a:lstStyle/><a:p>${tableCellParagraphPrXml(cell)}${text}</a:p></a:txBody><a:tcPr>${fillXml(cell?.fill || "#ffffff")}${borders}</a:tcPr></a:tc>`;
+          return `<a:tc${attrs}><a:txBody>${tableCellBodyPrXml(cell)}<a:lstStyle/><a:p>${tableCellParagraphPrXml(cell)}${text}</a:p></a:txBody><a:tcPr>${fillXml(cell?.fill || "#ffffff", cell?.fillAlpha ?? null)}${borders}</a:tcPr></a:tc>`;
         })
         .join("");
       return `<a:tr h="${emu(height)}">${cells}</a:tr>`;
