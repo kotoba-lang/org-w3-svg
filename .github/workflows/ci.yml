@@ -222,6 +222,8 @@ jobs:
           assert "Name: svgraph" in wheel_metadata
           assert "Summary: Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing." in wheel_metadata
           assert "Keywords: drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter" in wheel_metadata
+          assert "License-Expression: MIT" in wheel_metadata
+          assert "License-File: LICENSE" in wheel_metadata
           assert "Project-URL: Homepage, https://github.com/com-junkawasaki/svgraph" in wheel_metadata
           assert "Project-URL: Repository, https://github.com/com-junkawasaki/svgraph" in wheel_metadata
           assert "Project-URL: Documentation, https://com-junkawasaki.github.io/svgraph/" in wheel_metadata

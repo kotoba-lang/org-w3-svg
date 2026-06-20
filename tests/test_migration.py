@@ -513,6 +513,8 @@ def test_generated_distribution_metadata_preserves_legacy_compatibility_entry_po
         "and browser-only web editing."
     )
     assert metadata["Keywords"] == "drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter"
+    assert metadata["License-Expression"] == "MIT"
+    assert "LICENSE" in metadata.get_all("License-File")
     assert "Documentation, https://com-junkawasaki.github.io/svgraph/" in metadata.get_all("Project-URL")
     assert "drawingml-svg = svgraph.cli:main" in entry_point_text
     assert "drawingml-svg-analyze = svgraph.cli:main" in entry_point_text
@@ -612,6 +614,8 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
             "PresentationML/PPTX, and browser-only web editing."
         ) in source
         assert "Keywords: drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter" in source
+        assert "License-Expression: MIT" in source
+        assert "License-File: LICENSE" in source
         assert "Project-URL: Homepage, https://github.com/com-junkawasaki/svgraph" in source
         assert "Project-URL: Repository, https://github.com/com-junkawasaki/svgraph" in source
         assert "Project-URL: Documentation, https://com-junkawasaki.github.io/svgraph/" in source
@@ -976,6 +980,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "public repository description, MIT license metadata, and SVGraph topics",
         "published Pages title, description, Open Graph, and Twitter metadata",
         "release package metadata URLs for Homepage, Repository, Documentation, and Issues",
+        "wheel license expression and license file metadata",
     ]:
         assert expected in changelog
 

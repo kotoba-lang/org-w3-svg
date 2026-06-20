@@ -184,6 +184,8 @@ def test_generated_distribution_metadata_preserves_svgraph_identity(tmp_path) ->
         "and browser-only web editing."
     )
     assert metadata["Keywords"] == "drawingml,svg,svgraph,presentationml,ooxml,pptx,web,converter"
+    assert metadata["License-Expression"] == "MIT"
+    assert "LICENSE" in metadata.get_all("License-File")
     assert "Documentation, https://com-junkawasaki.github.io/svgraph/" in metadata.get_all("Project-URL")
     assert "svgraph = svgraph.cli:main" in entry_point_text
     assert "svgraph" in top_level_names
