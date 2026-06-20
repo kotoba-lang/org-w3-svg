@@ -31,7 +31,7 @@ The GitHub Pages editor runs a TypeScript converter entirely in the browser:
 
 - `web/app.ts` builds SVG IR, PPTXSVG package IR, PresentationML slide XML, and a `.pptx` ZIP without Python or server APIs.
 - `docs/app.js` is the compiled Pages artifact.
-- Current browser export coverage is still narrower than the Python converter, but supports `rect`, `circle`/`ellipse`, `line`, `polygon`, `polyline`, basic `M/L/H/V/Z` paths as custom geometry, embedded data URI images, marker arrows, `defs`/local `use` expansion, simple `<style>` selector rules, `text`, inline `style`/basic inherited paint and text styles, basic `matrix`/`translate`/`scale`/`rotate` transforms, PPTXSVG multi-slide groups, semantic relation connectors, and semantic table groups as native PowerPoint tables.
+- Current browser export coverage is still narrower than the Python converter, but supports `rect`, `circle`/`ellipse`, `line`, `polygon`, `polyline`, `M/L/H/V/Z` plus quadratic/cubic `Q/T/C/S` paths as custom geometry, embedded data URI images, marker arrows, `defs`/local `use` expansion, simple `<style>` selector rules, `text`, inline `style`/basic inherited paint and text styles, basic `matrix`/`translate`/`scale`/`rotate` transforms, PPTXSVG multi-slide groups, semantic relation connectors, and semantic table groups as native PowerPoint tables.
 
 ```bash
 npm ci

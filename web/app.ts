@@ -250,6 +250,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <polygon id="tri" points="120,170 300,170 210,315"/>
     <polyline id="zig" points="390,170 460,250 530,170 600,250" style="fill:none;stroke:#dc2626"/>
     <path id="box-path" d="M 690 170 L 900 170 L 900 315 L 690 315 Z" style="fill:#dcfce7;stroke:#15803d"/>
+    <path id="curve-path" d="M 120 520 C 190 430 260 610 330 520 Q 390 445 450 520 T 570 520" style="fill:none;stroke:#ea580c;stroke-width:6"/>
     <line id="marked-line" x1="980" y1="185" x2="1130" y2="260" style="stroke:#7c3aed;stroke-width:8;marker-end:url(#arrow)"/>
     <image id="pixel" x="980" y="340" width="96" height="96" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
     <circle class="css-circle" cx="1130" cy="388" r="48"/>
@@ -1342,17 +1343,30 @@ function parsePoints(value: string): [number, number][] {
 }
 
 function parseBasicPath(value: string, matrix: Matrix): { points: [number, number][]; closed: boolean } | null {
-  const tokens = value.match(/[MmLlHhVvZz]|[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[eE][-+]?\d+)?/g) || [];
+  const tokens = value.match(/[MmLlHhVvCcSsQqTtZz]|[-+]?(?:(?:\d*\.\d+)|(?:\d+\.?))(?:[eE][-+]?\d+)?/g) || [];
   const points: [number, number][] = [];
   let command = "";
   let index = 0;
   let x = 0;
   let y = 0;
   let start: [number, number] | null = null;
+  let lastCubicControl: [number, number] | null = null;
+  let lastQuadControl: [number, number] | null = null;
   let closed = false;
   const nextNumber = () => {
     const token = tokens[index++];
     return token == null ? null : Number(token);
+  };
+  const nextPoint = (relative: boolean): [number, number] | null => {
+    const nx = nextNumber();
+    const ny = nextNumber();
+    if (nx == null || ny == null || !Number.isFinite(nx) || !Number.isFinite(ny)) return null;
+    return relative ? [x + nx, y + ny] : [nx, ny];
+  };
+  const pushPoint = (raw: [number, number]) => {
+    const transformed = point(matrix, raw[0], raw[1]);
+    if (!start) start = transformed;
+    points.push(transformed);
   };
   while (index < tokens.length) {
     const token = tokens[index]!;
@@ -1360,7 +1374,7 @@ function parseBasicPath(value: string, matrix: Matrix): { points: [number, numbe
       command = token;
       index += 1;
     }
-    if (!/[MmLlHhVvZz]/.test(command)) return null;
+    if (!/[MmLlHhVvCcSsQqTtZz]/.test(command)) return null;
     if (command === "Z" || command === "z") {
       closed = true;
       if (start) points.push(start);
@@ -1370,29 +1384,88 @@ function parseBasicPath(value: string, matrix: Matrix): { points: [number, numbe
       const nx = nextNumber();
       if (nx == null) return null;
       x = command === "h" ? x + nx : nx;
+      pushPoint([x, y]);
+      lastCubicControl = null;
+      lastQuadControl = null;
     } else if (command === "V" || command === "v") {
       const ny = nextNumber();
       if (ny == null) return null;
       y = command === "v" ? y + ny : ny;
-    } else {
-      const nx = nextNumber();
-      const ny = nextNumber();
-      if (nx == null || ny == null) return null;
-      if (command === "m" || command === "l") {
-        x += nx;
-        y += ny;
-      } else {
-        x = nx;
-        y = ny;
-      }
+      pushPoint([x, y]);
+      lastCubicControl = null;
+      lastQuadControl = null;
+    } else if (command === "M" || command === "m" || command === "L" || command === "l") {
+      const next = nextPoint(command === "m" || command === "l");
+      if (!next) return null;
+      [x, y] = next;
+      pushPoint([x, y]);
       if (command === "M") command = "L";
       if (command === "m") command = "l";
+      lastCubicControl = null;
+      lastQuadControl = null;
+    } else if (command === "C" || command === "c") {
+      const c1 = nextPoint(command === "c");
+      const c2 = nextPoint(command === "c");
+      const end = nextPoint(command === "c");
+      if (!c1 || !c2 || !end) return null;
+      for (const curve of cubicPoints([x, y], c1, c2, end)) pushPoint(curve);
+      [x, y] = end;
+      lastCubicControl = c2;
+      lastQuadControl = null;
+    } else if (command === "S" || command === "s") {
+      const c1: [number, number] = lastCubicControl ? [x * 2 - lastCubicControl[0], y * 2 - lastCubicControl[1]] : [x, y];
+      const c2 = nextPoint(command === "s");
+      const end = nextPoint(command === "s");
+      if (!c2 || !end) return null;
+      for (const curve of cubicPoints([x, y], c1, c2, end)) pushPoint(curve);
+      [x, y] = end;
+      lastCubicControl = c2;
+      lastQuadControl = null;
+    } else if (command === "Q" || command === "q") {
+      const control = nextPoint(command === "q");
+      const end = nextPoint(command === "q");
+      if (!control || !end) return null;
+      for (const curve of quadraticPoints([x, y], control, end)) pushPoint(curve);
+      [x, y] = end;
+      lastQuadControl = control;
+      lastCubicControl = null;
+    } else if (command === "T" || command === "t") {
+      const control: [number, number] = lastQuadControl ? [x * 2 - lastQuadControl[0], y * 2 - lastQuadControl[1]] : [x, y];
+      const end = nextPoint(command === "t");
+      if (!end) return null;
+      for (const curve of quadraticPoints([x, y], control, end)) pushPoint(curve);
+      [x, y] = end;
+      lastQuadControl = control;
+      lastCubicControl = null;
     }
-    const transformed = point(matrix, x, y);
-    if (!start) start = transformed;
-    points.push(transformed);
   }
   return points.length >= 2 ? { points, closed } : null;
+}
+
+function cubicPoints(start: [number, number], c1: [number, number], c2: [number, number], end: [number, number]): [number, number][] {
+  const points: [number, number][] = [];
+  for (let step = 1; step <= 12; step += 1) {
+    const t = step / 12;
+    const u = 1 - t;
+    points.push([
+      u ** 3 * start[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * end[0],
+      u ** 3 * start[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * end[1],
+    ]);
+  }
+  return points;
+}
+
+function quadraticPoints(start: [number, number], control: [number, number], end: [number, number]): [number, number][] {
+  const points: [number, number][] = [];
+  for (let step = 1; step <= 8; step += 1) {
+    const t = step / 8;
+    const u = 1 - t;
+    points.push([
+      u * u * start[0] + 2 * u * t * control[0] + t * t * end[0],
+      u * u * start[1] + 2 * u * t * control[1] + t * t * end[1],
+    ]);
+  }
+  return points;
 }
 
 function emu(value: number): number {

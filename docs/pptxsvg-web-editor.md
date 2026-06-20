@@ -16,7 +16,7 @@ Current implementation status:
 
 - `web/app.ts` is the TypeScript browser runtime.
 - GitHub Pages loads the compiled `docs/app.js`.
-- The browser can export `.pptx` without Python for the PPTXSVG MVP subset: multi-slide SVG groups, editable rect/ellipse/line/text shapes, polygon/polyline/basic path custom geometry, embedded data URI images, marker arrows, local `defs`/`use`, simple selector styles, inline style/inherited paint, basic transforms, relation connectors, and semantic tables.
+- The browser can export `.pptx` without Python for the PPTXSVG MVP subset: multi-slide SVG groups, editable rect/ellipse/line/text shapes, polygon/polyline/quadratic/cubic path custom geometry, embedded data URI images, marker arrows, local `defs`/`use`, simple selector styles, inline style/inherited paint, basic transforms, relation connectors, and semantic tables.
 - The Python converter remains the fuller reference implementation for complex SVG features such as paths, images, advanced CSS, clipping, markers, and richer table extraction.
 
 ## Product Shape
