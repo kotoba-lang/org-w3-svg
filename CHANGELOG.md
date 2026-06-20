@@ -15,7 +15,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.
 - Aligned release checklist source distribution checks with packaged SVGraph docs, governance files, examples, and browser editor sources.
 - Strengthened release and CI source distribution checks so `svgraph-web` and Python package versions stay synchronized.
-- Strengthened web editor artifact-name guards for SVGraph JSON, DrawingML XML, presentation JSON, and PPTX downloads.
+- Strengthened web editor artifact-name guards for SVG source, SVGraph JSON, DrawingML XML, presentation JSON, and PPTX downloads.
 - Strengthened wheel metadata regression coverage so canonical SVGraph distribution identity is verified from a freshly built wheel.
 - Strengthened compatibility entry point regression coverage so retained legacy aliases are verified from freshly built SVGraph wheel metadata.
 - Strengthened web package release guards so private package intent and MIT license metadata stay synchronized with the packaged lockfile.
@@ -48,6 +48,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added the SVGraph presentation package blueprint custom XML sidecar part.
 - Added browser Slides pane package blueprint preview for SVGraph presentation parts.
 - Added browser DrawingML fragment download using the same SVGraph web shape extraction used by PPTX export.
+- Added browser SVG source download so the editor can export the canonical source document directly.
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.

@@ -3713,6 +3713,9 @@ mustElement<HTMLButtonElement>("sampleBtn").addEventListener("click", () => {
   source.value = sampleSvg;
   render();
 });
+mustElement<HTMLButtonElement>("downloadSvgBtn").addEventListener("click", () => {
+  downloadBlob("svgraph-source.svg", new Blob([source.value], { type: "image/svg+xml;charset=utf-8" }));
+});
 mustElement<HTMLButtonElement>("downloadSVGraphBtn").addEventListener("click", () => {
   if (state.svgraph) downloadText("svgraph.json", JSON.stringify(state.svgraph, null, 2));
 });

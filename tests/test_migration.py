@@ -565,6 +565,7 @@ def test_release_checklist_smokes_published_svgraph_pages_site() -> None:
         '\'property="og:url" content="https://com-junkawasaki.github.io/svgraph/"\'',
         '\'name="twitter:title" content="SVGraph Editor"\'',
         '"https://com-junkawasaki.github.io/svgraph/"',
+        '"Download SVG"',
         '"Download SVGraph"',
         '"PPTX" + "SVG"',
         '"pptx" + "svg"',
@@ -885,11 +886,14 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert package_metadata["license"] == "MIT"
     assert lock_metadata["packages"][""]["license"] == package_metadata["license"]
     assert "<title>SVGraph Editor</title>" in html
+    assert 'id="downloadSvgBtn"' in html
     assert 'id="downloadSVGraphBtn"' in html
     assert 'id="downloadDrawingMlBtn"' in html
+    assert 'mustElement<HTMLButtonElement>("downloadSvgBtn")' in source
     assert 'mustElement<HTMLButtonElement>("downloadSVGraphBtn")' in source
     assert 'mustElement<HTMLButtonElement>("downloadDrawingMlBtn")' in source
     for generated in [source, app_js]:
+        assert 'downloadBlob("svgraph-source.svg"' in generated
         assert 'downloadText("svgraph.json"' in generated
         assert 'downloadBlob("svgraph-drawingml.xml"' in generated
         assert "function svgToDrawingMl" in generated
@@ -956,6 +960,7 @@ def test_pages_typescript_build_targets_committed_svgraph_artifact() -> None:
     assert tsconfig["include"] == ["web/**/*.ts"]
     assert '<script type="module" src="./app.js"></script>' in html
     assert 'version: "0.3-svgraph-web-ts"' in app_js
+    assert 'downloadBlob("svgraph-source.svg"' in app_js
     assert 'downloadBlob("svgraph-web.pptx"' in app_js
     assert 'downloadBlob("svgraph-drawingml.xml"' in app_js
 
@@ -1049,6 +1054,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "SVGraph presentation package blueprint custom XML sidecar part",
         "browser Slides pane package blueprint preview",
         "browser DrawingML fragment download",
+        "browser SVG source download",
         "web editor design package part schema documentation",
     ]:
         assert expected in changelog
