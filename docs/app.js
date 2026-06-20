@@ -124,6 +124,10 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     </switch>
     <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-dashoffset:5;stroke-linecap:round;stroke-linejoin:bevel"/>
+    <g id="scaled-stroke-group" transform="translate(320 640) scale(2)">
+      <line id="scaled-stroke" x1="0" y1="0" x2="50" y2="0" style="stroke:#7c3aed;stroke-width:3;stroke-dasharray:9 3"/>
+      <line id="non-scaling-stroke" x1="0" y1="18" x2="50" y2="18" style="stroke:#be185d;stroke-width:3;stroke-dasharray:9 3;vector-effect:non-scaling-stroke"/>
+    </g>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px;text-transform:none"> blue</tspan></text>
     <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;stroke:#ffffff;stroke-width:1;stroke-opacity:.5;text-anchor:middle;dominant-baseline:middle;text-decoration-line:underline;text-decoration-color:#dc2626;text-decoration-thickness:3px">Centered</text>
     <text id="preserve-text" x="90" y="355" xml:space="preserve" style="font-size:22;font-family:Arial;fill:#64748b">  padded  <tspan style="fill:#0f766e"> kept </tspan></text>
@@ -526,6 +530,7 @@ function elementToShape(element, matrix, style, id, viewport) {
     const tag = localName(element);
     const data = dataAttrs(attrs(element));
     const name = element.getAttribute("id") || tag;
+    const paintStyle = scaledStrokeStyle(style, strokeTransformScale(style, matrix));
     if (tag === "rect") {
         const box = transformedBox(matrix, geom(element, "x", "x", viewport), geom(element, "y", "y", viewport), geom(element, "width", "x", viewport), geom(element, "height", "y", viewport));
         return {
@@ -538,12 +543,12 @@ function elementToShape(element, matrix, style, id, viewport) {
             width: box.width,
             height: box.height,
             rx: geom(element, "rx", "x", viewport),
-            fill: style.fill ?? "#000000",
-            fillAlpha: style.fillAlpha ?? null,
-            stroke: style.stroke ?? null,
-            strokeAlpha: style.strokeAlpha ?? null,
-            strokeWidth: style.strokeWidth ?? 1,
-            ...strokeStyle(style),
+            fill: paintStyle.fill ?? "#000000",
+            fillAlpha: paintStyle.fillAlpha ?? null,
+            stroke: paintStyle.stroke ?? null,
+            strokeAlpha: paintStyle.strokeAlpha ?? null,
+            strokeWidth: paintStyle.strokeWidth ?? 1,
+            ...strokeStyle(paintStyle),
         };
     }
     if (tag === "circle" || tag === "ellipse") {
@@ -561,12 +566,12 @@ function elementToShape(element, matrix, style, id, viewport) {
             y: box.y,
             width: box.width,
             height: box.height,
-            fill: style.fill ?? "#000000",
-            fillAlpha: style.fillAlpha ?? null,
-            stroke: style.stroke ?? null,
-            strokeAlpha: style.strokeAlpha ?? null,
-            strokeWidth: style.strokeWidth ?? 1,
-            ...strokeStyle(style),
+            fill: paintStyle.fill ?? "#000000",
+            fillAlpha: paintStyle.fillAlpha ?? null,
+            stroke: paintStyle.stroke ?? null,
+            strokeAlpha: paintStyle.strokeAlpha ?? null,
+            strokeWidth: paintStyle.strokeWidth ?? 1,
+            ...strokeStyle(paintStyle),
         };
     }
     if (tag === "line") {
@@ -581,10 +586,10 @@ function elementToShape(element, matrix, style, id, viewport) {
             y1,
             x2,
             y2,
-            stroke: style.stroke ?? "#111827",
-            strokeAlpha: style.strokeAlpha ?? null,
-            strokeWidth: style.strokeWidth ?? 1,
-            ...strokeStyle(style),
+            stroke: paintStyle.stroke ?? "#111827",
+            strokeAlpha: paintStyle.strokeAlpha ?? null,
+            strokeWidth: paintStyle.strokeWidth ?? 1,
+            ...strokeStyle(paintStyle),
             relation: data.kind === "relation" || data.role === "relation",
             startId: null,
             endId: null,
@@ -596,7 +601,7 @@ function elementToShape(element, matrix, style, id, viewport) {
         const fontSize = style.fontSize ?? 18;
         const [textX, textY] = svgTextPosition(element, viewport);
         const [x, y] = point(matrix, textX, textY);
-        const runs = textRuns(element, style, viewport);
+        const runs = textRuns(element, paintStyle, viewport);
         const text = runs.map((run) => run.text).join("").trim();
         const width = Math.max(80, style.textLength ?? text.length * fontSize * 0.62 + wordSpacingExtra(style, text));
         const height = fontSize * 1.35;
@@ -613,11 +618,11 @@ function elementToShape(element, matrix, style, id, viewport) {
             width,
             height,
             text,
-            fill: style.fill ?? "#111827",
-            stroke: style.stroke ?? null,
-            strokeAlpha: style.strokeAlpha ?? null,
-            strokeWidth: style.strokeWidth ?? 1,
-            ...strokeStyle(style),
+            fill: paintStyle.fill ?? "#111827",
+            stroke: paintStyle.stroke ?? null,
+            strokeAlpha: paintStyle.strokeAlpha ?? null,
+            strokeWidth: paintStyle.strokeWidth ?? 1,
+            ...strokeStyle(paintStyle),
             fontSize,
             fontFamily: style.fontFamily || "Aptos",
             bold: ["bold", "700", "800", "900"].includes(style.fontWeight || ""),
@@ -647,12 +652,12 @@ function elementToShape(element, matrix, style, id, viewport) {
                 data,
                 points,
                 closed: tag === "polygon",
-                fill: tag === "polygon" ? (style.fill ?? "#000000") : null,
-                fillAlpha: tag === "polygon" ? (style.fillAlpha ?? null) : null,
-                stroke: style.stroke ?? "#111827",
-                strokeAlpha: style.strokeAlpha ?? null,
-                strokeWidth: style.strokeWidth ?? 1,
-                ...strokeStyle(style),
+                fill: tag === "polygon" ? (paintStyle.fill ?? "#000000") : null,
+                fillAlpha: tag === "polygon" ? (paintStyle.fillAlpha ?? null) : null,
+                stroke: paintStyle.stroke ?? "#111827",
+                strokeAlpha: paintStyle.strokeAlpha ?? null,
+                strokeWidth: paintStyle.strokeWidth ?? 1,
+                ...strokeStyle(paintStyle),
                 markerStart: style.markerStart ?? false,
                 markerEnd: style.markerEnd ?? false,
             };
@@ -668,12 +673,12 @@ function elementToShape(element, matrix, style, id, viewport) {
                 data,
                 points: parsed.points,
                 closed: parsed.closed,
-                fill: style.fill ?? (parsed.closed ? "#000000" : null),
-                fillAlpha: style.fill ? (style.fillAlpha ?? null) : parsed.closed ? (style.fillAlpha ?? null) : null,
-                stroke: style.stroke ?? "#111827",
-                strokeAlpha: style.strokeAlpha ?? null,
-                strokeWidth: style.strokeWidth ?? 1,
-                ...strokeStyle(style),
+                fill: paintStyle.fill ?? (parsed.closed ? "#000000" : null),
+                fillAlpha: paintStyle.fill ? (paintStyle.fillAlpha ?? null) : parsed.closed ? (paintStyle.fillAlpha ?? null) : null,
+                stroke: paintStyle.stroke ?? "#111827",
+                strokeAlpha: paintStyle.strokeAlpha ?? null,
+                strokeWidth: paintStyle.strokeWidth ?? 1,
+                ...strokeStyle(paintStyle),
                 markerStart: style.markerStart ?? false,
                 markerEnd: style.markerEnd ?? false,
             };
@@ -2524,6 +2529,7 @@ function computedStyle(element, inherited, css = [], refs = new Map(), viewport 
     const clipPath = value("clip-path");
     const transform = value("transform");
     const transformOrigin = value("transform-origin");
+    const vectorEffect = value("vector-effect");
     const marker = value("marker");
     const markerStart = value("marker-start");
     const markerEnd = value("marker-end");
@@ -2620,6 +2626,8 @@ function computedStyle(element, inherited, css = [], refs = new Map(), viewport 
         next.transform = transform.trim();
     if (transformOrigin != null)
         next.transformOrigin = transformOrigin.trim();
+    if (vectorEffect != null)
+        next.vectorEffect = normalizeVectorEffect(vectorEffect);
     if (marker != null) {
         const enabled = marker !== "none";
         next.markerStart = enabled;
@@ -2850,6 +2858,8 @@ function cssValueFromStyle(style, name) {
             return style.transform ?? null;
         case "transform-origin":
             return style.transformOrigin ?? null;
+        case "vector-effect":
+            return style.vectorEffect ?? null;
         case "padding":
             return style.tableCellPadding == null ? null : String(style.tableCellPadding);
         case "padding-left":
@@ -3278,6 +3288,37 @@ function strokeStyle(style) {
         strokeDasharray: style.strokeDasharray ?? null,
         strokeDashoffset: style.strokeDashoffset ?? null,
     };
+}
+function scaledStrokeStyle(style, scale) {
+    if (Math.abs(scale - 1) < 1e-9)
+        return style;
+    const next = { ...style };
+    if (next.strokeWidth != null)
+        next.strokeWidth *= scale;
+    if (next.strokeDasharray)
+        next.strokeDasharray = scaleDasharray(next.strokeDasharray, scale);
+    if (next.strokeDashoffset != null)
+        next.strokeDashoffset *= scale;
+    return next;
+}
+function strokeTransformScale(style, matrix) {
+    return style.vectorEffect === "non-scaling-stroke" ? 1 : matrixScale(matrix);
+}
+function matrixScale(matrix) {
+    const [a, b, c, d] = matrix;
+    const sx = Math.hypot(a, b);
+    const sy = Math.hypot(c, d);
+    return sx && sy ? (sx + sy) / 2 : sx || sy || 1;
+}
+function scaleDasharray(value, scale) {
+    const nums = dasharrayNumbers(value);
+    if (!nums)
+        return value;
+    return nums.map((item) => formatNumber(item * scale)).join(" ");
+}
+function normalizeVectorEffect(value) {
+    const normalized = value.trim().toLowerCase().split(/\s+/).join(" ");
+    return normalized === "non-scaling-stroke" ? normalized : null;
 }
 function normalizeStrokeLineCap(value) {
     const normalized = value.trim().toLowerCase();
