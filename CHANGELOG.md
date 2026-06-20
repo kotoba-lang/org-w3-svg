@@ -67,6 +67,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added web editor design package part schema documentation for `part_name`, `content_type`, `kind`, and `source_node_id`.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
+- Added canonical CLI help descriptions for visible SVGraph commands while keeping legacy command aliases hidden from help output.
 - Added canonical `svgraph` version identity for retained compatibility console scripts.
 - Added CI and release wheel smoke checks that verify every retained console script reports the canonical `svgraph` version identity.
 - Added deprecation warnings that point retained legacy executable aliases to their canonical `svgraph` commands.

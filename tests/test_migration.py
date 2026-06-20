@@ -436,11 +436,21 @@ def test_cli_visible_commands_are_canonical_svgraph_commands() -> None:
     cli_source = (root / "src" / "svgraph" / "cli.py").read_text(encoding="utf-8")
     visible_commands = _literal_assignment(cli_source, "VISIBLE_COMMANDS")
     legacy_commands = _literal_assignment(cli_source, "LEGACY_COMMANDS")
+    command_help = _literal_assignment(cli_source, "COMMAND_HELP")
 
     assert visible_commands == ("svg2dml", "dml2svg", "svg2pptx", "analyze", "svgraph", "svgraph-presentation")
     assert legacy_commands == ("ir", "pptxsvg")
+    assert command_help == {
+        "svg2dml": "convert SVG to a DrawingML shape fragment",
+        "dml2svg": "convert a DrawingML shape fragment to SVG",
+        "svg2pptx": "convert SVG/SVGraph presentation metadata to a PPTX package",
+        "analyze": "report SVG conversion coverage and unsupported features",
+        "svgraph": "emit the metadata-preserving SVGraph JSON document",
+        "svgraph-presentation": "emit the SVGraph presentation/package JSON projection",
+    }
     assert "ir" not in visible_commands
     assert "pptxsvg" not in visible_commands
+    assert set(command_help) == set(visible_commands)
 
 
 def test_readme_lists_all_legacy_console_compatibility_aliases() -> None:
@@ -1130,6 +1140,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "`slide_size` and `text_styles`",
         "`slideSize` and `textStyles`",
         "GitHub Actions, Python, and npm/web dependency update pull requests",
+        "canonical CLI help descriptions for visible SVGraph commands",
         "public repository description, MIT license metadata, and SVGraph topics",
         "published Pages title, description, Open Graph, and Twitter metadata",
         "live `app.js` artifact for canonical SVGraph controls and legacy-name exclusions",

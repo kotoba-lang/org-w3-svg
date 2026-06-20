@@ -175,6 +175,10 @@ def test_cli_help_lists_svgraph_commands_and_hides_legacy_aliases(capsys) -> Non
     assert captured.out.startswith("usage: svgraph ")
     assert "svgraph" in captured.out
     assert "svgraph-presentation" in captured.out
+    assert "emit the metadata-preserving SVGraph JSON document" in captured.out
+    assert "emit the SVGraph presentation/package JSON projection" in captured.out
+    assert "convert SVG/SVGraph presentation metadata to a PPTX" in captured.out
+    assert "package" in captured.out
     assert "pptxsvg" not in captured.out
     assert "{svg2dml,dml2svg,svg2pptx,analyze,ir" not in captured.out
 

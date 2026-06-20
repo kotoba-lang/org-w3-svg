@@ -17,6 +17,14 @@ from .model import svg_svgraph_presentation_to_json, svg_svgraph_to_json
 VISIBLE_COMMANDS = ("svg2dml", "dml2svg", "svg2pptx", "analyze", "svgraph", "svgraph-presentation")
 LEGACY_COMMANDS = ("ir", "pptxsvg")
 REPORT_COMMANDS = {"analyze", "ir", "svgraph", "svgraph-presentation", "pptxsvg"}
+COMMAND_HELP = {
+    "svg2dml": "convert SVG to a DrawingML shape fragment",
+    "dml2svg": "convert a DrawingML shape fragment to SVG",
+    "svg2pptx": "convert SVG/SVGraph presentation metadata to a PPTX package",
+    "analyze": "report SVG conversion coverage and unsupported features",
+    "svgraph": "emit the metadata-preserving SVGraph JSON document",
+    "svgraph-presentation": "emit the SVGraph presentation/package JSON projection",
+}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -29,7 +37,8 @@ def main(argv: list[str] | None = None) -> int:
     subparsers.required = True
 
     for command in (*VISIBLE_COMMANDS, *LEGACY_COMMANDS):
-        sub = subparsers.add_parser(command)
+        help_text = COMMAND_HELP.get(command)
+        sub = subparsers.add_parser(command, help=help_text, description=help_text)
         if command in LEGACY_COMMANDS:
             subparsers._choices_actions = [action for action in subparsers._choices_actions if action.dest != command]
         sub.add_argument("input", nargs="?", help="Input file. Reads stdin when omitted.")
