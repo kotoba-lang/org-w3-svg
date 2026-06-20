@@ -497,6 +497,19 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "downloadPptxsvg" not in combined
 
 
+def test_web_runtime_accepts_canonical_svgraph_presentation_metadata_keys() -> None:
+    root = Path(__file__).resolve().parents[1]
+    source = (root / "web" / "app.ts").read_text(encoding="utf-8")
+    app_js = (root / "docs" / "app.js").read_text(encoding="utf-8")
+
+    for generated in [source, app_js]:
+        assert "rootMeta.slideSize || rootMeta.slide_size" in generated
+        assert "rootMeta.textStyles || rootMeta.text_styles" in generated
+        assert "Array.isArray(metadataStyles)" in generated
+        assert "text-style-${index + 1}" in generated
+        assert "style_id: String(obj.id || role)" in generated
+
+
 def test_pages_typescript_build_targets_committed_svgraph_artifact() -> None:
     root = Path(__file__).resolve().parents[1]
     package_metadata = json.loads((root / "package.json").read_text(encoding="utf-8"))
