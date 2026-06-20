@@ -6,6 +6,21 @@ Use this checklist when publishing a new `svgraph` release.
 
 - Confirm `CHANGELOG.md` has a dated section for the release and an empty `Unreleased` section for the next cycle.
 - Confirm `pyproject.toml` and `package.json` have the intended version.
+- Confirm the public GitHub repository and Pages URL are the canonical SVGraph locations:
+
+```bash
+gh repo view com-junkawasaki/svgraph --json nameWithOwner,isPrivate,homepageUrl,defaultBranchRef
+```
+
+Expected values:
+
+```text
+nameWithOwner: com-junkawasaki/svgraph
+isPrivate: false
+homepageUrl: https://com-junkawasaki.github.io/svgraph/
+defaultBranchRef.name: main
+```
+
 - Run the local checks from `CONTRIBUTING.md`.
 - Rebuild the browser editor artifact and confirm the committed Pages output is current:
 

@@ -441,6 +441,19 @@ def test_release_checklist_keeps_legacy_console_alias_smoke() -> None:
     assert "drawingml-svg --version" in release
 
 
+def test_release_checklist_verifies_public_svgraph_repo_identity() -> None:
+    release = (Path(__file__).resolve().parents[1] / "RELEASE.md").read_text(encoding="utf-8")
+
+    for expected in [
+        "gh repo view com-junkawasaki/svgraph --json nameWithOwner,isPrivate,homepageUrl,defaultBranchRef",
+        "nameWithOwner: com-junkawasaki/svgraph",
+        "isPrivate: false",
+        "homepageUrl: https://com-junkawasaki.github.io/svgraph/",
+        "defaultBranchRef.name: main",
+    ]:
+        assert expected in release
+
+
 def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
     root = Path(__file__).resolve().parents[1]
     release = (root / "RELEASE.md").read_text(encoding="utf-8")
@@ -756,6 +769,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "python -m svgraph",
         "python -m svgraph.cli",
         "release and CI smoke checks",
+        "public `com-junkawasaki/svgraph` repository identity and Pages URL",
         "wheel metadata",
         "canonical `svgraph` surfaces",
         "canonical typed Python import package",

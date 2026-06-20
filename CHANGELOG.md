@@ -16,6 +16,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
 - Added `python -m svgraph` as a canonical module execution path and moved local contribution checks away from `python -m svgraph.cli`.
 - Updated README, ADR, and release checklist guidance to document `python -m svgraph` and `svgraph.model` as canonical migration targets.
+- Added release checklist coverage for verifying the public `com-junkawasaki/svgraph` repository identity and Pages URL before publishing.
 - Added a packaged migration guide that maps old repository, distribution, import, CLI, and IR surfaces to canonical SVGraph surfaces.
 - Strengthened release and CI smoke checks so SVGraph JSON, presentation JSON, top-level wheel metadata, and sample XML generation use or verify canonical `svgraph` surfaces first.
 - Added the canonical `svgraph` console script, with `svgraph input.svg` emitting SVGraph JSON directly while keeping `drawingml-svg` as a compatibility entry point.
