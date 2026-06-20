@@ -189,6 +189,7 @@ def test_ci_pptx_smoke_covers_recent_fixture_regressions() -> None:
 
     assert "svgraph analyze examples/coverage.svg" in workflow
     assert "svgraph svg2pptx examples/svgraph.svg -o tmp/ci-svgraph.pptx" in workflow
+    assert 'f"{root}/MIGRATION.md" in sdist_names' in workflow
     assert '<a:miter lim="400000"' in workflow
     assert 'u=\\"wavy\\"' in workflow or "u=\"wavy\"" in workflow
     assert 'spc="' in workflow
