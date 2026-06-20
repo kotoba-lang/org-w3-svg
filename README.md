@@ -36,6 +36,7 @@ The GitHub Pages editor runs a TypeScript converter entirely in the browser:
 - Browser marker export only emits DrawingML arrows for resolved arrow-like SVG marker references; unsupported marker definitions remain analyzer diagnostics.
 - Browser image sizing scans segmented JPEG data URIs so `preserveAspectRatio` works when APP/EXIF segments precede the SOF size marker.
 - Browser data URI image handling validates base64 before conversion or PPTX media embedding.
+- Browser CSS keyword handling resets converted properties to SVG defaults for `initial` and falls back correctly for `unset`.
 
 ```bash
 npm ci

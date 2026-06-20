@@ -1066,6 +1066,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "text-decoration-color:inherit" in generated
         assert "text-decoration-thickness:inherit" in generated
         assert "resolvedCascadedDeclarations(element, css, style)" in generated
+        assert "function cssInitialValue" in generated
+        assert 'id="initial-reset-rect"' in generated
+        assert 'id="unset-reset-text"' in generated
         assert "const coverageTextLayoutAttributes" in generated
         assert "function subtreeHasVisibleText" in generated
         assert "coverageTextLayoutAttributes.has(name)" in generated
@@ -1404,6 +1407,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser marker export with arrow-like SVG marker references",
         "browser JPEG intrinsic-size detection with segmented JPEG files",
         "browser data URI image validation",
+        "browser `initial` and `unset` CSS keyword handling",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",

@@ -64,6 +64,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser marker export with arrow-like SVG marker references and unsupported marker diagnostics.
 - Aligned browser JPEG intrinsic-size detection with segmented JPEG files for image `preserveAspectRatio`.
 - Aligned browser data URI image validation with Python so invalid base64 images are not converted or embedded as PPTX media.
+- Aligned browser `initial` and `unset` CSS keyword handling with SVG defaults for converted style properties.
 - Added browser assistant patch proposal validation for SVGraph-level edit operations before applying LLM suggestions.
 - Added browser assistant patch diff preview rows for SVGraph data and metadata edits before applying LLM suggestions.
 - Added browser assistant patch apply support for validated SVGraph data and metadata edits back into the canonical SVG source.

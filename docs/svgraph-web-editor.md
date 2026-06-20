@@ -24,6 +24,7 @@ Current implementation status:
 - Marker export only emits DrawingML arrows for resolved arrow-like SVG marker references; unsupported marker definitions stay as analyzer diagnostics.
 - Image sizing scans segmented JPEG data URIs so `preserveAspectRatio` still works when APP/EXIF segments precede the SOF size marker.
 - Data URI image handling validates base64 before conversion or PPTX media embedding.
+- CSS keyword handling resets converted properties to SVG defaults for `initial` and falls back correctly for `unset`.
 - The browser Assistant panel exposes a deterministic patch proposal/validation preview for SVGraph-level edit operations before any future LLM suggestion is applied.
 - The browser Assistant panel shows deterministic patch diff preview rows for SVGraph data and metadata edits before applying future LLM suggestions.
 - The browser Assistant panel can apply validated SVGraph patch operations back into the canonical SVG source as `data-*` attributes and `<metadata>` JSON.

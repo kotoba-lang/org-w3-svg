@@ -634,6 +634,10 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <rect id="display-hidden" x="875" y="615" width="34" height="50" style="display:none;fill:#111827"/>
     <g id="visibility-hidden" visibility="hidden"><rect id="visibility-visible" x="910" y="615" width="34" height="50" visibility="visible" style="fill:#ffffff;stroke:#0f766e;stroke-width:3"/></g>
     <g class="var-theme"><rect class="inherit-box" x="910" y="88" width="105" height="52"/></g>
+    <g id="initial-reset-group" fill="#123456" stroke="#abcdef" stroke-width="5" font-size="24" text-anchor="middle">
+      <rect id="initial-reset-rect" x="1035" y="155" width="70" height="40" fill="initial" stroke="initial" stroke-width="initial"/>
+      <text id="unset-reset-text" x="1070" y="225" fill="unset" text-anchor="unset">Unset</text>
+    </g>
     <rect id="css-transform-origin" class="css-transform-origin" x="1035" y="88" width="105" height="52" style="fill:#f0fdf4;stroke:#16a34a"/>
     <rect id="media-rule" class="media-rule" x="1160" y="88" width="70" height="52"/>
     <switch>
@@ -4847,15 +4851,56 @@ function resolvedCascadedDeclarations(element: Element, css: CssRule[], inherite
       continue;
     }
     const normalized = value.trim().toLowerCase();
-    if (normalized === "initial") continue;
+    if (normalized === "initial") {
+      const initialValue = cssInitialValue(name);
+      if (initialValue != null) resolved[name] = initialValue;
+      continue;
+    }
     if (normalized === "inherit" || normalized === "unset") {
       const inheritedValue = cssValueFromStyle(inherited, name);
+      const fallback = normalized === "unset" ? cssInitialValue(name) : null;
       if (inheritedValue != null) resolved[name] = inheritedValue;
+      else if (fallback != null) resolved[name] = fallback;
       continue;
     }
     resolved[name] = resolveCssVars(value, customProperties);
   }
   return resolved;
+}
+
+function cssInitialValue(name: string): string | null {
+  const values: Record<string, string> = {
+    color: "#000000",
+    direction: "ltr",
+    display: "inline",
+    fill: "#000000",
+    "fill-opacity": "1",
+    "font-family": "Aptos",
+    "font-size": String(rootFontSize),
+    "font-style": "normal",
+    "font-variant": "normal",
+    "font-weight": "400",
+    "letter-spacing": "0",
+    opacity: "1",
+    stroke: "none",
+    "stroke-dasharray": "none",
+    "stroke-dashoffset": "0",
+    "stroke-linecap": "butt",
+    "stroke-linejoin": "miter",
+    "stroke-miterlimit": "4",
+    "stroke-opacity": "1",
+    "stroke-width": "1",
+    "text-anchor": "start",
+    "text-decoration": "none",
+    "text-decoration-color": "currentColor",
+    "text-decoration-line": "none",
+    "text-decoration-style": "solid",
+    "text-decoration-thickness": "auto",
+    "text-transform": "none",
+    visibility: "visible",
+    "word-spacing": "0",
+  };
+  return values[name] ?? null;
 }
 
 function customPropertiesFromDeclarations(declarations: Record<string, string>, inherited: SvgStyle): Record<string, string> {
