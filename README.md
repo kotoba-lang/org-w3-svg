@@ -29,7 +29,7 @@ The converter supports DrawingML shape fragments and can also emit complete `.pp
 
 The GitHub Pages editor runs a TypeScript converter entirely in the browser:
 
-- `web/app.ts` builds SVG IR, PPTXSVG package IR, PresentationML slide XML, and a `.pptx` ZIP without Python or server APIs.
+- `web/app.ts` builds SVGraph, PPTXSVG package IR, PresentationML slide XML, and a `.pptx` ZIP without Python or server APIs.
 - `docs/app.js` is the compiled Pages artifact.
 - Current browser export coverage is still narrower than the Python converter, but supports `rect`, `circle`/`ellipse`, `line`, `polygon`, `polyline`, `M/L/H/V/Z`, quadratic/cubic `Q/T/C/S`, and arc `A` paths as custom geometry, embedded data URI images with intrinsic-size `preserveAspectRatio` meet/slice handling and `opacity` as picture alpha, marker arrows, `defs`/local `use` expansion plus root, nested `svg`, and `symbol` viewBox scaling with `preserveAspectRatio`, linear/radial gradient and pattern paint-server fallback colors, named colors, CSS `rgb()`/`hsl()` colors, `currentColor`, `context-fill`/`context-stroke`, fill/stroke alpha from opacity properties and alpha colors, stroke dash/cap/join styles including `stroke-dashoffset` phase approximation and miterlimit export, `display:none` subtree skipping and inherited `visibility:hidden`/`collapse` with visible-descendant recovery, simple `<style>` selector rules plus screen-compatible `@media` blocks with specificity plus `!important` cascade priority, CSS custom properties with `var()` fallbacks, and `inherit`/`initial`/`unset` on converted properties, geometry and text metrics with absolute/relative CSS length units including `em`, `%`, `rem`, and basic `calc()`/`min()`/`max()`/`clamp()` expressions, `text` plus inline `tspan` rich text runs, first-`tspan` position fallback, positioned `tspan` line-break fallback, `text-transform` literal text mapping, `xml:space="preserve"` whitespace retention, CSS/presentation `font` shorthand expansion, font-size keywords, `font-variant` small/all caps, run-level text outline stroke, underline/strike decoration including underline color and thickness, `baseline-shift` super/sub, `letter-spacing`, simple `word-spacing`, `textLength` spacing approximation, single-value text `rotate`, simple RTL paragraph direction, text line breaks, and basic `text-anchor`/baseline alignment, inline `style`/basic inherited paint and text styles, CSS/SVG `matrix`/`translate`/`scale`/`rotate`/`skewX`/`skewY` transforms with common angle and absolute length units plus absolute, keyword, and reference-box percentage `transform-origin`, rectangular `clipPath` bounds in user space and object bounding-box units, PPTXSVG multi-slide groups, semantic relation connectors, semantic table groups as native PowerPoint tables with `data-text`, `data-colspan`, `data-rowspan`, rect fills, and rect stroke borders including dash/cap/join/miterlimit styles, and simple `foreignObject` HTML tables as native PowerPoint tables with editable captions, `colgroup` widths, `colspan`/`rowspan`, `cellspacing`/`border-spacing` spacer cells, inline rich text runs, fill, text color, bold headers, uniform and per-side cell padding, RTL/nowrap cell text, alignment, and basic/side border styles.
 
@@ -72,10 +72,13 @@ cat input.svg | drawingml-svg svg2dml > shape.xml
 # coverage / maturity report
 drawingml-svg analyze input.svg
 
-# metadata-preserving SVG IR
+# metadata-preserving SVGraph
+drawingml-svg svgraph input.svg
+
+# legacy alias for SVGraph
 drawingml-svg ir input.svg
 
-# PPTX/package-oriented SVG IR
+# PPTX/package-oriented SVGraph projection
 drawingml-svg pptxsvg input.svg
 
 # installed package version
@@ -125,9 +128,9 @@ report = analyze_svg(svg_text).to_dict()
 ```
 
 ```python
-from drawingml_svg import svg_to_ir
+from drawingml_svg import svg_to_svgraph
 
-ir = svg_to_ir(svg_text).to_dict()
+svgraph = svg_to_svgraph(svg_text).to_dict()
 ```
 
 ```python
@@ -136,13 +139,13 @@ from drawingml_svg import svg_to_pptx_ir
 pptx_ir = svg_to_pptx_ir(svg_text)
 ```
 
-## SVG semantic IR
+## SVGraph Semantic IR
 
-The `ir` command and `svg_to_ir()` API expose an SVG-based intermediate representation for app-level pipelines that need more than visual conversion. The IR keeps the SVG element tree, normal attributes, `data-*` attributes, `<metadata>` payloads, local reference dependencies such as `href` and `url(#id)`, and a `presentation` view for slide/package emitters.
+The `svgraph` command and `svg_to_svgraph()` API expose SVGraph, an SVG-based semantic graph IR for app-level pipelines that need more than visual conversion. The legacy `ir` command and `svg_to_ir()` API remain aliases. SVGraph keeps the SVG element tree, normal attributes, `data-*` attributes, `<metadata>` payloads, local reference dependencies such as `href` and `url(#id)`, and a `presentation` view for slide/package emitters.
 
 This is intended as the stable handoff layer for expanding one SVG source into different targets:
 
-- DrawableXML / Android VectorDrawable: visual geometry is emitted natively, while semantic structure such as tables, entities, relations, and provenance should remain in the IR or a sidecar JSON because VectorDrawable has no native table or metadata graph model.
+- DrawableXML / Android VectorDrawable: visual geometry is emitted natively, while semantic structure such as tables, entities, relations, and provenance should remain in SVGraph or a sidecar JSON because VectorDrawable has no native table or metadata graph model.
 - DrawingML: editable shapes, text, and native tables can be emitted where the target supports them.
 - PresentationML: slide-level structure, connectors, reading order, notes, tags, or custom XML can be derived from the same IR.
 

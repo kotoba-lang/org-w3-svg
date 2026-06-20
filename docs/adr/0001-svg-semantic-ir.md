@@ -1,4 +1,4 @@
-# ADR 0001: SVG Semantic IR
+# ADR 0001: SVGraph Semantic IR
 
 ## Status
 
@@ -10,7 +10,7 @@ SVG can carry visual geometry, document metadata, and application-specific data 
 
 ## Decision
 
-Introduce an SVG-based intermediate representation, exposed as `svg_to_ir()`, that preserves:
+Introduce SVGraph, an SVG-based intermediate representation exposed as `svg_to_svgraph()`. The legacy `svg_to_ir()` API remains an alias. SVGraph preserves:
 
 - element tree structure with stable node ids
 - normal SVG attributes
@@ -19,12 +19,13 @@ Introduce an SVG-based intermediate representation, exposed as `svg_to_ir()`, th
 - dependencies such as `href`, `xlink:href`, `url(#id)` paint servers, markers, clipping, masks, symbols, and other local references
 - a presentation/package view named `pptxsvg`
 
-The IR is intentionally independent of a specific output format. Target emitters consume the IR and decide whether a node maps to a native object, a grouped shape, a raster fallback, or an application sidecar.
+SVGraph is intentionally independent of a specific output format. Target emitters consume the graph and decide whether a node maps to a native object, a grouped shape, a raster fallback, or an application sidecar.
 
 ## IR Shape
 
 ```json
 {
+  "kind": "svgraph",
   "version": "0.1",
   "metadata": {},
   "dependencies": [],
@@ -86,7 +87,7 @@ Recommended fields:
 
 ## PPTXSVG Presentation View
 
-`pptxsvg` is the SVG IR projection for creating a full `.pptx` package rather than a single DrawingML shape fragment. It is not a new rendering format; it is a package intent over the same SVG source.
+`pptxsvg` is the SVGraph projection for creating a full `.pptx` package rather than a single DrawingML shape fragment. It is not a new rendering format; it is a package intent over the same SVG source.
 
 Slide boundaries are discovered in this order:
 
@@ -157,13 +158,13 @@ VectorDrawable is a visual vector format. It has no native table, rich metadata,
 
 - map supported geometry and paint to native vector paths/groups
 - flatten unsupported semantics into visual groups
-- preserve IR metadata outside the drawable as a sidecar JSON when semantic round-trip is required
+- preserve SVGraph metadata outside the drawable as a sidecar JSON when semantic round-trip is required
 
 ### DrawingML
 
 DrawingML can represent editable shapes, text, tables, and some semantic grouping. Emitters should:
 
-- use native DrawingML tables only when the IR identifies table semantics or the geometry is clearly table-like
+- use native DrawingML tables only when SVGraph identifies table semantics or the geometry is clearly table-like
 - keep per-node provenance in non-visual properties where package context allows it
 - preserve unsupported semantics in a sidecar when fragment-only output has no safe storage location
 
@@ -171,11 +172,11 @@ DrawingML can represent editable shapes, text, tables, and some semantic groupin
 
 PresentationML can add slide-level structure beyond DrawingML fragments. Emitters should:
 
-- map IR groups to slide shape trees
+- map SVGraph groups to slide shape trees
 - map relationships to connectors when they are visually represented
 - map `data-order` and metadata to animation, reading order, notes, custom XML, or tags when the package writer supports it
 - use `pptxsvg` as the package-level contract instead of treating `svg_to_drawingml()` output as a whole deck
 
 ## Consequences
 
-The converter remains conservative and deterministic. The IR gives the app a richer layer for inference and multi-target expansion without forcing every semantic concept into DrawingML or DrawableXML, where many of those concepts do not exist natively.
+The converter remains conservative and deterministic. SVGraph gives the app a richer layer for inference and multi-target expansion without forcing every semantic concept into DrawingML or DrawableXML, where many of those concepts do not exist natively.

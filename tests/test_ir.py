@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 
-from drawingml_svg import svg_to_ir, svg_to_pptx_ir
-from drawingml_svg.ir import svg_ir_to_json, svg_pptx_ir_to_json
+from drawingml_svg import svg_to_ir, svg_to_pptx_ir, svg_to_svgraph
+from drawingml_svg.ir import svg_ir_to_json, svg_pptx_ir_to_json, svg_svgraph_to_json
 
 
 def test_svg_ir_preserves_metadata_data_attributes_and_dependencies() -> None:
@@ -20,6 +20,7 @@ def test_svg_ir_preserves_metadata_data_attributes_and_dependencies() -> None:
 
     ir = svg_to_ir(svg)
 
+    assert ir.kind == "svgraph"
     assert ir.version == "0.1"
     assert ir.metadata["json"] == {"title": "System", "relations": [{"from": "api", "to": "db"}]}
     assert ir.presentation.kind == "pptxsvg"
@@ -46,7 +47,18 @@ def test_svg_ir_json_cli_payload_is_serializable() -> None:
     data = json.loads(payload)
 
     assert data["root"]["children"][0]["data"] == {"kind": "table"}
+    assert data["kind"] == "svgraph"
     assert data["presentation"]["kind"] == "pptxsvg"
+
+
+def test_svgraph_alias_matches_svg_ir_payload() -> None:
+    svg = """<svg xmlns="http://www.w3.org/2000/svg"><rect data-kind="table" width="10" height="10"/></svg>"""
+    direct = svg_to_svgraph(svg).to_dict()
+    payload = json.loads(svg_svgraph_to_json(svg))
+
+    assert direct["kind"] == "svgraph"
+    assert payload["kind"] == "svgraph"
+    assert payload["root"]["children"][0]["data"] == {"kind": "table"}
 
 
 def test_svg_pptx_ir_discovers_declared_slides() -> None:

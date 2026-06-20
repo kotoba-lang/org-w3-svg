@@ -4,6 +4,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PPTXSVG Editor</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230f766e'/%3E%3Ctext x='32' y='40' text-anchor='middle' font-family='Arial' font-size='20' font-weight='700' fill='white'%3ESG%3C/text%3E%3C/svg%3E"
+    />
     <style>
       :root {
         color-scheme: light;
@@ -299,13 +303,13 @@
       <header>
         <div class="brand">
           <h1>PPTXSVG Editor</h1>
-          <div class="subtitle">SVG semantic IR, slide/package preview, browser-local assistant hooks</div>
+          <div class="subtitle">SVGraph semantic graph, slide/package preview, browser-local assistant hooks</div>
         </div>
         <div class="toolbar">
           <input id="fileInput" type="file" accept=".svg,image/svg+xml" hidden />
           <button class="btn" id="openBtn" type="button">Open SVG</button>
           <button class="btn" id="sampleBtn" type="button">Load Sample</button>
-          <button class="btn primary" id="downloadIrBtn" type="button">Download IR</button>
+          <button class="btn primary" id="downloadIrBtn" type="button">Download SVGraph</button>
           <button class="btn" id="downloadPptxsvgBtn" type="button">Download PPTXSVG</button>
           <button class="btn primary" id="downloadPptxBtn" type="button">Download PPTX</button>
         </div>
@@ -415,11 +419,11 @@
         return deps;
       }
 
-      function nodeToIr(element, nodeId) {
+      function nodeToSvgraph(element, nodeId) {
         const attributes = attrs(element);
         const children = Array.from(element.children)
           .filter((child) => localName(child) !== "metadata")
-          .map((child, index) => nodeToIr(child, `${nodeId}.${index}`));
+          .map((child, index) => nodeToSvgraph(child, `${nodeId}.${index}`));
         return {
           node_id: nodeId,
           tag: localName(element),
@@ -592,16 +596,17 @@
         return [...fromMeta, ...fromNodes];
       }
 
-      function buildIr(svgText) {
+      function buildSvgraph(svgText) {
         const parser = new DOMParser();
         const doc = parser.parseFromString(svgText, "image/svg+xml");
         const error = doc.querySelector("parsererror");
         if (error) throw new Error(error.textContent.trim());
-        const root = nodeToIr(doc.documentElement, "n0");
+        const root = nodeToSvgraph(doc.documentElement, "n0");
         const dependencies = flatten(root).flatMap((node) => node.dependencies);
         const presentation = buildPptxsvg(root);
         return {
-          version: "0.1-web",
+          kind: "svgraph",
+          version: "0.3-svgraph-web-ts",
           root,
           metadata: root.metadata,
           dependencies,
@@ -612,12 +617,12 @@
       function render() {
         try {
           const text = source.value;
-          state.ir = buildIr(text);
-          state.pptxsvg = state.ir.presentation;
+          state.svgraph = buildSvgraph(text);
+          state.pptxsvg = state.svgraph.presentation;
           preview.innerHTML = text;
         } catch (error) {
           preview.innerHTML = "";
-          state.ir = null;
+          state.svgraph = null;
           state.pptxsvg = null;
           panel.innerHTML = `<div class="notice">${escapeHtml(error.message)}</div>`;
           return;
@@ -636,15 +641,15 @@
       }
 
       function renderPanel() {
-        if (!state.ir) return;
-        const nodes = flatten(state.ir.root);
+        if (!state.svgraph) return;
+        const nodes = flatten(state.svgraph.root);
         const semantic = nodes.filter((node) => Object.keys(node.data).length > 0).length;
-        const deps = state.ir.dependencies.length;
+        const deps = state.svgraph.dependencies.length;
         const templates = state.pptxsvg.masters.length + state.pptxsvg.layouts.length + state.pptxsvg.text_styles.length;
         if (state.tab === "summary") {
           panel.innerHTML = `
             <div class="metrics">
-              <div class="metric"><strong>${nodes.length}</strong><span>SVG IR nodes</span></div>
+              <div class="metric"><strong>${nodes.length}</strong><span>SVGraph nodes</span></div>
               <div class="metric"><strong>${state.pptxsvg.slides.length}</strong><span>PPTXSVG slides</span></div>
               <div class="metric"><strong>${semantic}</strong><span>semantic nodes</span></div>
               <div class="metric"><strong>${templates}</strong><span>templates</span></div>
@@ -674,7 +679,7 @@
               model: "onnx-community/gemma-4-e2b-it-ONNX"
             }, null, 2))}</pre>`;
         } else {
-          panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.ir, null, 2))}</pre>`;
+          panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.svgraph, null, 2))}</pre>`;
         }
       }
 
@@ -702,7 +707,7 @@
         render();
       });
       document.getElementById("downloadIrBtn").addEventListener("click", () => {
-        if (state.ir) download("pptxsvg-ir.json", JSON.stringify(state.ir, null, 2));
+        if (state.svgraph) download("svgraph.json", JSON.stringify(state.svgraph, null, 2));
       });
       document.getElementById("downloadPptxsvgBtn").addEventListener("click", () => {
         if (state.pptxsvg) download("pptxsvg.json", JSON.stringify(state.pptxsvg, null, 2));

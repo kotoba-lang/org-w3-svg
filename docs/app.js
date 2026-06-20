@@ -117,6 +117,11 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <g class="var-theme"><rect class="inherit-box" x="910" y="88" width="105" height="52"/></g>
     <rect id="css-transform-origin" class="css-transform-origin" x="1035" y="88" width="105" height="52" style="fill:#f0fdf4;stroke:#16a34a"/>
     <rect id="media-rule" class="media-rule" x="1160" y="88" width="70" height="52"/>
+    <switch>
+      <rect id="switch-unsupported" requiredExtensions="https://example.test/ext" x="1160" y="155" width="70" height="40" fill="#dc2626"/>
+      <rect id="switch-fallback" x="1160" y="155" width="70" height="40" fill="#16a34a" stroke="#14532d"/>
+      <rect id="switch-skipped" x="1160" y="155" width="70" height="40" fill="#2563eb"/>
+    </switch>
     <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-dashoffset:5;stroke-linecap:round;stroke-linejoin:bevel"/>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px;text-transform:none"> blue</tspan></text>
@@ -146,7 +151,7 @@ line</text>
 </svg>`;
 const state = {
     tab: "summary",
-    ir: null,
+    svgraph: null,
     pptxsvg: null,
     webgpu: false,
 };
@@ -198,11 +203,11 @@ function dependencies(element, attributes) {
     }
     return deps;
 }
-function nodeToIr(element, nodeId) {
+function nodeToSvgraph(element, nodeId) {
     const attributes = attrs(element);
     const children = Array.from(element.children)
         .filter((child) => localName(child) !== "metadata")
-        .map((child, index) => nodeToIr(child, `${nodeId}.${index}`));
+        .map((child, index) => nodeToSvgraph(child, `${nodeId}.${index}`));
     const text = Array.from(element.childNodes)
         .filter((node) => node.nodeType === Node.TEXT_NODE)
         .map((node) => (node.textContent || "").trim())
@@ -377,17 +382,18 @@ function textStyles(nodes, metadataStyles) {
     }));
     return [...fromMeta, ...fromNodes];
 }
-function buildIr(svgText) {
+function buildSvgraph(svgText) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(svgText, "image/svg+xml");
     const error = doc.querySelector("parsererror");
     if (error)
         throw new Error((error.textContent || "").trim());
-    const root = nodeToIr(doc.documentElement, "n0");
+    const root = nodeToSvgraph(doc.documentElement, "n0");
     const dependencies = flatten(root).flatMap((node) => node.dependencies);
     const presentation = buildPptxsvg(root);
     return {
-        version: "0.2-web-ts",
+        kind: "svgraph",
+        version: "0.3-svgraph-web-ts",
         root,
         metadata: root.metadata,
         dependencies,
@@ -401,7 +407,7 @@ function svgToPptx(svgText) {
     if (error)
         throw new Error((error.textContent || "").trim());
     const root = doc.documentElement;
-    const ir = buildIr(svgText);
+    const ir = buildSvgraph(svgText);
     const slides = declaredSlides(root);
     const selectedSlides = slides.length ? slides : [root];
     const slideXmls = selectedSlides.map((slide, index) => buildSlideXml(slide, index + 1));
@@ -424,6 +430,16 @@ function declaredSlides(root) {
 }
 function isSlideElement(element) {
     return element.getAttribute("data-kind") === "slide" || element.getAttribute("data-role") === "slide" || element.hasAttribute("data-slide");
+}
+function switchSelectedChild(element) {
+    return Array.from(element.children).find(switchChildIsSupported) ?? null;
+}
+function switchChildIsSupported(element) {
+    for (const name of ["requiredExtensions", "requiredFeatures", "requiredFormats"]) {
+        if ((element.getAttribute(name) || "").trim())
+            return false;
+    }
+    return !(element.getAttribute("systemLanguage") || "").trim();
 }
 function buildSlideXml(slide, slideIndex) {
     const shapes = extractShapes(slide);
@@ -466,6 +482,12 @@ function extractShapes(root) {
                 }
                 walk(ref, useMatrix, ownStyle, new Set([...refStack, refId]), refViewport);
             }
+            return;
+        }
+        if (tag === "switch") {
+            const selected = switchSelectedChild(element);
+            if (selected)
+                walk(selected, ownMatrix, ownStyle, refStack, childViewport);
             return;
         }
         if (!visibilityHidden && tag === "g" && (element.getAttribute("data-kind") === "table" || element.getAttribute("data-role") === "table")) {
@@ -2237,13 +2259,13 @@ function concat(chunks) {
 function render() {
     try {
         const text = source.value;
-        state.ir = buildIr(text);
-        state.pptxsvg = state.ir.presentation;
+        state.svgraph = buildSvgraph(text);
+        state.pptxsvg = state.svgraph.presentation;
         preview.innerHTML = text;
     }
     catch (error) {
         preview.innerHTML = "";
-        state.ir = null;
+        state.svgraph = null;
         state.pptxsvg = null;
         panel.innerHTML = `<div class="notice">${escapeHtml(error instanceof Error ? error.message : String(error))}</div>`;
         return;
@@ -2254,16 +2276,16 @@ function escapeHtml(value) {
     return String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
 }
 function renderPanel() {
-    if (!state.ir || !state.pptxsvg)
+    if (!state.svgraph || !state.pptxsvg)
         return;
-    const nodes = flatten(state.ir.root);
+    const nodes = flatten(state.svgraph.root);
     const semantic = nodes.filter((node) => Object.keys(node.data).length > 0).length;
-    const deps = state.ir.dependencies.length;
+    const deps = state.svgraph.dependencies.length;
     const templatesCount = state.pptxsvg.masters.length + state.pptxsvg.layouts.length + state.pptxsvg.text_styles.length;
     if (state.tab === "summary") {
         panel.innerHTML = `
       <div class="metrics">
-        <div class="metric"><strong>${nodes.length}</strong><span>SVG IR nodes</span></div>
+        <div class="metric"><strong>${nodes.length}</strong><span>SVGraph nodes</span></div>
         <div class="metric"><strong>${state.pptxsvg.slides.length}</strong><span>PPTXSVG slides</span></div>
         <div class="metric"><strong>${semantic}</strong><span>semantic nodes</span></div>
         <div class="metric"><strong>${templatesCount}</strong><span>templates</span></div>
@@ -2288,7 +2310,7 @@ function renderPanel() {
         }, null, 2))}</pre>`;
     }
     else {
-        panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.ir, null, 2))}</pre>`;
+        panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.svgraph, null, 2))}</pre>`;
     }
 }
 function downloadText(name, value) {
@@ -2315,8 +2337,8 @@ mustElement("sampleBtn").addEventListener("click", () => {
     render();
 });
 mustElement("downloadIrBtn").addEventListener("click", () => {
-    if (state.ir)
-        downloadText("pptxsvg-ir.json", JSON.stringify(state.ir, null, 2));
+    if (state.svgraph)
+        downloadText("svgraph.json", JSON.stringify(state.svgraph, null, 2));
 });
 mustElement("downloadPptxsvgBtn").addEventListener("click", () => {
     if (state.pptxsvg)

@@ -13,31 +13,32 @@ HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0
 
 
 @dataclass(frozen=True)
-class SvgIRDocument:
+class SvgraphDocument:
+    kind: str
     version: str
-    root: "SvgIRNode"
+    root: "SvgraphNode"
     metadata: dict[str, object]
-    dependencies: tuple["SvgIRDependency", ...]
-    presentation: "SvgIRPresentation"
+    dependencies: tuple["SvgraphDependency", ...]
+    presentation: "SvgraphPresentation"
 
     def to_dict(self) -> dict[str, object]:
         return asdict(self)
 
 
 @dataclass(frozen=True)
-class SvgIRNode:
+class SvgraphNode:
     node_id: str
     tag: str
     attributes: dict[str, str]
     data: dict[str, str]
     metadata: dict[str, object]
-    dependencies: tuple["SvgIRDependency", ...]
-    children: tuple["SvgIRNode", ...]
+    dependencies: tuple["SvgraphDependency", ...]
+    children: tuple["SvgraphNode", ...]
     text: str | None = None
 
 
 @dataclass(frozen=True)
-class SvgIRDependency:
+class SvgraphDependency:
     kind: str
     source: str
     target: str
@@ -45,21 +46,21 @@ class SvgIRDependency:
 
 
 @dataclass(frozen=True)
-class SvgIRPresentation:
+class SvgraphPresentation:
     kind: str
     slide_size: tuple[float, float]
-    slides: tuple["SvgIRSlide", ...]
-    parts: tuple["SvgIRPackagePart", ...]
-    masters: tuple["SvgIRTemplate", ...]
-    layouts: tuple["SvgIRTemplate", ...]
-    guides: tuple["SvgIRGuide", ...]
-    rulers: tuple["SvgIRRuler", ...]
-    text_styles: tuple["SvgIRTextStyle", ...]
+    slides: tuple["SvgraphSlide", ...]
+    parts: tuple["SvgraphPackagePart", ...]
+    masters: tuple["SvgraphTemplate", ...]
+    layouts: tuple["SvgraphTemplate", ...]
+    guides: tuple["SvgraphGuide", ...]
+    rulers: tuple["SvgraphRuler", ...]
+    text_styles: tuple["SvgraphTextStyle", ...]
     metadata: dict[str, object]
 
 
 @dataclass(frozen=True)
-class SvgIRSlide:
+class SvgraphSlide:
     slide_id: str
     node_id: str
     title: str | None
@@ -69,7 +70,7 @@ class SvgIRSlide:
 
 
 @dataclass(frozen=True)
-class SvgIRPackagePart:
+class SvgraphPackagePart:
     part_name: str
     content_type: str
     kind: str
@@ -77,7 +78,7 @@ class SvgIRPackagePart:
 
 
 @dataclass(frozen=True)
-class SvgIRTemplate:
+class SvgraphTemplate:
     template_id: str
     kind: str
     node_id: str | None
@@ -86,7 +87,7 @@ class SvgIRTemplate:
 
 
 @dataclass(frozen=True)
-class SvgIRGuide:
+class SvgraphGuide:
     guide_id: str
     orientation: str
     position: float
@@ -95,7 +96,7 @@ class SvgIRGuide:
 
 
 @dataclass(frozen=True)
-class SvgIRRuler:
+class SvgraphRuler:
     ruler_id: str
     orientation: str
     origin: float
@@ -105,19 +106,33 @@ class SvgIRRuler:
 
 
 @dataclass(frozen=True)
-class SvgIRTextStyle:
+class SvgraphTextStyle:
     style_id: str
     role: str
     properties: dict[str, object]
     node_id: str | None = None
 
 
-def svg_to_ir(svg_text: str) -> SvgIRDocument:
+# Backward-compatible type aliases for the pre-SVGraph API names.
+SvgIRDocument = SvgraphDocument
+SvgIRNode = SvgraphNode
+SvgIRDependency = SvgraphDependency
+SvgIRPresentation = SvgraphPresentation
+SvgIRSlide = SvgraphSlide
+SvgIRPackagePart = SvgraphPackagePart
+SvgIRTemplate = SvgraphTemplate
+SvgIRGuide = SvgraphGuide
+SvgIRRuler = SvgraphRuler
+SvgIRTextStyle = SvgraphTextStyle
+
+
+def svg_to_ir(svg_text: str) -> SvgraphDocument:
     """Parse SVG into a metadata-preserving IR for downstream emitters."""
 
     root = ET.fromstring(svg_text)
     root_node = _node_to_ir(root, "n0")
-    return SvgIRDocument(
+    return SvgraphDocument(
+        kind="svgraph",
         version="0.1",
         root=root_node,
         metadata=root_node.metadata,
@@ -126,8 +141,14 @@ def svg_to_ir(svg_text: str) -> SvgIRDocument:
     )
 
 
-def svg_to_pptx_ir(svg_text: str) -> SvgIRPresentation:
-    """Parse SVG into the presentation/package view of the SVG IR."""
+def svg_to_svgraph(svg_text: str) -> SvgraphDocument:
+    """Parse SVG into SVGraph, the metadata-preserving SVG graph IR."""
+
+    return svg_to_ir(svg_text)
+
+
+def svg_to_pptx_ir(svg_text: str) -> SvgraphPresentation:
+    """Parse SVG into the presentation/package view of SVGraph."""
 
     return svg_to_ir(svg_text).presentation
 
@@ -136,11 +157,15 @@ def svg_ir_to_json(svg_text: str) -> str:
     return json.dumps(svg_to_ir(svg_text).to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
 
+def svg_svgraph_to_json(svg_text: str) -> str:
+    return json.dumps(svg_to_svgraph(svg_text).to_dict(), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
 def svg_pptx_ir_to_json(svg_text: str) -> str:
     return json.dumps(asdict(svg_to_pptx_ir(svg_text)), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
 
 
-def _node_to_ir(element: ET.Element, node_id: str) -> SvgIRNode:
+def _node_to_ir(element: ET.Element, node_id: str) -> SvgraphNode:
     tag = _local_name(element.tag)
     attributes = _attributes(element)
     data = _data_attributes(attributes)
@@ -149,7 +174,7 @@ def _node_to_ir(element: ET.Element, node_id: str) -> SvgIRNode:
     child_elements = [child for child in list(element) if _local_name(child.tag) != "metadata"]
     children = tuple(_node_to_ir(child, f"{node_id}.{index}") for index, child in enumerate(child_elements))
     text = element.text.strip() if element.text and element.text.strip() else None
-    return SvgIRNode(
+    return SvgraphNode(
         node_id=node_id,
         tag=tag,
         attributes=attributes,
@@ -193,31 +218,31 @@ def _json_metadata(text: str) -> object | None:
         return None
 
 
-def _dependencies(element: ET.Element, attributes: dict[str, str]) -> tuple[SvgIRDependency, ...]:
+def _dependencies(element: ET.Element, attributes: dict[str, str]) -> tuple[SvgraphDependency, ...]:
     tag = _local_name(element.tag)
     source = attributes.get("id", tag)
-    deps: list[SvgIRDependency] = []
+    deps: list[SvgraphDependency] = []
     href = _href(element)
     if href:
-        deps.append(SvgIRDependency("href", source, href, "href"))
+        deps.append(SvgraphDependency("href", source, href, "href"))
     for name, value in attributes.items():
         if name == "href":
             continue
         if value.startswith("#") and not HEX_COLOR_RE.match(value):
-            deps.append(SvgIRDependency("reference", source, value, name))
+            deps.append(SvgraphDependency("reference", source, value, name))
         for match in IRI_RE.finditer(value):
-            deps.append(SvgIRDependency("paint-server", source, match.group(1), name))
+            deps.append(SvgraphDependency("paint-server", source, match.group(1), name))
     return tuple(deps)
 
 
-def _collect_node_dependencies(node: SvgIRNode) -> tuple[SvgIRDependency, ...]:
+def _collect_node_dependencies(node: SvgraphNode) -> tuple[SvgraphDependency, ...]:
     deps = list(node.dependencies)
     for child in node.children:
         deps.extend(_collect_node_dependencies(child))
     return tuple(deps)
 
 
-def _presentation_ir(root: SvgIRNode) -> SvgIRPresentation:
+def _presentation_ir(root: SvgraphNode) -> SvgraphPresentation:
     slides = _declared_slides(root)
     if not slides:
         slides = (root,)
@@ -225,7 +250,7 @@ def _presentation_ir(root: SvgIRNode) -> SvgIRPresentation:
     metadata = _presentation_metadata(root.metadata)
     masters = _templates(root, metadata, "masters", "slide-master")
     layouts = _templates(root, metadata, "layouts", "slide-layout")
-    return SvgIRPresentation(
+    return SvgraphPresentation(
         kind="pptxsvg",
         slide_size=_slide_size(root, slide_irs[0].view_box),
         slides=slide_irs,
@@ -239,13 +264,13 @@ def _presentation_ir(root: SvgIRNode) -> SvgIRPresentation:
     )
 
 
-def _declared_slides(node: SvgIRNode) -> tuple[SvgIRNode, ...]:
-    slides: list[SvgIRNode] = []
+def _declared_slides(node: SvgraphNode) -> tuple[SvgraphNode, ...]:
+    slides: list[SvgraphNode] = []
     _collect_declared_slides(node, slides)
     return tuple(slides)
 
 
-def _collect_declared_slides(node: SvgIRNode, slides: list[SvgIRNode]) -> None:
+def _collect_declared_slides(node: SvgraphNode, slides: list[SvgraphNode]) -> None:
     if _is_slide_node(node):
         slides.append(node)
         return
@@ -253,7 +278,7 @@ def _collect_declared_slides(node: SvgIRNode, slides: list[SvgIRNode]) -> None:
         _collect_declared_slides(child, slides)
 
 
-def _is_slide_node(node: SvgIRNode) -> bool:
+def _is_slide_node(node: SvgraphNode) -> bool:
     return (
         node.data.get("kind") == "slide"
         or node.data.get("role") == "slide"
@@ -263,9 +288,9 @@ def _is_slide_node(node: SvgIRNode) -> bool:
     )
 
 
-def _slide_ir(node: SvgIRNode, index: int) -> SvgIRSlide:
+def _slide_ir(node: SvgraphNode, index: int) -> SvgraphSlide:
     view_box = _view_box(node)
-    return SvgIRSlide(
+    return SvgraphSlide(
         slide_id=node.attributes.get("id") or node.data.get("slide") or f"slide-{index}",
         node_id=node.node_id,
         title=_title(node),
@@ -275,28 +300,28 @@ def _slide_ir(node: SvgIRNode, index: int) -> SvgIRSlide:
     )
 
 
-def _nodes_by_kind(root: SvgIRNode, kind: str) -> tuple[SvgIRNode, ...]:
-    nodes: list[SvgIRNode] = []
+def _nodes_by_kind(root: SvgraphNode, kind: str) -> tuple[SvgraphNode, ...]:
+    nodes: list[SvgraphNode] = []
     _collect_nodes_by_kind(root, kind, nodes)
     return tuple(nodes)
 
 
-def _collect_nodes_by_kind(node: SvgIRNode, kind: str, nodes: list[SvgIRNode]) -> None:
+def _collect_nodes_by_kind(node: SvgraphNode, kind: str, nodes: list[SvgraphNode]) -> None:
     if node.data.get("kind") == kind or node.data.get("role") == kind:
         nodes.append(node)
     for child in node.children:
         _collect_nodes_by_kind(child, kind, nodes)
 
 
-def _templates(root: SvgIRNode, metadata: dict[str, object], metadata_key: str, kind: str) -> tuple[SvgIRTemplate, ...]:
-    templates: list[SvgIRTemplate] = []
+def _templates(root: SvgraphNode, metadata: dict[str, object], metadata_key: str, kind: str) -> tuple[SvgraphTemplate, ...]:
+    templates: list[SvgraphTemplate] = []
     for index, entry in enumerate(_list_metadata(metadata, metadata_key), start=1):
         if isinstance(entry, dict):
             template_id = str(entry.get("id") or entry.get("name") or f"{kind}-{index}")
-            templates.append(SvgIRTemplate(template_id, kind, None, {}, entry))
+            templates.append(SvgraphTemplate(template_id, kind, None, {}, entry))
     for node in _nodes_by_kind(root, kind):
         templates.append(
-            SvgIRTemplate(
+            SvgraphTemplate(
                 node.attributes.get("id") or node.data.get("template") or node.node_id,
                 kind,
                 node.node_id,
@@ -307,8 +332,8 @@ def _templates(root: SvgIRNode, metadata: dict[str, object], metadata_key: str, 
     return tuple(templates)
 
 
-def _guides(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRGuide, ...]:
-    guides: list[SvgIRGuide] = []
+def _guides(root: SvgraphNode, metadata: dict[str, object]) -> tuple[SvgraphGuide, ...]:
+    guides: list[SvgraphGuide] = []
     for index, entry in enumerate(_list_metadata(metadata, "guides"), start=1):
         if not isinstance(entry, dict):
             continue
@@ -316,7 +341,7 @@ def _guides(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRGuide, .
         if position is None:
             continue
         guides.append(
-            SvgIRGuide(
+            SvgraphGuide(
                 str(entry.get("id") or f"guide-{index}"),
                 str(entry.get("orientation") or "vertical"),
                 position,
@@ -328,7 +353,7 @@ def _guides(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRGuide, .
         if position is None:
             continue
         guides.append(
-            SvgIRGuide(
+            SvgraphGuide(
                 node.attributes.get("id") or node.node_id,
                 node.data.get("orientation") or ("horizontal" if "y" in node.attributes else "vertical"),
                 position,
@@ -339,14 +364,14 @@ def _guides(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRGuide, .
     return tuple(guides)
 
 
-def _rulers(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRRuler, ...]:
-    rulers: list[SvgIRRuler] = []
+def _rulers(root: SvgraphNode, metadata: dict[str, object]) -> tuple[SvgraphRuler, ...]:
+    rulers: list[SvgraphRuler] = []
     for index, entry in enumerate(_list_metadata(metadata, "rulers"), start=1):
         if not isinstance(entry, dict):
             continue
         origin = _number(entry.get("origin")) or 0.0
         rulers.append(
-            SvgIRRuler(
+            SvgraphRuler(
                 str(entry.get("id") or f"ruler-{index}"),
                 str(entry.get("orientation") or "horizontal"),
                 origin,
@@ -356,7 +381,7 @@ def _rulers(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRRuler, .
         )
     for node in _nodes_by_kind(root, "ruler"):
         rulers.append(
-            SvgIRRuler(
+            SvgraphRuler(
                 node.attributes.get("id") or node.node_id,
                 node.data.get("orientation") or "horizontal",
                 _number(node.data.get("origin")) or 0.0,
@@ -368,20 +393,20 @@ def _rulers(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRRuler, .
     return tuple(rulers)
 
 
-def _text_styles(root: SvgIRNode, metadata: dict[str, object]) -> tuple[SvgIRTextStyle, ...]:
-    styles: list[SvgIRTextStyle] = []
+def _text_styles(root: SvgraphNode, metadata: dict[str, object]) -> tuple[SvgraphTextStyle, ...]:
+    styles: list[SvgraphTextStyle] = []
     raw_styles = metadata.get("textStyles") or metadata.get("text_styles")
     if isinstance(raw_styles, dict):
         for role, properties in raw_styles.items():
             if isinstance(properties, dict):
-                styles.append(SvgIRTextStyle(str(role), str(role), properties))
+                styles.append(SvgraphTextStyle(str(role), str(role), properties))
     for index, entry in enumerate(_list_metadata(metadata, "textStyles"), start=1):
         if isinstance(entry, dict):
             role = str(entry.get("role") or entry.get("id") or f"text-style-{index}")
-            styles.append(SvgIRTextStyle(str(entry.get("id") or role), role, entry))
+            styles.append(SvgraphTextStyle(str(entry.get("id") or role), role, entry))
     for node in _nodes_by_kind(root, "style-template"):
         role = node.data.get("role") or node.data.get("style") or node.attributes.get("id") or node.node_id
-        styles.append(SvgIRTextStyle(node.attributes.get("id") or role, role, {**node.attributes, **node.data}, node.node_id))
+        styles.append(SvgraphTextStyle(node.attributes.get("id") or role, role, {**node.attributes, **node.data}, node.node_id))
     return tuple(styles)
 
 
@@ -391,12 +416,12 @@ def _list_metadata(metadata: dict[str, object], key: str) -> list[object]:
 
 
 def _package_parts(
-    slides: tuple[SvgIRSlide, ...],
-    masters: tuple[SvgIRTemplate, ...] = (),
-    layouts: tuple[SvgIRTemplate, ...] = (),
-) -> tuple[SvgIRPackagePart, ...]:
+    slides: tuple[SvgraphSlide, ...],
+    masters: tuple[SvgraphTemplate, ...] = (),
+    layouts: tuple[SvgraphTemplate, ...] = (),
+) -> tuple[SvgraphPackagePart, ...]:
     parts = [
-        SvgIRPackagePart(
+        SvgraphPackagePart(
             part_name="/ppt/presentation.xml",
             content_type="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml",
             kind="presentation",
@@ -404,7 +429,7 @@ def _package_parts(
     ]
     for index, master in enumerate(masters or (None,), start=1):
         parts.append(
-            SvgIRPackagePart(
+            SvgraphPackagePart(
                 part_name=f"/ppt/slideMasters/slideMaster{index}.xml",
                 content_type="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml",
                 kind="slide-master",
@@ -413,7 +438,7 @@ def _package_parts(
         )
     for index, layout in enumerate(layouts or (None,), start=1):
         parts.append(
-            SvgIRPackagePart(
+            SvgraphPackagePart(
                 part_name=f"/ppt/slideLayouts/slideLayout{index}.xml",
                 content_type="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml",
                 kind="slide-layout",
@@ -421,7 +446,7 @@ def _package_parts(
             )
         )
     parts.append(
-        SvgIRPackagePart(
+        SvgraphPackagePart(
             part_name="/ppt/theme/theme1.xml",
             content_type="application/vnd.openxmlformats-officedocument.theme+xml",
             kind="theme",
@@ -429,7 +454,7 @@ def _package_parts(
     )
     for index, slide in enumerate(slides, start=1):
         parts.append(
-            SvgIRPackagePart(
+            SvgraphPackagePart(
                 part_name=f"/ppt/slides/slide{index}.xml",
                 content_type="application/vnd.openxmlformats-officedocument.presentationml.slide+xml",
                 kind="slide",
@@ -439,7 +464,7 @@ def _package_parts(
     return tuple(parts)
 
 
-def _slide_size(root: SvgIRNode, fallback_view_box: tuple[float, float, float, float]) -> tuple[float, float]:
+def _slide_size(root: SvgraphNode, fallback_view_box: tuple[float, float, float, float]) -> tuple[float, float]:
     metadata = _presentation_metadata(root.metadata)
     slide_size = metadata.get("slideSize")
     if isinstance(slide_size, dict):
@@ -466,7 +491,7 @@ def _presentation_metadata(metadata: dict[str, object]) -> dict[str, object]:
     return presentation if isinstance(presentation, dict) else {}
 
 
-def _view_box(node: SvgIRNode) -> tuple[float, float, float, float]:
+def _view_box(node: SvgraphNode) -> tuple[float, float, float, float]:
     raw = node.attributes.get("viewBox")
     if raw:
         values = [_number(part) for part in raw.replace(",", " ").split()]
@@ -477,7 +502,7 @@ def _view_box(node: SvgIRNode) -> tuple[float, float, float, float]:
     return (0.0, 0.0, width, height)
 
 
-def _title(node: SvgIRNode) -> str | None:
+def _title(node: SvgraphNode) -> str | None:
     if "title" in node.data:
         return node.data["title"]
     if isinstance(node.metadata.get("json"), dict):

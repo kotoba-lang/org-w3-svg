@@ -2,12 +2,12 @@
 
 ## Goal
 
-Build a browser-based editor for `pptxsvg`: an SVG-first presentation format where SVG remains the editable source of truth, `svg_to_ir()` exposes semantic structure, and `svg_to_pptx_ir()` provides the package-level plan for `.pptx` export.
+Build a browser-based editor for `pptxsvg`: an SVG-first presentation format where SVG remains the editable source of truth, `svg_to_svgraph()` exposes SVGraph semantic structure, and `svg_to_pptx_ir()` provides the package-level plan for `.pptx` export.
 
 The app should support:
 
 - editing SVG visually and structurally
-- editing metadata, `data-*`, dependencies, and slide semantics through the SVG IR
+- editing metadata, `data-*`, dependencies, and slide semantics through SVGraph
 - previewing slide boundaries and package parts
 - exporting PresentationML/PPTX from deterministic emitters
 - running local Web LLM inference in the browser for semantic assistance, not for final conversion correctness
@@ -26,7 +26,7 @@ The first screen is the editor, not a landing page.
 Primary panes:
 
 - Canvas: live SVG rendering with slide overlays, selection handles, guides, connectors, and table/cell hints.
-- Structure: SVG IR tree, node ids, `id`, `data-kind`, `data-role`, `data-bind`, dependencies, and warnings.
+- Structure: SVGraph tree, node ids, `id`, `data-kind`, `data-role`, `data-bind`, dependencies, and warnings.
 - Properties: geometry, paint, text, metadata, accessibility, table semantics, and slide settings.
 - Slides: `pptxsvg` slide list, slide size, titles, notes, and package part mapping.
 - Assistant: local WebGPU LLM panel for semantic suggestions and batch edits.
@@ -40,8 +40,8 @@ Browser UI
   |-- SVG document model
   |     |-- raw SVG text
   |     |-- DOM tree
-  |     |-- SvgIRDocument JSON
-  |     |-- SvgIRPresentation JSON
+  |     |-- SVGraph JSON
+  |     |-- PPTXSVG presentation JSON
   |
   |-- Workers
   |     |-- parser/analyzer worker
@@ -62,8 +62,8 @@ Client-side state should keep four synchronized layers:
 
 1. Raw SVG source.
 2. Parsed SVG DOM.
-3. `SvgIRDocument`.
-4. `SvgIRPresentation`.
+3. `SVGraphDocument`.
+4. `PPTXSVG presentation projection`.
 
 The app treats SVG as canonical. IR is derived and cached. UI actions should preferably emit structured edit operations and then serialize back to SVG:
 
@@ -120,12 +120,12 @@ Every operation should be reversible for undo/redo.
 Export targets:
 
 - `svg`: canonical source.
-- `ir.json`: full SVG IR.
+- `svgraph.json`: full SVGraph.
 - `pptxsvg.json`: presentation/package projection.
 - `drawingml.xml`: current fragment converter output.
 - `pptx`: full package emitter output.
 
-The `.pptx` exporter should consume `SvgIRPresentation.parts` and generate package relationships, content types, presentation properties, slide XML, theme, layouts, and optional custom XML sidecar.
+The `.pptx` exporter should consume the SVGraph `presentation.parts` projection and generate package relationships, content types, presentation properties, slide XML, theme, layouts, and optional custom XML sidecar.
 
 ## Web LLM Integration
 

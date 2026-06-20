@@ -9,7 +9,7 @@ from xml.etree import ElementTree as ET
 
 from .coverage import analyze_svg
 from .converter import drawingml_to_svg, svg_to_drawingml
-from .ir import svg_ir_to_json, svg_pptx_ir_to_json
+from .ir import svg_ir_to_json, svg_pptx_ir_to_json, svg_svgraph_to_json
 from .pptx import svg_to_pptx
 
 
@@ -20,10 +20,10 @@ def main(argv: list[str] | None = None) -> int:
     subparsers = parser.add_subparsers(dest="command")
     subparsers.required = True
 
-    for command in ("svg2dml", "dml2svg", "svg2pptx", "analyze", "ir", "pptxsvg"):
+    for command in ("svg2dml", "dml2svg", "svg2pptx", "analyze", "ir", "svgraph", "pptxsvg"):
         sub = subparsers.add_parser(command)
         sub.add_argument("input", nargs="?", help="Input file. Reads stdin when omitted.")
-        if command not in {"analyze", "ir", "pptxsvg"}:
+        if command not in {"analyze", "ir", "svgraph", "pptxsvg"}:
             sub.add_argument("-o", "--output", help="Output file. Writes stdout when omitted.")
 
     args = parser.parse_args(argv)
@@ -42,6 +42,8 @@ def main(argv: list[str] | None = None) -> int:
             output = json.dumps(analyze_svg(source).to_dict(), indent=2, sort_keys=True) + "\n"
         elif args.command == "ir":
             output = svg_ir_to_json(source)
+        elif args.command == "svgraph":
+            output = svg_svgraph_to_json(source)
         elif args.command == "pptxsvg":
             output = svg_pptx_ir_to_json(source)
         else:

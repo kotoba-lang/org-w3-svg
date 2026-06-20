@@ -2,14 +2,14 @@ const emuPerPx = 9525;
 
 type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
-type SvgIrNode = {
+type SvgraphNode = {
   node_id: string;
   tag: string;
   attributes: Record<string, string>;
   data: Record<string, string>;
   metadata: { text?: string; json?: JsonValue };
   dependencies: Dependency[];
-  children: SvgIrNode[];
+  children: SvgraphNode[];
   text: string | null;
 };
 
@@ -80,9 +80,10 @@ type TextStyleIr = {
   node_id: string | null;
 };
 
-type FullIr = {
+type SvgraphDocument = {
+  kind: "svgraph";
   version: string;
-  root: SvgIrNode;
+  root: SvgraphNode;
   metadata: { text?: string; json?: JsonValue };
   dependencies: Dependency[];
   presentation: PptxSvgIr;
@@ -500,6 +501,11 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <g class="var-theme"><rect class="inherit-box" x="910" y="88" width="105" height="52"/></g>
     <rect id="css-transform-origin" class="css-transform-origin" x="1035" y="88" width="105" height="52" style="fill:#f0fdf4;stroke:#16a34a"/>
     <rect id="media-rule" class="media-rule" x="1160" y="88" width="70" height="52"/>
+    <switch>
+      <rect id="switch-unsupported" requiredExtensions="https://example.test/ext" x="1160" y="155" width="70" height="40" fill="#dc2626"/>
+      <rect id="switch-fallback" x="1160" y="155" width="70" height="40" fill="#16a34a" stroke="#14532d"/>
+      <rect id="switch-skipped" x="1160" y="155" width="70" height="40" fill="#2563eb"/>
+    </switch>
     <rect id="alpha-shape" x="580" y="615" width="120" height="50" style="fill:rgba(239,68,68,0.5);stroke:#2563ebcc;stroke-width:6;fill-opacity:0.8;stroke-opacity:0.5"/>
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-dashoffset:5;stroke-linecap:round;stroke-linejoin:bevel"/>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;letter-spacing:2px;text-transform:none"> blue</tspan></text>
@@ -530,12 +536,12 @@ line</text>
 
 const state: {
   tab: string;
-  ir: FullIr | null;
+  svgraph: SvgraphDocument | null;
   pptxsvg: PptxSvgIr | null;
   webgpu: boolean;
 } = {
   tab: "summary",
-  ir: null,
+  svgraph: null,
   pptxsvg: null,
   webgpu: false,
 };
@@ -593,11 +599,11 @@ function dependencies(element: Element, attributes: Record<string, string>): Dep
   return deps;
 }
 
-function nodeToIr(element: Element, nodeId: string): SvgIrNode {
+function nodeToSvgraph(element: Element, nodeId: string): SvgraphNode {
   const attributes = attrs(element);
   const children = Array.from(element.children)
     .filter((child) => localName(child) !== "metadata")
-    .map((child, index) => nodeToIr(child, `${nodeId}.${index}`));
+    .map((child, index) => nodeToSvgraph(child, `${nodeId}.${index}`));
   const text = Array.from(element.childNodes)
     .filter((node) => node.nodeType === Node.TEXT_NODE)
     .map((node) => (node.textContent || "").trim())
@@ -615,11 +621,11 @@ function nodeToIr(element: Element, nodeId: string): SvgIrNode {
   };
 }
 
-function flatten(node: SvgIrNode): SvgIrNode[] {
+function flatten(node: SvgraphNode): SvgraphNode[] {
   return [node, ...node.children.flatMap(flatten)];
 }
 
-function viewBox(node: SvgIrNode): [number, number, number, number] {
+function viewBox(node: SvgraphNode): [number, number, number, number] {
   const raw = node.attributes.viewBox;
   if (raw) {
     const values = raw.replaceAll(",", " ").split(/\s+/).map(Number).filter((value) => Number.isFinite(value));
@@ -630,7 +636,7 @@ function viewBox(node: SvgIrNode): [number, number, number, number] {
   return [0, 0, Number(node.attributes.width) || 0, Number(node.attributes.height) || 0];
 }
 
-function nodeTitle(node: SvgIrNode): string | null {
+function nodeTitle(node: SvgraphNode): string | null {
   if (node.data.title) return node.data.title;
   const meta = asObject(node.metadata.json);
   if (typeof meta.title === "string") return meta.title;
@@ -638,11 +644,11 @@ function nodeTitle(node: SvgIrNode): string | null {
   return titleNode?.text || null;
 }
 
-function isSlide(node: SvgIrNode): boolean {
+function isSlide(node: SvgraphNode): boolean {
   return node.data.kind === "slide" || node.data.role === "slide" || Object.hasOwn(node.data, "slide");
 }
 
-function buildPptxsvg(root: SvgIrNode): PptxSvgIr {
+function buildPptxsvg(root: SvgraphNode): PptxSvgIr {
   const nodes = flatten(root);
   const slides = nodes.filter(isSlide);
   const selectedSlides = slides.length ? slides : [root];
@@ -688,7 +694,7 @@ function buildPptxsvg(root: SvgIrNode): PptxSvgIr {
   };
 }
 
-function templates(nodes: SvgIrNode[], metadataItems: JsonValue, kind: string): TemplateIr[] {
+function templates(nodes: SvgraphNode[], metadataItems: JsonValue, kind: string): TemplateIr[] {
   const items = Array.isArray(metadataItems) ? metadataItems : [];
   const fromMeta = items.map((item, index) => {
     const obj = asObject(item);
@@ -712,7 +718,7 @@ function templates(nodes: SvgIrNode[], metadataItems: JsonValue, kind: string): 
   return [...fromMeta, ...fromNodes];
 }
 
-function guides(nodes: SvgIrNode[], metadataItems: JsonValue): GuideIr[] {
+function guides(nodes: SvgraphNode[], metadataItems: JsonValue): GuideIr[] {
   const items = Array.isArray(metadataItems) ? metadataItems : [];
   const fromMeta = items.map((item, index) => {
     const obj = asObject(item);
@@ -736,7 +742,7 @@ function guides(nodes: SvgIrNode[], metadataItems: JsonValue): GuideIr[] {
   return [...fromMeta, ...fromNodes];
 }
 
-function rulers(nodes: SvgIrNode[], metadataItems: JsonValue): RulerIr[] {
+function rulers(nodes: SvgraphNode[], metadataItems: JsonValue): RulerIr[] {
   const items = Array.isArray(metadataItems) ? metadataItems : [];
   const fromMeta = items.map((item, index) => {
     const obj = asObject(item);
@@ -762,7 +768,7 @@ function rulers(nodes: SvgIrNode[], metadataItems: JsonValue): RulerIr[] {
   return [...fromMeta, ...fromNodes];
 }
 
-function textStyles(nodes: SvgIrNode[], metadataStyles: JsonValue): TextStyleIr[] {
+function textStyles(nodes: SvgraphNode[], metadataStyles: JsonValue): TextStyleIr[] {
   const styleObj = !Array.isArray(metadataStyles) ? asObject(metadataStyles) : {};
   const fromMeta = Object.entries(styleObj).map(([role, properties]) => ({
     style_id: role,
@@ -781,16 +787,17 @@ function textStyles(nodes: SvgIrNode[], metadataStyles: JsonValue): TextStyleIr[
   return [...fromMeta, ...fromNodes];
 }
 
-function buildIr(svgText: string): FullIr {
+function buildSvgraph(svgText: string): SvgraphDocument {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
   const error = doc.querySelector("parsererror");
   if (error) throw new Error((error.textContent || "").trim());
-  const root = nodeToIr(doc.documentElement, "n0");
+  const root = nodeToSvgraph(doc.documentElement, "n0");
   const dependencies = flatten(root).flatMap((node) => node.dependencies);
   const presentation = buildPptxsvg(root);
   return {
-    version: "0.2-web-ts",
+    kind: "svgraph",
+    version: "0.3-svgraph-web-ts",
     root,
     metadata: root.metadata,
     dependencies,
@@ -804,7 +811,7 @@ function svgToPptx(svgText: string): Uint8Array {
   const error = doc.querySelector("parsererror");
   if (error) throw new Error((error.textContent || "").trim());
   const root = doc.documentElement;
-  const ir = buildIr(svgText);
+  const ir = buildSvgraph(svgText);
   const slides = declaredSlides(root);
   const selectedSlides = slides.length ? slides : [root];
   const slideXmls = selectedSlides.map((slide, index) => buildSlideXml(slide, index + 1));
@@ -828,6 +835,17 @@ function declaredSlides(root: Element): Element[] {
 
 function isSlideElement(element: Element): boolean {
   return element.getAttribute("data-kind") === "slide" || element.getAttribute("data-role") === "slide" || element.hasAttribute("data-slide");
+}
+
+function switchSelectedChild(element: Element): Element | null {
+  return Array.from(element.children).find(switchChildIsSupported) ?? null;
+}
+
+function switchChildIsSupported(element: Element): boolean {
+  for (const name of ["requiredExtensions", "requiredFeatures", "requiredFormats"]) {
+    if ((element.getAttribute(name) || "").trim()) return false;
+  }
+  return !(element.getAttribute("systemLanguage") || "").trim();
 }
 
 function buildSlideXml(slide: Element, slideIndex: number): string {
@@ -870,6 +888,11 @@ function extractShapes(root: Element): Shape[] {
         }
         walk(ref, useMatrix, ownStyle, new Set([...refStack, refId]), refViewport);
       }
+      return;
+    }
+    if (tag === "switch") {
+      const selected = switchSelectedChild(element);
+      if (selected) walk(selected, ownMatrix, ownStyle, refStack, childViewport);
       return;
     }
     if (!visibilityHidden && tag === "g" && (element.getAttribute("data-kind") === "table" || element.getAttribute("data-role") === "table")) {
@@ -2598,12 +2621,12 @@ function concat(chunks: Uint8Array[]): Uint8Array {
 function render(): void {
   try {
     const text = source.value;
-    state.ir = buildIr(text);
-    state.pptxsvg = state.ir.presentation;
+    state.svgraph = buildSvgraph(text);
+    state.pptxsvg = state.svgraph.presentation;
     preview.innerHTML = text;
   } catch (error) {
     preview.innerHTML = "";
-    state.ir = null;
+    state.svgraph = null;
     state.pptxsvg = null;
     panel.innerHTML = `<div class="notice">${escapeHtml(error instanceof Error ? error.message : String(error))}</div>`;
     return;
@@ -2616,15 +2639,15 @@ function escapeHtml(value: unknown): string {
 }
 
 function renderPanel(): void {
-  if (!state.ir || !state.pptxsvg) return;
-  const nodes = flatten(state.ir.root);
+  if (!state.svgraph || !state.pptxsvg) return;
+  const nodes = flatten(state.svgraph.root);
   const semantic = nodes.filter((node) => Object.keys(node.data).length > 0).length;
-  const deps = state.ir.dependencies.length;
+  const deps = state.svgraph.dependencies.length;
   const templatesCount = state.pptxsvg.masters.length + state.pptxsvg.layouts.length + state.pptxsvg.text_styles.length;
   if (state.tab === "summary") {
     panel.innerHTML = `
       <div class="metrics">
-        <div class="metric"><strong>${nodes.length}</strong><span>SVG IR nodes</span></div>
+        <div class="metric"><strong>${nodes.length}</strong><span>SVGraph nodes</span></div>
         <div class="metric"><strong>${state.pptxsvg.slides.length}</strong><span>PPTXSVG slides</span></div>
         <div class="metric"><strong>${semantic}</strong><span>semantic nodes</span></div>
         <div class="metric"><strong>${templatesCount}</strong><span>templates</span></div>
@@ -2646,7 +2669,7 @@ function renderPanel(): void {
         model: "onnx-community/gemma-4-e2b-it-ONNX"
       }, null, 2))}</pre>`;
   } else {
-    panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.ir, null, 2))}</pre>`;
+    panel.innerHTML = `<pre>${escapeHtml(JSON.stringify(state.svgraph, null, 2))}</pre>`;
   }
 }
 
@@ -2677,7 +2700,7 @@ mustElement<HTMLButtonElement>("sampleBtn").addEventListener("click", () => {
   render();
 });
 mustElement<HTMLButtonElement>("downloadIrBtn").addEventListener("click", () => {
-  if (state.ir) downloadText("pptxsvg-ir.json", JSON.stringify(state.ir, null, 2));
+  if (state.svgraph) downloadText("svgraph.json", JSON.stringify(state.svgraph, null, 2));
 });
 mustElement<HTMLButtonElement>("downloadPptxsvgBtn").addEventListener("click", () => {
   if (state.pptxsvg) downloadText("pptxsvg.json", JSON.stringify(state.pptxsvg, null, 2));
