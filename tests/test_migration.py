@@ -1171,6 +1171,12 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function hasVisibleMarker" in generated
         assert '"fill stroke markers"' in generated
         assert 'paint-order="fill stroke markers"' in generated
+        assert "strokeLineCapSource" in generated
+        assert "strokeLineJoinSource" in generated
+        assert "function subtreeHasUnsupportedStrokeLineEnum" in generated
+        assert "function strokeLineEnumIsUnsupported" in generated
+        assert 'id="ignored-stroke-enum"' in generated
+        assert 'stroke-linejoin="arcs"' in generated
         assert 'id="length-glyphs-text"' in generated
         assert 'lengthAdjust=" SPACINGANDGLYPHS "' in generated
         assert 'id="word-spacing-text"' in generated

@@ -382,7 +382,9 @@ type SvgStyle = {
   color?: string | null;
   colorAlpha?: number | null;
   strokeLineCap?: string | null;
+  strokeLineCapSource?: string | null;
   strokeLineJoin?: string | null;
+  strokeLineJoinSource?: string | null;
   strokeMiterlimit?: number | null;
   strokeDasharray?: string | null;
   strokeDashoffset?: number | null;
@@ -649,11 +651,12 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-dashoffset:5;stroke-linecap:round;stroke-linejoin:bevel"/>
     <line id="path-length-line" x1="120" y1="675" x2="220" y2="675" pathLength="50" style="stroke:#0891b2;stroke-width:4;stroke-dasharray:10 5"/>
     <line id="negative-stroke-width" x1="230" y1="675" x2="300" y2="675" style="stroke:#7f1d1d;stroke-width:-2"/>
-    <g id="scaled-stroke-group" transform="translate(320 640) scale(2)">
+    <g id="scaled-stroke-group" transform="translate(320 640) scale(2)" stroke-linejoin="arcs">
       <line id="scaled-stroke" x1="0" y1="0" x2="50" y2="0" style="stroke:#7c3aed;stroke-width:3;stroke-dasharray:9 3"/>
       <line id="non-scaling-stroke" x1="0" y1="18" x2="50" y2="18" style="stroke:#be185d;stroke-width:3;stroke-dasharray:9 3;vector-effect:non-scaling-stroke"/>
       <text id="scaled-text" x="62" y="10" style="font-size:12;font-family:Arial;fill:#111827;stroke:#ffffff;stroke-width:1;vector-effect:non-scaling-stroke">Scale</text>
     </g>
+    <g id="ignored-stroke-enum" stroke-linecap="triangle"><line x1="450" y1="675" x2="520" y2="675" stroke="none"/></g>
     <text id="rich-text" x="330" y="660" rotate="6" style="font-size:24;font-family:Arial;fill:#111827;font-variant:small-caps;text-transform:capitalize">rich <tspan style="fill:#dc2626;font-weight:700;baseline-shift:super;text-transform:uppercase">red</tspan><tspan style="fill:#2563eb;font-style:italic;text-decoration:underline line-through;text-decoration-style:wavy;letter-spacing:2px;text-transform:none"> blue</tspan></text>
     <text id="anchored-text" x="680" y="660" style="font-size:24;font-family:Arial;fill:#0f172a;stroke:#ffffff;stroke-width:1;stroke-opacity:.5;text-anchor:middle;dominant-baseline:middle;text-decoration-line:underline;text-decoration-style:dashed;text-decoration-color:#dc2626;text-decoration-thickness:3px">Centered</text>
     <text id="decoration-inherit" x="560" y="700" style="font-size:18;font-family:Arial;fill:#0f172a;text-decoration-line:underline;text-decoration-style:wavy;text-decoration-color:#dc2626;text-decoration-thickness:2px">Inherited <tspan style="text-decoration-style:inherit;text-decoration-color:inherit;text-decoration-thickness:inherit">decor</tspan></text>
@@ -1741,8 +1744,7 @@ function coverageAttributeIsSupportedOrNoop(element: Element, tag: string, name:
   if (name === "preserveAspectRatio") return tag === "svg" || tag === "symbol" || tag === "image" || tag === "use";
   if (name === "rotate") return singleTextRotation(value, element.textContent || null) != null;
   if (name === "stroke-dashoffset") return Number.isFinite(parseCssLength(value, percentageBasis("diag", defaultViewport()), Number.NaN));
-  if (name === "stroke-linecap") return normalizeStrokeLineCap(value) != null;
-  if (name === "stroke-linejoin") return normalizeStrokeLineJoin(value) != null;
+  if (name === "stroke-linecap" || name === "stroke-linejoin") return !subtreeHasUnsupportedStrokeLineEnum(element, style, refs, css, viewport, name);
   if (name === "textLength") return textLengthIsSupported(element, tag, value, style);
   if (name === "text-decoration") return textDecorationShorthandIsSupported(value, style);
   if (name === "text-decoration-line") return hasSupportedTextDecorationLine(value);
@@ -1809,6 +1811,43 @@ function paintOrderHasNoEffect(tag: string, value: string, style: SvgStyle): boo
 
 function hasVisibleMarker(style: SvgStyle): boolean {
   return !!(style.markerStart || style.markerMid || style.markerEnd);
+}
+
+function subtreeHasUnsupportedStrokeLineEnum(element: Element, style: SvgStyle, refs: Map<string, Element>, css: CssRule[], viewport: Viewport, attr: string, refStack: Set<string> = new Set()): boolean {
+  const tag = localName(element);
+  if (style.display === "none") return false;
+  if (tag === "use") {
+    const href = hrefValue(element);
+    const refId = href.startsWith("#") ? href.slice(1) : "";
+    const ref = refId ? refs.get(refId) : null;
+    if (!ref || refStack.has(refId)) return false;
+    const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
+    return subtreeHasUnsupportedStrokeLineEnum(ref, style, refs, css, refViewport, attr, new Set([...refStack, refId]));
+  }
+  if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageStrokeLineEnumApplies(element, tag, style, css, viewport) && strokeLineEnumIsUnsupported(attr, styleValueForStrokeLineEnum(style, attr))) return true;
+  const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
+  if (tag === "switch") {
+    const selected = switchSelectedChild(element);
+    return selected ? subtreeHasUnsupportedStrokeLineEnum(selected, computedStyle(selected, style, css, refs, childViewport), refs, css, childViewport, attr, refStack) : false;
+  }
+  return Array.from(element.children).some((child) => subtreeHasUnsupportedStrokeLineEnum(child, computedStyle(child, style, css, refs, childViewport), refs, css, childViewport, attr, refStack));
+}
+
+function coverageStrokeLineEnumApplies(element: Element, tag: string, style: SvgStyle, css: CssRule[], viewport: Viewport): boolean {
+  return ["circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan"].includes(tag) && !coverageHasNonRenderingGeometry(element, tag, style, css, viewport) && !strokeHasNoEffect(tag, style);
+}
+
+function strokeLineEnumIsUnsupported(attr: string, value: string | null): boolean {
+  if (value == null) return false;
+  return attr === "stroke-linecap" ? normalizeStrokeLineCap(value) == null : normalizeStrokeLineJoin(value) == null;
+}
+
+function styleValueForStrokeLineEnum(style: SvgStyle, attr: string): string | null {
+  return attr === "stroke-linecap" ? style.strokeLineCapSource ?? style.strokeLineCap ?? null : style.strokeLineJoinSource ?? style.strokeLineJoin ?? null;
+}
+
+function strokeHasNoEffect(tag: string, style: SvgStyle): boolean {
+  return !style.stroke || style.stroke === "none" || style.strokeAlpha === 0 || (style.strokeWidth ?? 1) <= 0 || (tag === "line" && style.stroke === "transparent");
 }
 
 function zeroLengthOrPercentage(value: string): boolean {
@@ -4753,8 +4792,14 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
     next.strokeAlpha = combinedAlpha(opacityAlpha, parseAlpha(strokeOpacity), next.strokeAlpha);
   }
   if (strokeWidth != null) next.strokeWidth = normalizeStrokeWidth(strokeWidth, next.fontSize ?? rootFontSize, next.strokeWidth ?? 1);
-  if (strokeLineCap != null) next.strokeLineCap = normalizeStrokeLineCap(strokeLineCap);
-  if (strokeLineJoin != null) next.strokeLineJoin = normalizeStrokeLineJoin(strokeLineJoin);
+  if (strokeLineCap != null) {
+    next.strokeLineCap = normalizeStrokeLineCap(strokeLineCap);
+    next.strokeLineCapSource = strokeLineCap;
+  }
+  if (strokeLineJoin != null) {
+    next.strokeLineJoin = normalizeStrokeLineJoin(strokeLineJoin);
+    next.strokeLineJoinSource = strokeLineJoin;
+  }
   if (strokeMiterlimit != null) next.strokeMiterlimit = normalizeStrokeMiterlimit(strokeMiterlimit);
   if (next.strokeLineJoin === "miter" && next.strokeMiterlimit == null) next.strokeMiterlimit = 4;
   const dashBasis = percentageBasis("diag", viewport);
@@ -5009,9 +5054,9 @@ function cssValueFromStyle(style: SvgStyle, name: string): string | null {
     case "border-width":
       return style.strokeWidth == null ? null : String(style.strokeWidth);
     case "stroke-linecap":
-      return style.strokeLineCap ?? null;
+      return style.strokeLineCapSource ?? style.strokeLineCap ?? null;
     case "stroke-linejoin":
-      return style.strokeLineJoin ?? null;
+      return style.strokeLineJoinSource ?? style.strokeLineJoin ?? null;
     case "stroke-miterlimit":
       return style.strokeMiterlimit == null ? null : String(style.strokeMiterlimit);
     case "stroke-dasharray":
