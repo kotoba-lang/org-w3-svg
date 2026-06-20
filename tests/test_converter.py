@@ -166,6 +166,9 @@ def test_release_checklist_covers_distribution_and_pptx_smoke() -> None:
     assert "tmp/dist/svgraph-*.whl" in release
     assert "python -m svgraph --version" in release
     assert "svgraph --version" in release
+    assert "import svgraph" in release
+    assert "from svgraph import svg_to_svgraph, svg_to_svgraph_presentation" in release
+    assert '"svg_to_" + "ir" not in svgraph.__all__' in release
     assert "svgraph examples/svgraph.svg > tmp/release-svgraph.json" in release
     assert "svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json" in release
     assert "svgraph analyze examples/coverage.svg" in release
@@ -177,6 +180,8 @@ def test_ci_pptx_smoke_covers_recent_fixture_regressions() -> None:
 
     assert "svgraph analyze examples/coverage.svg" in workflow
     assert "svgraph svg2pptx examples/svgraph.svg -o tmp/ci-svgraph.pptx" in workflow
+    assert "from svgraph import svg_to_svgraph, svg_to_svgraph_presentation" in workflow
+    assert '"svg_to_" + "ir" not in svgraph.__all__' in workflow
     assert 'f"{root}/MIGRATION.md" in sdist_names' in workflow
     assert '<a:miter lim="400000"' in workflow
     assert 'u=\\"wavy\\"' in workflow or "u=\"wavy\"" in workflow

@@ -30,6 +30,16 @@ tmp/release-venv/bin/python -m pip install tmp/dist/svgraph-*.whl
 tmp/release-venv/bin/python -m svgraph --version
 tmp/release-venv/bin/svgraph --version
 tmp/release-venv/bin/drawingml-svg --version
+tmp/release-venv/bin/python - <<'PY'
+import svgraph
+from svgraph import svg_to_svgraph, svg_to_svgraph_presentation
+
+assert svgraph.svg_to_svgraph is svg_to_svgraph
+assert svgraph.svg_to_svgraph_presentation is svg_to_svgraph_presentation
+assert "svg_to_svgraph" in svgraph.__all__
+assert "svg_to_" + "ir" not in svgraph.__all__
+assert svg_to_svgraph("<svg><rect data-kind='table'/></svg>").kind == "svgraph"
+PY
 tmp/release-venv/bin/svgraph analyze examples/coverage.svg
 tmp/release-venv/bin/svgraph examples/svgraph.svg > tmp/release-svgraph.json
 tmp/release-venv/bin/svgraph svgraph-presentation examples/svgraph.svg > tmp/release-svgraph-presentation.json
