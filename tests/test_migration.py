@@ -535,15 +535,19 @@ def test_release_checklist_verifies_public_svgraph_repo_identity() -> None:
     for expected in [
         (
             "gh repo view com-junkawasaki/svgraph --json "
-            "nameWithOwner,isPrivate,visibility,url,homepageUrl,defaultBranchRef,repositoryTopics"
+            "nameWithOwner,description,isPrivate,visibility,url,homepageUrl,defaultBranchRef,"
+            "repositoryTopics,licenseInfo"
         ),
         "nameWithOwner: com-junkawasaki/svgraph",
+        "description: SVG presentation graph toolkit for SVGraph, DrawingML, and PPTX conversion",
         "isPrivate: false",
         "visibility: PUBLIC",
         "url: https://github.com/com-junkawasaki/svgraph",
         "homepageUrl: https://com-junkawasaki.github.io/svgraph/",
         "defaultBranchRef.name: main",
         "repositoryTopics: drawingml, ooxml, pptx, presentationml, svg, svgraph, web-editor",
+        "licenseInfo.key: mit",
+        "licenseInfo.name: MIT License",
     ]:
         assert expected in release
 
@@ -961,6 +965,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "`slide_size` and `text_styles`",
         "`slideSize` and `textStyles`",
         "GitHub Actions, Python, and npm/web dependency update pull requests",
+        "public repository description, MIT license metadata, and SVGraph topics",
     ]:
         assert expected in changelog
 

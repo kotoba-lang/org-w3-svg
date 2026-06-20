@@ -25,6 +25,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Strengthened release and CI package file-list guards for canonical SVGraph modules and retained compatibility wrappers.
 - Added SVGraph-oriented public repository topics and release checklist verification for them.
 - Added a release checklist smoke for the published SVGraph Pages site.
+- Expanded release checklist coverage for public repository description, MIT license metadata, and SVGraph topics.
 - Accepted canonical snake_case SVGraph presentation metadata keys such as `slide_size` and `text_styles` in both Python and browser runtimes, while continuing to read SVG-authored `slideSize` and `textStyles`.
 - Switched direct Python CLI entry calls to use `svgraph` as the program name, while preserving legacy executable names for compatibility aliases.
 - Added deprecation warnings that point retained legacy executable aliases to their canonical `svgraph` commands.
