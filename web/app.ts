@@ -246,6 +246,7 @@ type ImageShape = BaseShape & {
   width: number;
   height: number;
   href: string;
+  alpha: number | null;
   srcRect: [number, number, number, number] | null;
 };
 
@@ -308,6 +309,7 @@ type SvgStyle = {
   strokeMiterlimit?: number | null;
   strokeDasharray?: string | null;
   strokeDashoffset?: number | null;
+  imageAlpha?: number | null;
   fontSize?: number;
   fontFamily?: string;
   fontWeight?: string;
@@ -469,7 +471,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <path id="arc-path" d="M 640 520 A 90 55 0 0 1 820 520 A 90 55 0 0 1 640 520" style="fill:#fef3c7;stroke:#a16207;stroke-width:5"/>
     <rect id="geometry-lengths" x="calc(50% - 80px)" y="42%" width="10%" height="8%" style="fill:#ecfccb;stroke:#4d7c0f;stroke-width:2pt"/>
     <line id="marked-line" x1="980" y1="185" x2="1130" y2="260" style="stroke:#7c3aed;stroke-width:8;marker-end:url(#arrow)"/>
-    <image id="pixel" x="980" y="340" width="96" height="48" preserveAspectRatio="xMidYMid slice" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
+    <image id="pixel" x="980" y="340" width="96" height="48" preserveAspectRatio="xMidYMid slice" opacity="35%" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
     <circle class="css-circle" cx="1130" cy="388" r="48"/>
     <rect id="clipped-bar" x="930" y="500" width="250" height="70" style="fill:#fecaca;stroke:#991b1b;clip-path:url(#bar-clip)"/>
     <ellipse id="bbox-clipped-ellipse" cx="1090" cy="560" rx="80" ry="50" style="fill:#ede9fe;stroke:#6d28d9;clip-path:url(#bbox-clip)"/>
@@ -1052,6 +1054,7 @@ function elementToShape(element: Element, matrix: Matrix, style: SvgStyle, id: n
         width: box.width,
         height: box.height,
         href,
+        alpha: style.imageAlpha ?? null,
         srcRect: imageFit.srcRect,
       };
     }
@@ -2308,7 +2311,7 @@ function freeformXml(shape: FreeformShape): string {
 
 function imageXml(shape: ImageShape): string {
   const srcRect = shape.srcRect ? srcRectXml(shape.srcRect) : "";
-  return `<p:pic><p:nvPicPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${xml(shape.href)}"/>${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${emu(shape.x)}" y="${emu(shape.y)}"/><a:ext cx="${emu(shape.width)}" cy="${emu(shape.height)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
+  return `<p:pic><p:nvPicPr><p:cNvPr id="${shape.id}" name="${xml(shape.name)}"/><p:cNvPicPr/><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="${xml(shape.href)}">${blipAlphaXml(shape.alpha)}</a:blip>${srcRect}<a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${emu(shape.x)}" y="${emu(shape.y)}"/><a:ext cx="${emu(shape.width)}" cy="${emu(shape.height)}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`;
 }
 
 function srcRectXml(rect: [number, number, number, number]): string {
@@ -2390,6 +2393,11 @@ function svgLineCapToDml(value: string | null | undefined): string | null {
 function alphaXml(value: number | null | undefined): string {
   if (value == null || value >= 1) return "";
   return `<a:alpha val="${Math.round(clamp(value, 0, 1) * 100000)}"/>`;
+}
+
+function blipAlphaXml(value: number | null | undefined): string {
+  if (value == null || value >= 1) return "";
+  return `<a:alphaModFix amt="${Math.round(clamp(value, 0, 1) * 100000)}"/>`;
 }
 
 function writePptx(slideXmls: string[], slideSize: [number, number]): Uint8Array {
@@ -2809,6 +2817,7 @@ function computedStyle(element: Element, inherited: SvgStyle, css: CssRule[] = [
   delete next.transformOrigin;
   if (color != null) next.color = parseCssColor(color, next);
   const opacityAlpha = parseAlpha(opacity);
+  if (opacityAlpha != null) next.imageAlpha = combinedAlpha(opacityAlpha, next.imageAlpha);
   const fillPaint = fill != null ? normalizePaintValue(fill, refs, next) : null;
   const strokePaint = stroke != null ? normalizePaintValue(stroke, refs, next) : null;
   if (fillPaint) {
