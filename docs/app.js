@@ -80,6 +80,16 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
         </table>
       </body>
     </foreignObject>
+    <foreignObject id="aligned-html-table" x="760" y="465" width="360" height="110">
+      <body xmlns="http://www.w3.org/1999/xhtml">
+        <table width="240" height="70" align="right" style="margin-top:8px">
+          <tr>
+            <td>Aligned</td>
+            <td>Frame</td>
+          </tr>
+        </table>
+      </body>
+    </foreignObject>
   </g>
   <g id="coverage-slide" data-kind="slide" data-title="Browser SVG Coverage" style="stroke:#334155;stroke-width:4;fill:#fde68a">
     <defs>
@@ -812,19 +822,25 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
     if (box.width <= 0 || box.height <= 0)
         return [];
     const tableStyle = htmlElementStyle(table, inheritedStyle, css);
+    const tableWidth = htmlTableElementSize(table, "width", box.width) ?? box.width;
+    const tableHeight = htmlTableElementSize(table, "height", box.height) ?? box.height;
+    const tableX = htmlTableXOffset(table, box.width, tableWidth, css);
+    const tableYOffset = htmlTableYOffset(table);
+    const frameX = box.x + tableX;
+    const frameY = box.y + tableYOffset;
     const caption = htmlTableCaption(table);
     const captionStyle = caption ? htmlElementStyle(caption, tableStyle, css) : null;
     const captionText = caption ? htmlCellText(caption) : "";
-    const captionHeight = htmlCaptionHeight(captionText, captionStyle, box.height);
+    const captionHeight = htmlCaptionHeight(captionText, captionStyle, tableHeight);
     const captionBottom = htmlCaptionSide(caption, css) === "bottom";
     const tableId = captionText && !captionBottom ? id + 1 : id;
     const captionId = captionText && !captionBottom ? id : id + 1;
-    const tableY = box.y + (captionText && !captionBottom ? captionHeight : 0);
-    const tableHeight = Math.max(1, box.height - captionHeight);
-    const spacing = htmlTableHasSpans(rows) ? [0, 0] : htmlTableBorderSpacing(table, css, box.width, tableHeight);
+    const tableY = frameY + (captionText && !captionBottom ? captionHeight : 0);
+    const gridHeight = Math.max(1, tableHeight - captionHeight);
+    const spacing = htmlTableHasSpans(rows) ? [0, 0] : htmlTableBorderSpacing(table, css, tableWidth, gridHeight);
     const spaced = spacing[0] > 0 || spacing[1] > 0;
-    const dataWidth = spaced ? Math.max(1, box.width - spacing[0] * (columnCount + 1)) : box.width;
-    const dataHeight = spaced ? Math.max(1, tableHeight - spacing[1] * (rows.length + 1)) : tableHeight;
+    const dataWidth = spaced ? Math.max(1, tableWidth - spacing[0] * (columnCount + 1)) : tableWidth;
+    const dataHeight = spaced ? Math.max(1, gridHeight - spacing[1] * (rows.length + 1)) : gridHeight;
     const dataColumns = htmlTableColumns(table, columnCount, dataWidth);
     const dataRows = htmlTableRowHeights(rows, dataHeight);
     const columnBackgrounds = htmlTableColumnBackgrounds(table, columnCount, css);
@@ -872,7 +888,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
         kind: "table",
         name: element.getAttribute("id") || table.getAttribute("id") || "foreignObject-table",
         data: dataAttrs(attrs(element)),
-        x: box.x,
+        x: frameX,
         y: tableY,
         columns,
         rows: rowHeights,
@@ -880,7 +896,7 @@ function shapesFromForeignObject(element, matrix, id, inheritedStyle, css = [], 
     };
     if (!caption || !captionText || !captionStyle || captionHeight <= 0)
         return [tableShape];
-    const captionShape = htmlCaptionShape(caption, captionStyle, captionId, box.x, captionBottom ? box.y + tableHeight : box.y, box.width, captionHeight, css);
+    const captionShape = htmlCaptionShape(caption, captionStyle, captionId, frameX, captionBottom ? frameY + gridHeight : frameY, tableWidth, captionHeight, css);
     return captionBottom ? [tableShape, captionShape] : [captionShape, tableShape];
 }
 function tableCellStyle(style, header) {
@@ -1046,6 +1062,57 @@ function htmlTableColumns(table, count, width) {
     const missing = Math.max(0, count - explicit.filter((item) => item != null).length);
     const fallback = missing ? Math.max(1, (width - fixedTotal) / missing) : Math.max(1, width / count);
     return Array.from({ length: count }, (_, index) => explicit[index] ?? fallback);
+}
+function htmlTableElementSize(table, axis, basis) {
+    const value = htmlStyleValue(table, axis) ?? table.getAttribute(axis);
+    const parsed = htmlCssLength(value, basis);
+    return parsed != null && parsed > 0 ? parsed : null;
+}
+function htmlTableXOffset(table, containerWidth, tableWidth, css) {
+    const extra = Math.max(0, containerWidth - tableWidth);
+    const marginLeft = htmlMarginSide(table, "left");
+    const marginRight = htmlMarginSide(table, "right");
+    if (marginLeft === "auto" && marginRight === "auto")
+        return extra / 2;
+    if (marginLeft === "auto")
+        return extra;
+    if (typeof marginLeft === "number")
+        return marginLeft;
+    const align = (htmlCssValue(table, "text-align", css) ?? table.getAttribute("align") ?? "").trim().toLowerCase();
+    if (align === "center" || align === "middle")
+        return extra / 2;
+    if (align === "right" || align === "end")
+        return extra;
+    return 0;
+}
+function htmlTableYOffset(table) {
+    const marginTop = htmlMarginSide(table, "top");
+    return typeof marginTop === "number" ? marginTop : 0;
+}
+function htmlMarginSide(element, side) {
+    const value = htmlStyleValue(element, `margin-${side}`) ?? htmlMarginShorthandSide(htmlStyleValue(element, "margin"), side);
+    if (value == null)
+        return null;
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "auto")
+        return "auto";
+    const parsed = htmlCssLength(normalized, 0);
+    return parsed != null ? Math.max(0, parsed) : null;
+}
+function htmlMarginShorthandSide(value, side) {
+    if (!value)
+        return null;
+    const parts = value.trim().split(/\s+/).filter(Boolean).slice(0, 4);
+    if (!parts.length)
+        return null;
+    const [top, right, bottom, left] = parts.length === 1
+        ? [parts[0], parts[0], parts[0], parts[0]]
+        : parts.length === 2
+            ? [parts[0], parts[1], parts[0], parts[1]]
+            : parts.length === 3
+                ? [parts[0], parts[1], parts[2], parts[1]]
+                : [parts[0], parts[1], parts[2], parts[3]];
+    return { top, right, bottom, left }[side] ?? null;
 }
 function htmlTableColumnBackgrounds(table, count, css) {
     const backgrounds = [];
