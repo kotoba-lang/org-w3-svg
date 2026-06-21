@@ -17,6 +17,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser coverage diagnostics for `pathLength` with actual browser conversion support, including cascaded dash arrays and no-op stroke cases.
 - Aligned browser coverage diagnostics for `preserveAspectRatio` with the Python analyzer, including image intrinsic-size and `use` viewBox-reference checks.
 - Aligned browser coverage diagnostics for text decoration detail attributes with the Python analyzer, limiting non-solid style, color, and thickness support to cases the browser exporter preserves.
+- Aligned browser coverage diagnostics for contradictory text decoration line tokens with the Python analyzer, including `none` mixed with visible line decorations.
 - Aligned browser coverage diagnostics for `vector-effect` with the Python analyzer, so unsupported values are ignored when no visible stroke can be affected.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.

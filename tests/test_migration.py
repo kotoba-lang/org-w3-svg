@@ -1161,6 +1161,8 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert 'name === "unicode-bidi"' in generated
         assert 'name === "writing-mode"' in generated
         assert "function textDecorationShorthandIsSupported" in generated
+        assert "function textDecorationLineIsSupportedOrNoop" in generated
+        assert "function textDecorationLineTokensAreSupportedOrNoop" in generated
         assert "function textDecorationStyleIsSupportedOrNoop" in generated
         assert "function textDecorationColorHasNoEffect" in generated
         assert "function textDecorationThicknessHasNoEffect" in generated

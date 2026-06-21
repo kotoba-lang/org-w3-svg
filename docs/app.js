@@ -1825,16 +1825,15 @@ function clipPathHasRect(value, refs) {
     return !!clip && localName(clip) === "clipPath" && Array.from(clip.children).some((child) => localName(child) === "rect");
 }
 function hasSupportedTextDecorationLine(value) {
-    const tokens = value.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    return tokens.length > 0 && tokens.every((token) => ["none", "underline", "line-through"].includes(token));
+    return textDecorationLineIsSupportedOrNoop(value);
 }
 function textDecorationShorthandIsSupported(value, style, viewport) {
     const tokens = cssValueTokens(value);
     const lineTokens = new Set(tokens.map((token) => token.toLowerCase()).filter((token) => textDecorationLineTokens.has(token)));
+    if (!textDecorationLineTokensAreSupportedOrNoop(lineTokens))
+        return false;
     if (!lineTokens.size || [...lineTokens].every((token) => token === "none"))
         return true;
-    if ([...lineTokens].some((token) => !["underline", "line-through"].includes(token)))
-        return false;
     const styleToken = textDecorationStyleToken(value);
     if (styleToken && styleToken !== "solid" && !hasOnlyVisibleUnderline(style))
         return false;
@@ -1864,6 +1863,15 @@ function textDecorationShorthandIsSupported(value, style, viewport) {
         return false;
     }
     return true;
+}
+function textDecorationLineIsSupportedOrNoop(value) {
+    const lineTokens = new Set(cssValueTokens(value).map((token) => token.toLowerCase()).filter((token) => textDecorationLineTokens.has(token)));
+    return textDecorationLineTokensAreSupportedOrNoop(lineTokens);
+}
+function textDecorationLineTokensAreSupportedOrNoop(lineTokens) {
+    if (!lineTokens.size || [...lineTokens].every((token) => token === "none"))
+        return true;
+    return [...lineTokens].every((token) => token === "underline" || token === "line-through");
 }
 function textDecorationStyleIsSupportedOrNoop(value, style) {
     const normalized = value.trim().toLowerCase();
