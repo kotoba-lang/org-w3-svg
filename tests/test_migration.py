@@ -1187,6 +1187,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function strokeDashoffsetHasNoEffect" in generated
         assert "function strokeDashoffsetIsSupported" in generated
         assert "function dashPatternPeriod" in generated
+        assert "function overflowIsSupportedOrNoop" in generated
+        assert 'id="visible-overflow"' in generated
+        assert 'id="hidden-overflow-empty"' in generated
         assert 'id="length-glyphs-text"' in generated
         assert 'lengthAdjust=" SPACINGANDGLYPHS "' in generated
         assert 'id="word-spacing-text"' in generated

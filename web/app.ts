@@ -695,6 +695,8 @@ line</text>
     <svg id="nested-overflow" class="css-overflow-frame" viewBox="0 0 20 10" overflow="hidden">
       <rect id="nested-overflow-rect" x="-5" y="-5" width="30" height="20" fill="#fee2e2" stroke="#991b1b" stroke-width="1"/>
     </svg>
+    <svg id="visible-overflow" x="1205" y="610" width="40" height="40" viewBox="0 0 20 10" overflow="visible"><rect x="-5" y="-5" width="30" height="20" fill="#f8fafc" stroke="#64748b"/></svg>
+    <svg id="hidden-overflow-empty" x="1205" y="660" width="40" height="30" viewBox="0 0 20 10" overflow="hidden"><rect x="-5" y="-5" width="30" height="20" opacity="0" fill="#111827"/></svg>
     <g transform="translate(90 390) scale(1.5)">
       <rect id="scaled" width="160" height="80" style="fill:#dbeafe;stroke:#2563eb"/>
     </g>
@@ -1746,7 +1748,7 @@ function coverageAttributeIsSupportedOrNoop(element: Element, tag: string, name:
   if (name === "lengthAdjust") return normalizeLengthAdjust(value) != null;
   if (name === "marker" || name === "marker-start" || name === "marker-end") return markerRefIsArrowLike(value, refs);
   if (name === "marker-mid") return true;
-  if (name === "overflow") return tag === "svg" && normalizeOverflow(value) === "hidden";
+  if (name === "overflow") return overflowIsSupportedOrNoop(element, tag, value, style, refs, css, viewport);
   if (name === "opacity") return parseAlpha(value) != null && visibleRenderingDescendantCount(element, refs, 2) < 2;
   if (name === "paint-order") return paintOrderHasNoEffect(tag, value, style);
   if (name === "pathLength") return normalizePathLength(value) != null;
@@ -1866,6 +1868,14 @@ function subtreeHasVisibleFill(element: Element, inheritedStyle: SvgStyle, refs:
 function hasVisibleFill(element: Element, tag: string, style: SvgStyle): boolean {
   if ((tag === "text" || tag === "tspan") && !(element.textContent || "").trim()) return false;
   return tag !== "line" && style.fill !== "none" && style.fillAlpha !== 0;
+}
+
+function overflowIsSupportedOrNoop(element: Element, tag: string, value: string, style: SvgStyle, refs: Map<string, Element>, css: CssRule[], viewport: Viewport): boolean {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized || normalized === "visible") return true;
+  if (tag !== "svg" && tag !== "symbol") return true;
+  if (normalizeOverflow(value) !== "hidden") return false;
+  return !coverageSubtreeHasVisibleRendering(element, style, refs, css, viewport, new Set());
 }
 
 function subtreeHasUnsupportedStrokeLineEnum(element: Element, style: SvgStyle, refs: Map<string, Element>, css: CssRule[], viewport: Viewport, attr: string, refStack: Set<string> = new Set()): boolean {
