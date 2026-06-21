@@ -1118,6 +1118,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "placements.some((item) => item.row + item.rowSpan > rows.length)" in generated
         assert "function htmlTableFirstRowColumnWidths" in generated
         assert "function htmlTableSizes" in generated
+        assert "return htmlTableSizes(explicit, rows.length, height)" in generated
         assert 'htmlStyleValue(cell, "width") ?? cell.getAttribute("width")' in generated
         assert 'htmlSpan(col, "span")' in generated
         assert "coverageHasNonRenderingGeometry(element, tag, style, css, viewport)" in generated

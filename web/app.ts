@@ -3619,10 +3619,7 @@ function htmlElementBackgroundFill(element: Element, css: CssRule[]): HtmlFill |
 
 function htmlTableRowHeights(rows: Element[], height: number): number[] {
   const explicit = rows.map((row) => htmlCssLength(htmlStyleValue(row, "height") ?? row.getAttribute("height"), height));
-  const fixedTotal = explicit.reduce<number>((sum, item) => sum + (item ?? 0), 0);
-  const missing = Math.max(0, rows.length - explicit.filter((item) => item != null).length);
-  const fallback = missing ? Math.max(1, (height - fixedTotal) / missing) : Math.max(1, height / Math.max(1, rows.length));
-  return explicit.map((item) => item ?? fallback);
+  return htmlTableSizes(explicit, rows.length, height);
 }
 
 function htmlTableCellStyle(cell: Element, table: Element, inheritedStyle: SvgStyle, css: CssRule[]): SvgStyle {

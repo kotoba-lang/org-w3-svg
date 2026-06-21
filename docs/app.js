@@ -3342,10 +3342,7 @@ function htmlElementBackgroundFill(element, css) {
 }
 function htmlTableRowHeights(rows, height) {
     const explicit = rows.map((row) => htmlCssLength(htmlStyleValue(row, "height") ?? row.getAttribute("height"), height));
-    const fixedTotal = explicit.reduce((sum, item) => sum + (item ?? 0), 0);
-    const missing = Math.max(0, rows.length - explicit.filter((item) => item != null).length);
-    const fallback = missing ? Math.max(1, (height - fixedTotal) / missing) : Math.max(1, height / Math.max(1, rows.length));
-    return explicit.map((item) => item ?? fallback);
+    return htmlTableSizes(explicit, rows.length, height);
 }
 function htmlTableCellStyle(cell, table, inheritedStyle, css) {
     const tableStyle = htmlElementStyle(table, inheritedStyle, css);
