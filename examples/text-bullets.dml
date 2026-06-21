@@ -69,6 +69,15 @@
           <a:t>Roman</a:t>
         </a:r>
       </a:p>
+      <a:p>
+        <a:pPr>
+          <a:buAutoNum type="romanUcPeriod" startAt="3996"/>
+        </a:pPr>
+        <a:r>
+          <a:rPr sz="1200"/>
+          <a:t>Roman overflow</a:t>
+        </a:r>
+      </a:p>
     </p:txBody>
   </p:sp>
 </p:spTree>

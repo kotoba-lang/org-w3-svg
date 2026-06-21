@@ -33,6 +33,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added browser TypeScript `drawingMlToSvg` import support for Python-compatible DrawingML baseline shift thresholds.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph default and end-paragraph text run fallback styles.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks.
+- Aligned browser TypeScript `drawingMlToSvg` Roman auto-numbered bullets with Python by falling back to numeric text above 3999.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML `bodyPr` no-wrap text bodies as SVG `white-space="nowrap"`.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML shape style fill, line, and font references.

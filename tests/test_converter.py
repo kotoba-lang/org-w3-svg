@@ -361,7 +361,7 @@ def test_cli_version_writes_installed_package_version(capsys) -> None:
     captured = capsys.readouterr()
 
     assert excinfo.value.code == 0
-    assert captured.out == "svgraph 0.1.33\n"
+    assert captured.out == "svgraph 0.1.34\n"
 
 
 def test_svgraph_module_cli_uses_canonical_program_name() -> None:
@@ -372,7 +372,7 @@ def test_svgraph_module_cli_uses_canonical_program_name() -> None:
         text=True,
     )
 
-    assert result.stdout == "svgraph 0.1.33\n"
+    assert result.stdout == "svgraph 0.1.34\n"
 
 
 def test_svgraph_cli_module_keeps_canonical_program_name() -> None:
@@ -383,7 +383,7 @@ def test_svgraph_cli_module_keeps_canonical_program_name() -> None:
         text=True,
     )
 
-    assert result.stdout == "svgraph 0.1.33\n"
+    assert result.stdout == "svgraph 0.1.34\n"
 
 
 def test_svgraph_module_cli_emits_canonical_svgraph_json_reports() -> None:
@@ -439,7 +439,7 @@ def test_svgraph_executable_keeps_svgraph_program_name(monkeypatch, capsys) -> N
     captured = capsys.readouterr()
 
     assert excinfo.value.code == 0
-    assert captured.out == "svgraph 0.1.33\n"
+    assert captured.out == "svgraph 0.1.34\n"
 
 
 def test_cli_converts_between_files_and_creates_output_parent(tmp_path) -> None:
@@ -8882,6 +8882,7 @@ def test_drawingml_alpha_and_roman_auto_number_bullets_round_trip_to_svg_text() 
           <a:p><a:pPr><a:buAutoNum type="alphaUcParenR" startAt="26"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Upper</a:t></a:r></a:p>
           <a:p><a:pPr><a:buAutoNum type="romanLcParenBoth" startAt="4"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Roman lower</a:t></a:r></a:p>
           <a:p><a:pPr><a:buAutoNum type="romanUcPeriod" startAt="4"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Roman upper</a:t></a:r></a:p>
+          <a:p><a:pPr><a:buAutoNum type="romanUcPeriod" startAt="3996"/></a:pPr><a:r><a:rPr sz="1200"/><a:t>Roman overflow</a:t></a:r></a:p>
         </p:txBody>
       </p:sp>
     </p:spTree>"""
@@ -8892,6 +8893,8 @@ def test_drawingml_alpha_and_roman_auto_number_bullets_round_trip_to_svg_text() 
     assert "AA) Upper" in svg
     assert "(vi) Roman lower" in svg
     assert "VII. Roman upper" in svg
+    assert "4000. Roman overflow" in svg
+    assert "MMMM" not in svg
     assert analyze_svg(svg).unsupported_attributes == {}
 
 
