@@ -1061,6 +1061,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "examples/sample.svg" in package_metadata["files"]
     assert "examples/style-ref.dml" in package_metadata["files"]
     assert "examples/table-rich.dml" in package_metadata["files"]
+    assert "examples/text-baseline-threshold.dml" in package_metadata["files"]
     assert "examples/text-bullets.dml" in package_metadata["files"]
     assert "examples/text-defaults.dml" in package_metadata["files"]
     assert "examples/text-layout.dml" in package_metadata["files"]
@@ -1190,6 +1191,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function dmlTextRuns" in generated
         assert "function dmlTextRunAttrs" in generated
         assert "function dmlTextRunAttrsFromProperties" in generated
+        assert "function dmlBaselineShift" in generated
         assert "function dmlPaintFillAttrs" in generated
         assert "function dmlStrokeAttrs" in generated
         assert "function dmlTextDecorationDetailAttrs" in generated
@@ -1619,6 +1621,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/line-arrow.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/line-style.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/style-ref.dml" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg examples/text-baseline-threshold.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-style.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-defaults.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-bullets.dml" in package_metadata["scripts"]["check:package"]
@@ -1648,6 +1651,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "package-line-arrow.svg" in package_metadata["scripts"]["check:package"]
     assert "package-line-style.svg" in package_metadata["scripts"]["check:package"]
     assert "package-style-ref.svg" in package_metadata["scripts"]["check:package"]
+    assert "package-text-baseline-threshold.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-style.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-defaults.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-bullets.svg" in package_metadata["scripts"]["check:package"]
@@ -1673,6 +1677,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'stroke-opacity=\\\"0.4\\\"' in package_metadata["scripts"]["check:package"]
     assert 'font-weight=\\\"bold\\\"' in package_metadata["scripts"]["check:package"]
     assert 'baseline-shift=\\\"super\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'baseline-shift=\\\"sub\\\"' in package_metadata["scripts"]["check:package"]
     assert 'text-decoration-style=\\\"dashed\\\"' in package_metadata["scripts"]["check:package"]
     assert 'text-decoration-color=\\\"#16a34a80\\\"' in package_metadata["scripts"]["check:package"]
     assert 'text-decoration-thickness=\\\"2\\\"' in package_metadata["scripts"]["check:package"]
@@ -1803,6 +1808,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser coverage analyzer `use` reference support checks against referenced SVG subtrees",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML rich text run fill, font, outline, decoration, baseline, and spacing details",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML underline style, color, alpha, and thickness details",
+        "browser TypeScript `drawingMlToSvg` import support for Python-compatible DrawingML baseline shift thresholds",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph default and end-paragraph text run fallback styles",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction",

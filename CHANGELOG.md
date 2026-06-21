@@ -30,6 +30,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser coverage diagnostics for `vector-effect` with the Python analyzer, so unsupported values are ignored when no visible stroke can be affected.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML rich text run fill, font, outline, decoration, baseline, and spacing details.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML underline style, color, alpha, and thickness details.
+- Added browser TypeScript `drawingMlToSvg` import support for Python-compatible DrawingML baseline shift thresholds.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph default and end-paragraph text run fallback styles.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction.

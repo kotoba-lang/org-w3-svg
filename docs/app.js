@@ -2501,14 +2501,20 @@ function dmlTextRunAttrsFromCandidates(candidates, fallbackFill, fallbackStroke)
         attrs.push(`text-decoration="${decoration}"`);
     attrs.push(...dmlTextDecorationDetailAttrs(candidates, decoration));
     const baseline = optionalInt(dmlFirstTextAttr(candidates, "baseline"));
-    if (baseline > 0)
-        attrs.push('baseline-shift="super"');
-    if (baseline < 0)
-        attrs.push('baseline-shift="sub"');
+    const baselineShift = dmlBaselineShift(baseline);
+    if (baselineShift)
+        attrs.push(`baseline-shift="${baselineShift}"`);
     const spacing = optionalInt(dmlFirstTextAttr(candidates, "spc"));
     if (spacing)
         attrs.push(`letter-spacing="${formatNumber(spacing / 75)}"`);
     return attrs;
+}
+function dmlBaselineShift(value) {
+    if (value >= 30000)
+        return "super";
+    if (value <= -25000)
+        return "sub";
+    return null;
 }
 function dmlFirstTextAttr(candidates, name) {
     for (const candidate of candidates) {
