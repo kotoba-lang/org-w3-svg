@@ -7,7 +7,7 @@
       <a:noFill/><a:ln><a:noFill/></a:ln>
     </p:spPr>
     <p:txBody>
-      <a:bodyPr lIns="19050" tIns="28575" rIns="95250" bIns="19050"/>
+      <a:bodyPr lIns="19050" tIns="28575" rIns="95250" bIns="19050" wrap="none"/>
       <a:lstStyle/>
       <a:p><a:r><a:rPr sz="1200"/><a:t>Inset</a:t></a:r></a:p>
     </p:txBody>

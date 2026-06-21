@@ -1185,6 +1185,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function dmlTextAnchor" in generated
         assert "function dmlTextDirection" in generated
         assert "function dmlTextBaseline" in generated
+        assert "function dmlTextWrap" in generated
         assert "function dmlParagraphBullet" in generated
         assert "function dmlAutoNumberBullet" in generated
         assert "function alphaNumber" in generated
@@ -1634,6 +1635,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'dy=\\\"1.2em\\\"' in package_metadata["scripts"]["check:package"]
     assert 'direction=\\\"rtl\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.6\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'white-space=\\\"nowrap\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-dasharray=\\\"4 2\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#000000\\\"[^>]*fill=\\\"' in package_metadata["scripts"]["check:package"]
     assert "buildSVGraphAssistantPrompt" in package_metadata["scripts"]["check:package"]
@@ -1758,6 +1760,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell text layout/rich runs and individual border line style details",
+        "browser TypeScript `drawingMlToSvg` import support for DrawingML `bodyPr` no-wrap text bodies",
         "browser pattern paint-server fallback colors to ignore hidden and fully transparent content",
         "browser gradient paint-server fallback colors to ignore fully transparent stops",
         "browser gradient paint-server fallback colors with inherited stop color, opacity, and currentColor context",

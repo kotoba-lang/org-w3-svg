@@ -44,7 +44,7 @@
           </a:tc>
           <a:tc>
             <a:txBody>
-              <a:bodyPr anchor="b"/>
+              <a:bodyPr anchor="b" wrap="none"/>
               <a:lstStyle>
                 <a:lvl1pPr algn="r" rtl="1"/>
               </a:lstStyle>

@@ -32,6 +32,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph default and end-paragraph text run fallback styles.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction.
+- Added browser TypeScript `drawingMlToSvg` import support for DrawingML `bodyPr` no-wrap text bodies as SVG `white-space="nowrap"`.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell text layout/rich runs and individual border line style details.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell fill alpha and non-duplicated default/run text paint attributes.
 - Aligned browser `foreignObject` HTML table column width export with Python, including `col span` expansion and first-row `td`/`th` width fallbacks.

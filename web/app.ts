@@ -2601,6 +2601,7 @@ function dmlTextSvg(element: Element, box: Box, options: DmlTextSvgOptions = {})
     layout.anchor ? `text-anchor="${layout.anchor}"` : "",
     layout.baseline ? `dominant-baseline="${layout.baseline}"` : "",
     layout.direction ? `direction="${layout.direction}"` : "",
+    dmlTextWrap(element) === "none" ? `white-space="nowrap"` : "",
   ].filter(Boolean);
   if (runs.length === 1) {
     const run = runs[0];
@@ -2755,6 +2756,10 @@ function dmlTextDirection(element: Element): string | null {
 function dmlTextBaseline(element: Element): string | null {
   const anchor = descendantsByLocal(element, "bodyPr")[0]?.getAttribute("anchor") || "";
   return ({ ctr: "middle", b: "text-after-edge", t: "text-before-edge" } as Record<string, string>)[anchor] ?? null;
+}
+
+function dmlTextWrap(element: Element): string | null {
+  return descendantsByLocal(element, "bodyPr")[0]?.getAttribute("wrap") === "none" ? "none" : null;
 }
 
 function dmlParagraphProperties(element: Element, predicate: (item: Element) => boolean): Element | null {
