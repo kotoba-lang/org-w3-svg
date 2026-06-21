@@ -1175,6 +1175,8 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function dmlLineJoin" in generated
         assert "function dmlDasharray" in generated
         assert "function dmlTextSvg" in generated
+        assert "function dmlTextRunAttrsWithoutDefaults" in generated
+        assert "function dmlAttrsInclude" in generated
         assert "function dmlTextLayout" in generated
         assert "function dmlTextInsets" in generated
         assert "function dmlTextRuns" in generated
@@ -1631,7 +1633,9 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'font-family=\\\"Yu Gothic\\\"' in package_metadata["scripts"]["check:package"]
     assert 'dy=\\\"1.2em\\\"' in package_metadata["scripts"]["check:package"]
     assert 'direction=\\\"rtl\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'fill-opacity=\\\"0.6\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-dasharray=\\\"4 2\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'fill=\\\"#000000\\\"[^>]*fill=\\\"' in package_metadata["scripts"]["check:package"]
     assert "buildSVGraphAssistantPrompt" in package_metadata["scripts"]["check:package"]
     assert "applyAssistantPatch" in package_metadata["scripts"]["check:package"]
     assert "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml" in readme

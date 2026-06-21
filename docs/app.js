@@ -1820,7 +1820,7 @@ function dmlTableFrameToSvg(element) {
             }
             if (!isMerge && cellWidth > 0 && cellHeight > 0) {
                 const text = dmlText(cell);
-                const fill = dmlColor(childByLocal(childByLocal(cell, "tcPr"), "solidFill")) ?? "#ffffff";
+                const fillPaint = dmlFillPaint(childByLocal(cell, "tcPr") ?? cell);
                 const cellAttrs = [
                     `data-kind="cell"`,
                     `data-row="${rowIndex}"`,
@@ -1829,7 +1829,7 @@ function dmlTableFrameToSvg(element) {
                     rowSpan > 1 ? `data-rowspan="${rowSpan}"` : "",
                     text ? `data-text="${xml(text)}"` : "",
                 ].filter(Boolean).join(" ");
-                children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}" fill="${fill}"/>`);
+                children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}"${dmlSvgStyle({ fill: fillPaint?.color ?? null, fillAlpha: fillPaint?.alpha ?? null, stroke: null, strokeWidth: null })}/>`);
                 children.push(...dmlTableCellBorderLines(childByLocal(cell, "tcPr"), colX, rowY, cellWidth, cellHeight));
                 if (text) {
                     children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none" }));
@@ -2190,11 +2190,12 @@ function dmlTextSvg(element, box, options = {}) {
     if (!runs.length)
         return "";
     const layout = dmlTextLayout(element, box, runs, options);
+    const singleRunAttrs = runs.length === 1 ? runs[0]?.attrs ?? [] : [];
     const attrs = [
         `x="${formatNumber(layout.x)}"`,
         `y="${formatNumber(layout.y)}"`,
-        options.defaultFill ? `fill="${options.defaultFill}"` : "",
-        options.defaultStroke ? `stroke="${options.defaultStroke}"` : "",
+        options.defaultFill && !dmlAttrsInclude(singleRunAttrs, "fill") ? `fill="${options.defaultFill}"` : "",
+        options.defaultStroke && !dmlAttrsInclude(singleRunAttrs, "stroke") ? `stroke="${options.defaultStroke}"` : "",
         layout.anchor ? `text-anchor="${layout.anchor}"` : "",
         layout.baseline ? `dominant-baseline="${layout.baseline}"` : "",
         layout.direction ? `direction="${layout.direction}"` : "",
@@ -2203,13 +2204,25 @@ function dmlTextSvg(element, box, options = {}) {
         const run = runs[0];
         if (!run)
             return "";
-        return `<text ${attrs.concat(run.attrs).join(" ")}>${xml(run.text)}</text>`;
+        return `<text ${attrs.concat(dmlTextRunAttrsWithoutDefaults(run.attrs, options)).join(" ")}>${xml(run.text)}</text>`;
     }
     const x = formatNumber(layout.x);
     return `<text ${attrs.join(" ")}>${runs.map((run) => {
         const runAttrs = run.breakBefore ? [`x="${x}"`, 'dy="1.2em"', ...run.attrs] : run.attrs;
         return `<tspan${runAttrs.length ? ` ${runAttrs.join(" ")}` : ""}>${xml(run.text)}</tspan>`;
     }).join("")}</text>`;
+}
+function dmlTextRunAttrsWithoutDefaults(attrs, options) {
+    return attrs.filter((attr) => {
+        if (options.defaultFill && attr === `fill="${options.defaultFill}"`)
+            return false;
+        if (options.defaultStroke && attr === `stroke="${options.defaultStroke}"`)
+            return false;
+        return true;
+    });
+}
+function dmlAttrsInclude(attrs, name) {
+    return attrs.some((attr) => attr.startsWith(`${name}="`));
 }
 function dmlTextLayout(element, box, runs, options = {}) {
     const [left, top, right, bottom] = dmlTextInsets(element);

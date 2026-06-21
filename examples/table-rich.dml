@@ -31,7 +31,7 @@
               </a:p>
             </a:txBody>
             <a:tcPr>
-              <a:solidFill><a:srgbClr val="e0f2fe"/></a:solidFill>
+              <a:solidFill><a:srgbClr val="e0f2fe"><a:alpha val="60000"/></a:srgbClr></a:solidFill>
               <a:lnL w="19050" cap="sq">
                 <a:solidFill><a:srgbClr val="dc2626"><a:alpha val="50000"/></a:srgbClr></a:solidFill>
                 <a:custDash><a:ds d="200000" sp="100000"/></a:custDash>
