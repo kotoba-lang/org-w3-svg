@@ -1737,7 +1737,7 @@ export function drawingMlToSvg(drawingMlText: string): string {
   const maxY = Math.max(0, ...bounds.map((box) => box.y + box.height));
   const width = Math.max(1, maxX - minX);
   const height = Math.max(1, maxY - minY);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${formatNumber(minX)} ${formatNumber(minY)} ${formatNumber(width)} ${formatNumber(height)}">${items.map((item) => item.svg).join("")}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${formatNumber(minX)} ${formatNumber(minY)} ${formatNumber(width)} ${formatNumber(height)}">${dmlSvgMarkerDefs(items)}${items.map((item) => item.svg).join("")}</svg>`;
 }
 
 type DmlSvgItem = {
@@ -1767,6 +1767,11 @@ function transformDmlSvgItem(item: DmlSvgItem, matrix: Matrix): DmlSvgItem {
     bounds,
     svg: `<g transform="${svgMatrix(matrix)}">${item.svg}</g>`,
   };
+}
+
+function dmlSvgMarkerDefs(items: DmlSvgItem[]): string {
+  if (!items.some((item) => item.svg.includes("url(#svgraph-arrow)"))) return "";
+  return '<defs><marker id="svgraph-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>';
 }
 
 function dmlGroupMatrix(element: Element): Matrix {
@@ -2312,7 +2317,7 @@ function dmlXfrmBox(spPr: Element): Box | null {
 type DmlPaint = { color: string | null; alpha: number | null };
 type DmlStrokePaint = { color: string | null; alpha: number | null; width: number | null; lineCap: string | null; lineJoin: string | null; dasharray: string | null; miterlimit: number | null };
 
-function dmlSvgPaint(spPr: Element, element: Element | null = null): { fill: string | null; fillAlpha: number | null; stroke: string | null; strokeAlpha: number | null; strokeWidth: number | null; strokeLineCap: string | null; strokeLineJoin: string | null; strokeDasharray: string | null; strokeMiterlimit: number | null } {
+function dmlSvgPaint(spPr: Element, element: Element | null = null): { fill: string | null; fillAlpha: number | null; stroke: string | null; strokeAlpha: number | null; strokeWidth: number | null; strokeLineCap: string | null; strokeLineJoin: string | null; strokeDasharray: string | null; strokeMiterlimit: number | null; markerStart: string | null; markerEnd: string | null } {
   const fillPaint = childByLocal(spPr, "noFill") ? { color: null, alpha: null } : dmlFillPaint(spPr) ?? dmlStylePaint(element, "fillRef") ?? { color: "#000000", alpha: null };
   const ln = childByLocal(spPr, "ln");
   const styleStroke = dmlStylePaint(element, "lnRef");
@@ -2328,10 +2333,12 @@ function dmlSvgPaint(spPr: Element, element: Element | null = null): { fill: str
     strokeLineJoin: ln ? dmlLineJoin(ln) : null,
     strokeDasharray: ln ? dmlDasharray(ln, strokeWidth) : null,
     strokeMiterlimit: ln ? dmlMiterlimit(ln) : null,
+    markerStart: ln ? dmlLineArrow(childByLocal(ln, "tailEnd")) : null,
+    markerEnd: ln ? dmlLineArrow(childByLocal(ln, "headEnd")) : null,
   };
 }
 
-function dmlSvgStyle(paint: { fill: string | null; fillAlpha?: number | null; stroke: string | null; strokeAlpha?: number | null; strokeWidth: number | null; strokeLineCap?: string | null; strokeLineJoin?: string | null; strokeDasharray?: string | null; strokeMiterlimit?: number | null }): string {
+function dmlSvgStyle(paint: { fill: string | null; fillAlpha?: number | null; stroke: string | null; strokeAlpha?: number | null; strokeWidth: number | null; strokeLineCap?: string | null; strokeLineJoin?: string | null; strokeDasharray?: string | null; strokeMiterlimit?: number | null; markerStart?: string | null; markerEnd?: string | null }): string {
   const attrs = [
     `fill="${paint.fill ?? "none"}"`,
     paint.fillAlpha != null && paint.fillAlpha < 1 ? `fill-opacity="${formatNumber(paint.fillAlpha)}"` : "",
@@ -2342,6 +2349,8 @@ function dmlSvgStyle(paint: { fill: string | null; fillAlpha?: number | null; st
     paint.stroke && paint.strokeLineJoin ? `stroke-linejoin="${paint.strokeLineJoin}"` : "",
     paint.stroke && paint.strokeDasharray ? `stroke-dasharray="${paint.strokeDasharray}"` : "",
     paint.stroke && paint.strokeMiterlimit != null ? `stroke-miterlimit="${formatNumber(paint.strokeMiterlimit)}"` : "",
+    paint.markerStart ? `marker-start="url(#${xml(paint.markerStart)})"` : "",
+    paint.markerEnd ? `marker-end="url(#${xml(paint.markerEnd)})"` : "",
   ].filter(Boolean);
   return attrs.length ? ` ${attrs.join(" ")}` : "";
 }
@@ -2401,6 +2410,11 @@ function dmlAverageAlpha(values: number[]): number | null {
 
 function dmlLineCap(value: string | null): string | null {
   return ({ flat: "butt", rnd: "round", sq: "square" } as Record<string, string>)[value || ""] ?? null;
+}
+
+function dmlLineArrow(element: Element | null): string | null {
+  const type = element?.getAttribute("type");
+  return type && type !== "none" ? "svgraph-arrow" : null;
 }
 
 function dmlLineJoin(ln: Element): string | null {

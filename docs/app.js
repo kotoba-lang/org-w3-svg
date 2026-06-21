@@ -1257,7 +1257,7 @@ export function drawingMlToSvg(drawingMlText) {
     const maxY = Math.max(0, ...bounds.map((box) => box.y + box.height));
     const width = Math.max(1, maxX - minX);
     const height = Math.max(1, maxY - minY);
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${formatNumber(minX)} ${formatNumber(minY)} ${formatNumber(width)} ${formatNumber(height)}">${items.map((item) => item.svg).join("")}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${formatNumber(minX)} ${formatNumber(minY)} ${formatNumber(width)} ${formatNumber(height)}">${dmlSvgMarkerDefs(items)}${items.map((item) => item.svg).join("")}</svg>`;
 }
 function dmlSvgItems(root) {
     return dmlSvgItemsWalk(root, [1, 0, 0, 1, 0, 0]);
@@ -1281,6 +1281,11 @@ function transformDmlSvgItem(item, matrix) {
         bounds,
         svg: `<g transform="${svgMatrix(matrix)}">${item.svg}</g>`,
     };
+}
+function dmlSvgMarkerDefs(items) {
+    if (!items.some((item) => item.svg.includes("url(#svgraph-arrow)")))
+        return "";
+    return '<defs><marker id="svgraph-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 Z" fill="context-stroke"/></marker></defs>';
 }
 function dmlGroupMatrix(element) {
     const xfrm = childByLocal(childByLocal(element, "grpSpPr"), "xfrm");
@@ -1924,6 +1929,8 @@ function dmlSvgPaint(spPr, element = null) {
         strokeLineJoin: ln ? dmlLineJoin(ln) : null,
         strokeDasharray: ln ? dmlDasharray(ln, strokeWidth) : null,
         strokeMiterlimit: ln ? dmlMiterlimit(ln) : null,
+        markerStart: ln ? dmlLineArrow(childByLocal(ln, "tailEnd")) : null,
+        markerEnd: ln ? dmlLineArrow(childByLocal(ln, "headEnd")) : null,
     };
 }
 function dmlSvgStyle(paint) {
@@ -1937,6 +1944,8 @@ function dmlSvgStyle(paint) {
         paint.stroke && paint.strokeLineJoin ? `stroke-linejoin="${paint.strokeLineJoin}"` : "",
         paint.stroke && paint.strokeDasharray ? `stroke-dasharray="${paint.strokeDasharray}"` : "",
         paint.stroke && paint.strokeMiterlimit != null ? `stroke-miterlimit="${formatNumber(paint.strokeMiterlimit)}"` : "",
+        paint.markerStart ? `marker-start="url(#${xml(paint.markerStart)})"` : "",
+        paint.markerEnd ? `marker-end="url(#${xml(paint.markerEnd)})"` : "",
     ].filter(Boolean);
     return attrs.length ? ` ${attrs.join(" ")}` : "";
 }
@@ -1997,6 +2006,10 @@ function dmlAverageAlpha(values) {
 }
 function dmlLineCap(value) {
     return { flat: "butt", rnd: "round", sq: "square" }[value || ""] ?? null;
+}
+function dmlLineArrow(element) {
+    const type = element?.getAttribute("type");
+    return type && type !== "none" ? "svgraph-arrow" : null;
 }
 function dmlLineJoin(ln) {
     if (childByLocal(ln, "round"))
