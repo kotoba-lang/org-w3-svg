@@ -1248,6 +1248,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function clipPathIsSupportedOrNoop" in generated
         assert "function clipPathTargetIsSupported" in generated
         assert "function subtreeClipPathIsSupported" in generated
+        assert 'id="hidden-filtered-use-target"' in generated
+        assert 'id="ignored-filtered-use"' in generated
+        assert "function coverageHasUnresolvedPaintServer" in generated
         unsupported_attributes = generated.split("const coverageUnsupportedAttributes", 1)[1].split(
             "const coverageSupportedPathCommands",
             1,

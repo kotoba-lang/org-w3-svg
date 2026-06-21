@@ -581,6 +581,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
       <clipPath id="bar-clip"><rect style="x:950px;y:500px;width:150px;height:70px;transform:translate(10px,0)"/></clipPath>
       <clipPath id="bbox-clip" clipPathUnits=" OBJECTBOUNDINGBOX "><rect style="x:0.15;y:0.15;width:0.7;height:0.7"/></clipPath>
       <clipPath id="group-clip"><rect x="1150" y="615" width="70" height="50"/></clipPath>
+      <rect id="hidden-filtered-use-target" width="10" height="8" fill="none" stroke="none" filter="url(#blur)"/>
       <linearGradient id="linear-fallback"><stop offset="0" stop-color="#ef4444"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
       <radialGradient id="radial-fallback"><stop offset="0" stop-color="#fef08a"/><stop offset="1" stop-color="#16a34a"/></radialGradient>
       <linearGradient id="empty-gradient" spreadMethod="repeat" gradientUnits="userSpaceOnUse" gradientTransform="rotate(15)"/>
@@ -701,6 +702,7 @@ line</text>
     </g>
     <polygon id="unsupported-clip-target" points="1120,690 1160,690 1140,715" clip-path="url(#group-clip)" fill="#fecaca" stroke="#991b1b"/>
     <use href="#reused-chip" class="accent-use" x="360" y="400"/>
+    <use id="ignored-filtered-use" href="#hidden-filtered-use-target" x="540" y="600"/>
     <use id="symbol-viewbox-use" class="css-use-frame" href="#viewbox-icon" preserveAspectRatio="xMaxYMax slice"/>
     <use id="context-paint-use" href="#context-badge" x="455" y="600" width="80" height="40" fill="#123456" stroke="#abcdef"/>
     <svg id="nested-viewbox" class="css-nested-frame" viewBox="0 0 20 10" preserveAspectRatio="none">
@@ -1746,6 +1748,8 @@ function inspectCoverageReferencedSubtree(element: Element, inheritedStyle: SvgS
   if (coverageIgnoredElements.has(tag)) return;
   const style = computedStyle(element, inheritedStyle, css, refs, viewport);
   if (style.display === "none") return;
+  if (coverageHasNonRenderingGeometry(element, tag, style, css, viewport)) return;
+  if (coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack) && !coverageHasUnresolvedPaintServer(style, refs, css)) return;
   const visibilityHidden = style.visibility === "hidden" || style.visibility === "collapse";
   if (!visibilityHidden) inspectCoverageAttributes(element, style, tag, stats, refs, css, viewport, refStack);
   if (tag === "foreignObject") return;
@@ -1765,6 +1769,16 @@ function coveragePaintChannelIsVisible(tag: string, attr: "fill" | "stroke", sty
   }
   if (!["circle", "ellipse", "line", "path", "polygon", "polyline", "rect", "text", "tspan", "use"].includes(tag)) return false;
   return style.strokeAlpha !== 0 && (style.strokeWidth ?? 1) !== 0;
+}
+
+function coverageHasUnresolvedPaintServer(style: SvgStyle, refs: Map<string, Element>, css: CssRule[]): boolean {
+  for (const attr of ["fill", "stroke"] as const) {
+    const value = style[attr];
+    if (!value) continue;
+    const ref = paintUrlRef(value);
+    if (ref && !ref.fallback && !paintServerColor(ref.id, refs, style, new Set(), css)) return true;
+  }
+  return false;
 }
 
 function subtreeHasVisibleText(element: Element, inheritedStyle: SvgStyle, css: CssRule[], refs: Map<string, Element>, viewport: Viewport, refStack: Set<string> = new Set()): boolean {
