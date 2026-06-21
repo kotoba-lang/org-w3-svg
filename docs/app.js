@@ -200,6 +200,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <line id="dash-line" x1="120" y1="650" x2="300" y2="650" style="stroke:#0f766e;stroke-width:8;stroke-dasharray:18 10;stroke-dashoffset:5;stroke-linecap:round;stroke-linejoin:bevel"/>
     <line id="path-length-line" x1="120" y1="675" x2="220" y2="675" pathLength="50" style="stroke:#0891b2;stroke-width:4;stroke-dasharray:10 5"/>
     <line id="negative-stroke-width" x1="230" y1="675" x2="300" y2="675" style="stroke:#7f1d1d;stroke-width:-2"/>
+    <rect id="ignored-vector-effect" x="305" y="668" width="10" height="10" fill="#f8fafc" stroke="none" vector-effect="non-scaling-size"/>
     <g id="scaled-stroke-group" transform="translate(320 640) scale(2)" stroke-linejoin="arcs">
       <line id="scaled-stroke" x1="0" y1="0" x2="50" y2="0" style="stroke:#7c3aed;stroke-width:3;stroke-dasharray:9 3"/>
       <line id="non-scaling-stroke" x1="0" y1="18" x2="50" y2="18" style="stroke:#be185d;stroke-width:3;stroke-dasharray:9 3;vector-effect:non-scaling-stroke"/>
@@ -1375,7 +1376,7 @@ function coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, re
     if (name === "unicode-bidi")
         return normalized === "normal";
     if (name === "vector-effect")
-        return normalizeVectorEffect(value) != null;
+        return vectorEffectIsSupportedOrNoop(element, value, style, refs, css, viewport);
     if (name === "word-spacing")
         return wordSpacingHasNoEffect(element, tag, value) || wordSpacingIsSupported(element, tag, value, style);
     if (name === "writing-mode")
@@ -1456,6 +1457,31 @@ function preserveAspectRatioIsSupportedOrNoop(element, tag, value, refs) {
         return align === "none" || dataImageDimensions(hrefValue(element)) != null;
     }
     return false;
+}
+function vectorEffectIsSupportedOrNoop(element, value, style, refs, css, viewport) {
+    return !subtreeHasVisibleStroke(element, style, refs, css, viewport) || normalizeVectorEffect(value) != null;
+}
+function subtreeHasVisibleStroke(element, style, refs, css, viewport, refStack = new Set()) {
+    const tag = localName(element);
+    if (style.display === "none")
+        return false;
+    if (tag === "use") {
+        const href = hrefValue(element);
+        const refId = href.startsWith("#") ? href.slice(1) : "";
+        const ref = refId ? refs.get(refId) : null;
+        if (!ref || refStack.has(refId))
+            return false;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
+        return subtreeHasVisibleStroke(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
+    }
+    if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageStrokeLineEnumApplies(element, tag, style, css, viewport))
+        return true;
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
+    if (tag === "switch") {
+        const selected = switchSelectedChild(element);
+        return selected ? subtreeHasVisibleStroke(selected, computedStyle(selected, style, css, refs, childViewport), refs, css, childViewport, refStack) : false;
+    }
+    return Array.from(element.children).some((child) => subtreeHasVisibleStroke(child, computedStyle(child, style, css, refs, childViewport), refs, css, childViewport, refStack));
 }
 function paintOrderHasNoEffect(tag, value, style) {
     const normalized = value.trim().toLowerCase().split(/\s+/).join(" ");

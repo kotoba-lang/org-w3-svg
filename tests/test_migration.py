@@ -1191,6 +1191,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function preserveAspectRatioIsSupportedOrNoop" in generated
         assert 'localName(ref) === "svg" || localName(ref) === "symbol"' in generated
         assert "dataImageDimensions(hrefValue(element)) != null" in generated
+        assert "function vectorEffectIsSupportedOrNoop" in generated
+        assert "function subtreeHasVisibleStroke" in generated
+        assert 'id="ignored-vector-effect"' in generated
         assert 'id="visible-overflow"' in generated
         assert 'id="hidden-overflow-empty"' in generated
         assert 'id="length-glyphs-text"' in generated

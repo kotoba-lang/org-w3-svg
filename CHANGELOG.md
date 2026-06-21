@@ -12,6 +12,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Clarified in the README that `drawingml_svg` remains only as a compatibility import path over `svgraph`.
 - Renamed the public repository and Pages site to `com-junkawasaki/svgraph`, and aligned web package names, generated PPTX metadata, generated DrawingML/SVG object names, and smoke artifact filenames with SVGraph branding.
 - Aligned browser coverage diagnostics for `preserveAspectRatio` with the Python analyzer, including image intrinsic-size and `use` viewBox-reference checks.
+- Aligned browser coverage diagnostics for `vector-effect` with the Python analyzer, so unsupported values are ignored when no visible stroke can be affected.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.
 - Aligned release checklist source distribution checks with packaged SVGraph docs, governance files, examples, and browser editor sources.
