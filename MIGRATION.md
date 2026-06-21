@@ -82,6 +82,14 @@ The browser npm package is published through GitHub Packages as:
 npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com
 ```
 
+It also exposes a TypeScript/browser-runtime CLI with a Node XML DOM shim:
+
+```bash
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml input.svg -o shape.xml
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- dml2svg shape.xml -o shape.svg
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2pptx deck.svg -o deck.pptx
+```
+
 ## Verification
 
 Run the migration guard tests before publishing:

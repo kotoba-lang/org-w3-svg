@@ -1,6 +1,6 @@
 {
   "name": "@com-junkawasaki/svgraph",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter.",
   "keywords": [
     "svg",
@@ -20,6 +20,10 @@
     },
     "./web/app.ts": "./web/app.ts"
   },
+  "bin": {
+    "svgraph": "./bin/svgraph.mjs",
+    "svgraph-browser": "./bin/svgraph.mjs"
+  },
   "homepage": "https://com-junkawasaki.github.io/svgraph/",
   "repository": {
     "type": "git",
@@ -30,6 +34,7 @@
   },
   "license": "MIT",
   "files": [
+    "bin",
     "docs",
     "web",
     "README.md",
@@ -43,9 +48,12 @@
   "scripts": {
     "build:web": "tsc -p tsconfig.web.json",
     "check:web": "tsc -p tsconfig.web.json --noEmit",
-    "check:package": "node -e \"import('./docs/app.js').then((m) => { for (const name of ['buildSVGraph','buildSVGraphSidecar','svgToDrawingMl','drawingMlToSvg','svgToPptx','initSVGraphEditor','assistantPatchProposal','buildSVGraphAssistantPrompt','parseAssistantPatchProposal','validateAssistantPatch','assistantPatchDiff','applyAssistantPatch']) if (typeof m[name] !== 'function') throw new Error(name); if (!Array.isArray(m.assistantAllowedOps)) throw new Error('assistantAllowedOps'); })\""
+    "check:package": "node -e \"import('./docs/app.js').then((m) => { for (const name of ['buildSVGraph','buildSVGraphSidecar','svgToDrawingMl','drawingMlToSvg','svgToPptx','initSVGraphEditor','assistantPatchProposal','buildSVGraphAssistantPrompt','parseAssistantPatchProposal','validateAssistantPatch','assistantPatchDiff','applyAssistantPatch']) if (typeof m[name] !== 'function') throw new Error(name); if (!Array.isArray(m.assistantAllowedOps)) throw new Error('assistantAllowedOps'); })\" && mkdir -p tmp && node ./bin/svgraph.mjs --version && node ./bin/svgraph.mjs svg2dml examples/sample.svg > tmp/package-smoke.xml && node ./bin/svgraph.mjs dml2svg tmp/package-smoke.xml > tmp/package-smoke.svg && node ./bin/svgraph.mjs svgraph examples/sample.svg > tmp/package-svgraph.json"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@xmldom/xmldom": "^0.9.10"
   }
 }

@@ -70,6 +70,14 @@ The browser package is publishable to GitHub Packages as `@com-junkawasaki/svgra
 npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com
 ```
 
+The npm package also installs a browser-runtime CLI that uses the TypeScript converter with a Node XML DOM shim:
+
+```bash
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml input.svg -o shape.xml
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- dml2svg shape.xml -o shape.svg
+npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2pptx deck.svg -o deck.pptx
+```
+
 ```ts
 import {
   applyAssistantPatch,

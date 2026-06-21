@@ -1043,6 +1043,12 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         },
         "./web/app.ts": "./web/app.ts",
     }
+    assert package_metadata["bin"] == {
+        "svgraph": "./bin/svgraph.mjs",
+        "svgraph-browser": "./bin/svgraph.mjs",
+    }
+    assert "bin" in package_metadata["files"]
+    assert "@xmldom/xmldom" in package_metadata["dependencies"]
     assert package_metadata["private"] is False
     assert package_metadata["publishConfig"] == {
         "registry": "https://npm.pkg.github.com",
@@ -1495,6 +1501,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     package_metadata = json.loads((root / "package.json").read_text(encoding="utf-8"))
     readme = (root / "README.md").read_text(encoding="utf-8")
     workflow = (root / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    npm_cli = (root / "bin" / "svgraph.mjs").read_text(encoding="utf-8")
 
     assert "`web/app.ts` builds SVGraph" in readme
     assert "`docs/app.js` is the compiled Pages artifact." in readme
@@ -1514,8 +1521,14 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
     assert "check:package" in package_metadata["scripts"]
     assert "drawingMlToSvg" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs --version" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs svg2dml examples/sample.svg" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg tmp/package-smoke.xml" in package_metadata["scripts"]["check:package"]
     assert "buildSVGraphAssistantPrompt" in package_metadata["scripts"]["check:package"]
     assert "applyAssistantPatch" in package_metadata["scripts"]["check:package"]
+    assert "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml" in readme
+    assert "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- dml2svg" in readme
+    assert "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2pptx" in readme
     assert "node-version: \"24\"" in workflow
     assert "run: npm ci" in workflow
     assert "npm run check:web" in workflow
@@ -1523,6 +1536,13 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "npm run check:package" in workflow
     assert "git diff --exit-code docs/app.js" in workflow
     assert "git diff --exit-code docs/app.d.ts" in workflow
+    assert "QueryDomParser" in npm_cli
+    assert "globalThis.DOMParser" in npm_cli
+    assert "globalThis.Node" in npm_cli
+    assert "svgToDrawingMl" in npm_cli
+    assert "drawingMlToSvg" in npm_cli
+    assert "svgToPptx" in npm_cli
+    assert "buildSVGraph" in npm_cli
 
 
 def test_dependabot_tracks_all_svgraph_dependency_surfaces() -> None:
@@ -1648,6 +1668,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` import support",
         "XML Open flow conversion back into canonical SVG source",
         "native DrawingML table fragments as semantic SVG table and cell nodes",
+        "npm package CLI backed by the TypeScript/browser converter",
         "web editor design package part schema documentation",
         "compatibility submodule public-surface guards",
         "installed compatibility submodules prove their canonical `__all__` and callable parity",
@@ -1972,6 +1993,14 @@ def test_migration_guide_cli_examples_use_canonical_svgraph_entry_points() -> No
 def test_migration_guide_verification_matches_svgraph_web_and_python_guards() -> None:
     migration = (Path(__file__).resolve().parents[1] / "MIGRATION.md").read_text(encoding="utf-8")
     verification = migration.split("## Verification", maxsplit=1)[1]
+
+    for command in [
+        "npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com",
+        "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml input.svg -o shape.xml",
+        "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- dml2svg shape.xml -o shape.svg",
+        "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2pptx deck.svg -o deck.pptx",
+    ]:
+        assert command in migration
 
     for command in [
         'find src -maxdepth 1 -name "*.egg-info" -exec rm -rf {} +',
