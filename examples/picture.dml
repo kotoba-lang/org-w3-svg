@@ -9,7 +9,7 @@
       <a:stretch><a:fillRect/></a:stretch>
     </p:blipFill>
     <p:spPr>
-      <a:xfrm><a:off x="95250" y="190500"/><a:ext cx="190500" cy="95250"/></a:xfrm>
+      <a:xfrm rot="1800000" flipH="1"><a:off x="95250" y="190500"/><a:ext cx="190500" cy="95250"/></a:xfrm>
       <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
     </p:spPr>
   </p:pic>

@@ -1,6 +1,6 @@
 [project]
 name = "svgraph"
-version = "0.1.8"
+version = "0.1.9"
 description = "Small, dependency-free SVG presentation graph toolkit for SVGraph, DrawingML, PresentationML/PPTX, and browser-only web editing."
 readme = "README.md"
 requires-python = ">=3.11"

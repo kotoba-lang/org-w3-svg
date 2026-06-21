@@ -1192,6 +1192,51 @@ function svgMatrix(matrix) {
 function dmlBool(value) {
     return value === "1" || value === "true";
 }
+function dmlXfrmTransformAttr(spPr, box, options = {}) {
+    const transform = dmlXfrmTransform(spPr, box, options);
+    return transform ? ` transform="${transform}"` : "";
+}
+function dmlXfrmTransform(spPr, box, options = {}) {
+    const xfrm = childByLocal(spPr, "xfrm");
+    if (!xfrm)
+        return "";
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const transforms = [];
+    const rotation = Number(xfrm.getAttribute("rot"));
+    if (Number.isFinite(rotation) && rotation) {
+        transforms.push(`rotate(${formatNumber(rotation / 60000)} ${formatNumber(centerX)} ${formatNumber(centerY)})`);
+    }
+    const flipH = !options.skipFlip && dmlBool(xfrm.getAttribute("flipH"));
+    const flipV = !options.skipFlip && dmlBool(xfrm.getAttribute("flipV"));
+    if (flipH || flipV) {
+        transforms.push(`translate(${formatNumber(centerX)} ${formatNumber(centerY)}) scale(${flipH ? -1 : 1} ${flipV ? -1 : 1}) translate(${formatNumber(-centerX)} ${formatNumber(-centerY)})`);
+    }
+    return transforms.join(" ");
+}
+function dmlXfrmTransformBounds(spPr, box, options = {}) {
+    const matrix = dmlXfrmTransformMatrix(spPr, box, options);
+    return matrixIsIdentity(matrix) ? box : transformedBox(matrix, box.x, box.y, box.width, box.height);
+}
+function dmlXfrmTransformMatrix(spPr, box, options = {}) {
+    const xfrm = childByLocal(spPr, "xfrm");
+    if (!xfrm)
+        return [1, 0, 0, 1, 0, 0];
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    let matrix = [1, 0, 0, 1, 0, 0];
+    const rotation = Number(xfrm.getAttribute("rot"));
+    if (Number.isFinite(rotation) && rotation) {
+        const radians = (rotation / 60000 / 180) * Math.PI;
+        matrix = multiply(multiply([1, 0, 0, 1, centerX, centerY], [Math.cos(radians), Math.sin(radians), -Math.sin(radians), Math.cos(radians), 0, 0]), multiply([1, 0, 0, 1, -centerX, -centerY], matrix));
+    }
+    const flipH = !options.skipFlip && dmlBool(xfrm.getAttribute("flipH"));
+    const flipV = !options.skipFlip && dmlBool(xfrm.getAttribute("flipV"));
+    if (flipH || flipV) {
+        matrix = multiply(multiply([1, 0, 0, 1, centerX, centerY], [flipH ? -1 : 1, 0, 0, flipV ? -1 : 1, 0, 0]), multiply([1, 0, 0, 1, -centerX, -centerY], matrix));
+    }
+    return matrix;
+}
 function dmlShapeToSvg(element) {
     const spPr = childByLocal(element, "spPr");
     if (!spPr)
@@ -1206,31 +1251,33 @@ function dmlShapeToSvg(element) {
     const text = dmlText(element);
     const textAttrs = text ? ` data-text="${xml(text)}"` : "";
     const idAttr = name ? ` id="${xml(dmlSvgId(name))}"` : "";
+    const transform = dmlXfrmTransformAttr(spPr, box);
+    const bounds = dmlXfrmTransformBounds(spPr, box);
     const body = text ? `<text x="${formatNumber(box.x + box.width / 2)}" y="${formatNumber(box.y + box.height / 2)}" text-anchor="middle" dominant-baseline="middle">${xml(text)}</text>` : "";
     const custom = childByLocal(spPr, "custGeom");
     if (custom) {
-        const customShape = dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body);
+        const customShape = dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body, transform, bounds);
         if (customShape)
             return customShape;
     }
     if (preset === "ellipse" || preset === "oval") {
         return {
-            bounds: box,
-            svg: `<g${idAttr}${textAttrs}><ellipse cx="${formatNumber(box.x + box.width / 2)}" cy="${formatNumber(box.y + box.height / 2)}" rx="${formatNumber(box.width / 2)}" ry="${formatNumber(box.height / 2)}"${style}/>${body}</g>`,
+            bounds,
+            svg: `<g${idAttr}${textAttrs}${transform}><ellipse cx="${formatNumber(box.x + box.width / 2)}" cy="${formatNumber(box.y + box.height / 2)}" rx="${formatNumber(box.width / 2)}" ry="${formatNumber(box.height / 2)}"${style}/>${body}</g>`,
         };
     }
     if (preset === "line" || preset === "straightConnector1") {
         const [x1, x2] = dmlFlip(spPr, "flipH") ? [box.x + box.width, box.x] : [box.x, box.x + box.width];
         const [y1, y2] = dmlFlip(spPr, "flipV") ? [box.y + box.height, box.y] : [box.y, box.y + box.height];
-        return { bounds: box, svg: `<line${idAttr} x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${style}/>` };
+        return { bounds: dmlXfrmTransformBounds(spPr, box, { skipFlip: true }), svg: `<line${idAttr} x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${style}${dmlXfrmTransformAttr(spPr, box, { skipFlip: true })}/>` };
     }
     const rx = preset === "roundRect" ? Math.min(box.width, box.height) * 0.12 : 0;
     return {
-        bounds: box,
-        svg: `<g${idAttr}${textAttrs}><rect x="${formatNumber(box.x)}" y="${formatNumber(box.y)}" width="${formatNumber(box.width)}" height="${formatNumber(box.height)}"${rx ? ` rx="${formatNumber(rx)}" ry="${formatNumber(rx)}"` : ""}${style}/>${body}</g>`,
+        bounds,
+        svg: `<g${idAttr}${textAttrs}${transform}><rect x="${formatNumber(box.x)}" y="${formatNumber(box.y)}" width="${formatNumber(box.width)}" height="${formatNumber(box.height)}"${rx ? ` rx="${formatNumber(rx)}" ry="${formatNumber(rx)}"` : ""}${style}/>${body}</g>`,
     };
 }
-function dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body) {
+function dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body, transform = "", transformedBounds = null) {
     const points = dmlCustomPoints(custom, box.x, box.y);
     if (points.points.length < 2)
         return null;
@@ -1238,8 +1285,8 @@ function dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body) {
     const pointsAttr = points.points.map(([x, y]) => `${formatNumber(x)},${formatNumber(y)}`).join(" ");
     const bounds = pointsBox(points.points);
     return {
-        bounds,
-        svg: `<g${idAttr}${textAttrs}><${tag} points="${pointsAttr}"${style}/>${body}</g>`,
+        bounds: transformedBounds ?? bounds,
+        svg: `<g${idAttr}${textAttrs}${transform}><${tag} points="${pointsAttr}"${style}/>${body}</g>`,
     };
 }
 function dmlCustomPoints(custom, x, y) {
@@ -1318,8 +1365,8 @@ function dmlConnectorToSvg(element) {
     const [x1, x2] = dmlFlip(spPr, "flipH") ? [box.x + box.width, box.x] : [box.x, box.x + box.width];
     const [y1, y2] = dmlFlip(spPr, "flipV") ? [box.y + box.height, box.y] : [box.y, box.y + box.height];
     return {
-        bounds: box,
-        svg: `<line id="${xml(dmlSvgId(name))}" x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${dmlSvgStyle(dmlSvgPaint(spPr))} data-kind="relation"/>`,
+        bounds: dmlXfrmTransformBounds(spPr, box, { skipFlip: true }),
+        svg: `<line id="${xml(dmlSvgId(name))}" x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${dmlSvgStyle(dmlSvgPaint(spPr))} data-kind="relation"${dmlXfrmTransformAttr(spPr, box, { skipFlip: true })}/>`,
     };
 }
 function dmlPictureToSvg(element) {
@@ -1336,6 +1383,7 @@ function dmlPictureToSvg(element) {
     const name = childByLocal(childByLocal(element, "nvPicPr"), "cNvPr")?.getAttribute("name") || "image";
     const opacity = dmlBlipAlpha(blip);
     const preserve = dmlPicturePreserveAspectRatio(element);
+    const transform = dmlXfrmTransformAttr(spPr, box);
     const attrs = [
         `id="${xml(dmlSvgId(name))}"`,
         `href="${xml(href)}"`,
@@ -1345,9 +1393,10 @@ function dmlPictureToSvg(element) {
         `height="${formatNumber(box.height)}"`,
         opacity == null || opacity >= 1 ? "" : `opacity="${formatNumber(opacity)}"`,
         preserve ? `preserveAspectRatio="${preserve}"` : "",
+        transform ? transform.trim() : "",
     ].filter(Boolean);
     return {
-        bounds: box,
+        bounds: dmlXfrmTransformBounds(spPr, box),
         svg: `<image ${attrs.join(" ")}/>`,
     };
 }

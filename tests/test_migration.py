@@ -1151,6 +1151,8 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function dmlTableColumns" in generated
         assert "function dmlSvgItemsWalk" in generated
         assert "function dmlGroupMatrix" in generated
+        assert "function dmlXfrmTransformAttr" in generated
+        assert "function dmlXfrmTransformBounds" in generated
         assert "function directChildrenByLocal" in generated
         assert 'data-kind="table"' in generated
         assert 'data-kind="cell"' in generated
@@ -1537,6 +1539,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/freeform.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/picture.dml" in package_metadata["scripts"]["check:package"]
     assert 'transform=\\\"matrix(2 0 0 2 10 20)\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'transform=\\\"rotate(30 20 25) translate(20 25) scale(-1 1) translate(-20 -25)\\\"' in package_metadata["scripts"]["check:package"]
     assert "package-freeform.svg" in package_metadata["scripts"]["check:package"]
     assert "package-picture.svg" in package_metadata["scripts"]["check:package"]
     assert "buildSVGraphAssistantPrompt" in package_metadata["scripts"]["check:package"]
@@ -1684,6 +1687,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` import support for DrawingML grouped shapes",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML custom geometry/freeform paths",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML pictures as SVG images",
+        "browser TypeScript `drawingMlToSvg` import support for DrawingML rotation/flip transforms",
         "XML Open flow conversion back into canonical SVG source",
         "native DrawingML table fragments as semantic SVG table and cell nodes",
         "npm package CLI backed by the TypeScript/browser converter",
