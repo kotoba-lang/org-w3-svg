@@ -2249,7 +2249,7 @@ function dmlTableFrameToSvg(element: Element): DmlSvgItem | null {
         children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}"${dmlSvgStyle({ fill: fillPaint?.color ?? null, fillAlpha: fillPaint?.alpha ?? null, stroke: null, strokeWidth: null })}/>`);
         children.push(...dmlTableCellBorderLines(childByLocal(cell, "tcPr"), colX, rowY, cellWidth, cellHeight));
         if (text) {
-          children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none" }));
+          children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none", insetScaleX: scaleX, insetScaleY: scaleY }));
         }
       }
       colX += cellWidth;
@@ -2639,7 +2639,7 @@ function dmlText(element: Element): string {
 
 type DmlTextRun = { text: string; attrs: string[]; breakBefore?: boolean };
 type DmlTextLayout = { x: number; y: number; anchor: string | null; baseline: string | null; direction: string | null };
-type DmlTextSvgOptions = { defaultBaseline?: string | null; defaultFill?: string | null; defaultStroke?: string | null; fallbackFill?: DmlPaint | null; fallbackStroke?: DmlStrokePaint | null };
+type DmlTextSvgOptions = { defaultBaseline?: string | null; defaultFill?: string | null; defaultStroke?: string | null; fallbackFill?: DmlPaint | null; fallbackStroke?: DmlStrokePaint | null; insetScaleX?: number; insetScaleY?: number };
 
 function dmlTextSvg(element: Element, box: Box, options: DmlTextSvgOptions = {}): string {
   const runs = dmlTextRuns(element, options.fallbackFill, options.fallbackStroke).filter((run) => run.text);
@@ -2681,7 +2681,11 @@ function dmlAttrsInclude(attrs: string[], name: string): boolean {
 }
 
 function dmlTextLayout(element: Element, box: Box, runs: DmlTextRun[], options: DmlTextSvgOptions = {}): DmlTextLayout {
-  const [left, top, right, bottom] = dmlTextInsets(element);
+  const [rawLeft, rawTop, rawRight, rawBottom] = dmlTextInsets(element);
+  const left = rawLeft * (options.insetScaleX ?? 1);
+  const right = rawRight * (options.insetScaleX ?? 1);
+  const top = rawTop * (options.insetScaleY ?? 1);
+  const bottom = rawBottom * (options.insetScaleY ?? 1);
   const inner = {
     x: box.x + left,
     y: box.y + top,

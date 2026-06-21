@@ -1851,7 +1851,7 @@ function dmlTableFrameToSvg(element) {
                 children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}"${dmlSvgStyle({ fill: fillPaint?.color ?? null, fillAlpha: fillPaint?.alpha ?? null, stroke: null, strokeWidth: null })}/>`);
                 children.push(...dmlTableCellBorderLines(childByLocal(cell, "tcPr"), colX, rowY, cellWidth, cellHeight));
                 if (text) {
-                    children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none" }));
+                    children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none", insetScaleX: scaleX, insetScaleY: scaleY }));
                 }
             }
             colX += cellWidth;
@@ -2275,7 +2275,11 @@ function dmlAttrsInclude(attrs, name) {
     return attrs.some((attr) => attr.startsWith(`${name}="`));
 }
 function dmlTextLayout(element, box, runs, options = {}) {
-    const [left, top, right, bottom] = dmlTextInsets(element);
+    const [rawLeft, rawTop, rawRight, rawBottom] = dmlTextInsets(element);
+    const left = rawLeft * (options.insetScaleX ?? 1);
+    const right = rawRight * (options.insetScaleX ?? 1);
+    const top = rawTop * (options.insetScaleY ?? 1);
+    const bottom = rawBottom * (options.insetScaleY ?? 1);
     const inner = {
         x: box.x + left,
         y: box.y + top,

@@ -1065,6 +1065,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "examples/table-merge-bool.dml" in package_metadata["files"]
     assert "examples/table-rich.dml" in package_metadata["files"]
     assert "examples/table-scaled.dml" in package_metadata["files"]
+    assert "examples/table-scaled-insets.dml" in package_metadata["files"]
     assert "examples/text-baseline-threshold.dml" in package_metadata["files"]
     assert "examples/text-bullets.dml" in package_metadata["files"]
     assert "examples/text-defaults.dml" in package_metadata["files"]
@@ -1637,6 +1638,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/table-rich.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/table-merge-bool.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/table-scaled.dml" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg examples/table-scaled-insets.dml" in package_metadata["scripts"]["check:package"]
     assert 'transform=\\\"matrix(2 0 0 2 10 20)\\\"' in package_metadata["scripts"]["check:package"]
     assert 'transform=\\\"rotate(30 20 25) translate(20 25) scale(-1 1) translate(-20 -25)\\\"' in package_metadata["scripts"]["check:package"]
     assert 'points=\\\"30,20 50,40 10,40\\\"' in package_metadata["scripts"]["check:package"]
@@ -1671,6 +1673,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "package-table-rich.svg" in package_metadata["scripts"]["check:package"]
     assert "package-table-merge-bool.svg" in package_metadata["scripts"]["check:package"]
     assert "package-table-scaled.svg" in package_metadata["scripts"]["check:package"]
+    assert "package-table-scaled-insets.svg" in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.5\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-opacity=\\\"0.25\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#99b2cc\\\"' in package_metadata["scripts"]["check:package"]
@@ -1680,6 +1683,8 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'x=\\\"0\\\" y=\\\"40\\\" width=\\\"40\\\" height=\\\"80\\\"' in package_metadata["scripts"]["check:package"]
     assert 'x=\\\"10\\\" y=\\\"20\\\" width=\\\"20\\\" height=\\\"30\\\"' in package_metadata["scripts"]["check:package"]
     assert 'x=\\\"10\\\" y=\\\"50\\\" width=\\\"40\\\" height=\\\"30\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'id=\\\"scaled-inset-table\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'Inset</text>' in package_metadata["scripts"]["check:package"]
     assert '<marker id=\\\"svgraph-arrow\\\"' in package_metadata["scripts"]["check:package"]
     assert 'marker-start=\\\"url(#svgraph-arrow)\\\"' in package_metadata["scripts"]["check:package"]
     assert 'marker-end=\\\"url(#svgraph-arrow)\\\"' in package_metadata["scripts"]["check:package"]
@@ -1707,7 +1712,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'font-family=\\\"Yu Gothic\\\"' in package_metadata["scripts"]["check:package"]
     assert 'dy=\\\"1.2em\\\"' in package_metadata["scripts"]["check:package"]
     assert 'direction=\\\"rtl\\\"' in package_metadata["scripts"]["check:package"]
-    assert 'x=\\\"16\\\" y=\\\"20.5\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'x=\\\"16\\\" y=\\\"21\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.6\\\"' in package_metadata["scripts"]["check:package"]
     assert 'white-space=\\\"nowrap\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-dasharray=\\\"4 2\\\"' in package_metadata["scripts"]["check:package"]
@@ -1840,6 +1845,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` import support for DrawingML line arrowheads as SVG markers",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML shape paint fallback on text fill and outline",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell text layout/rich runs and individual border line style details",
+        "browser TypeScript `drawingMlToSvg` native table text insets to scale with DrawingML graphic frame extents",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML `bodyPr` no-wrap text bodies",
         "browser pattern paint-server fallback colors to ignore hidden and fully transparent content",
         "browser gradient paint-server fallback colors to ignore fully transparent stops",
