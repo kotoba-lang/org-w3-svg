@@ -1,6 +1,6 @@
 {
   "name": "@com-junkawasaki/svgraph",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter.",
   "keywords": [
     "svg",
@@ -11,6 +11,15 @@
   ],
   "private": false,
   "type": "module",
+  "main": "./docs/app.js",
+  "types": "./docs/app.d.ts",
+  "exports": {
+    ".": {
+      "types": "./docs/app.d.ts",
+      "default": "./docs/app.js"
+    },
+    "./web/app.ts": "./web/app.ts"
+  },
   "homepage": "https://com-junkawasaki.github.io/svgraph/",
   "repository": {
     "type": "git",
@@ -33,7 +42,8 @@
   },
   "scripts": {
     "build:web": "tsc -p tsconfig.web.json",
-    "check:web": "tsc -p tsconfig.web.json --noEmit"
+    "check:web": "tsc -p tsconfig.web.json --noEmit",
+    "check:package": "node -e \"import('./docs/app.js').then((m) => { for (const name of ['buildSVGraph','buildSVGraphSidecar','svgToDrawingMl','svgToPptx','initSVGraphEditor']) if (typeof m[name] !== 'function') throw new Error(name); })\""
   },
   "devDependencies": {
     "typescript": "^5.9.3"

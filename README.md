@@ -42,6 +42,7 @@ The GitHub Pages editor runs a TypeScript converter entirely in the browser:
 npm ci
 npm run check:web
 npm run build:web
+npm run check:package
 ```
 
 ## Project links
@@ -66,6 +67,14 @@ The browser package is publishable to GitHub Packages as `@com-junkawasaki/svgra
 
 ```bash
 npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com
+```
+
+```ts
+import { buildSVGraph, svgToDrawingMl, svgToPptx } from "@com-junkawasaki/svgraph";
+
+const svgraph = buildSVGraph(svgText);
+const drawingMl = svgToDrawingMl(svgText);
+const pptxBytes = svgToPptx(svgText);
 ```
 
 ## CLI

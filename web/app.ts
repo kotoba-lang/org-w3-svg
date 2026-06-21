@@ -1,8 +1,8 @@
 const emuPerPx = 9525;
 
-type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
+export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
-type SVGraphNode = {
+export type SVGraphNode = {
   node_id: string;
   tag: string;
   attributes: Record<string, string>;
@@ -13,14 +13,14 @@ type SVGraphNode = {
   text: string | null;
 };
 
-type Dependency = {
+export type Dependency = {
   kind: string;
   source: string;
   target: string;
   attribute: string;
 };
 
-type SVGraphPresentationProjection = {
+export type SVGraphPresentationProjection = {
   kind: "svgraph-presentation";
   slide_size: [number, number];
   slides: SlideRecord[];
@@ -33,7 +33,7 @@ type SVGraphPresentationProjection = {
   metadata: Record<string, JsonValue>;
 };
 
-type SlideRecord = {
+export type SlideRecord = {
   slide_id: string;
   node_id: string;
   title: string | null;
@@ -42,14 +42,14 @@ type SlideRecord = {
   metadata: { text?: string; json?: JsonValue };
 };
 
-type PartRecord = {
+export type PartRecord = {
   part_name: string;
   content_type: string;
   kind: string;
   source_node_id: string | null;
 };
 
-type TemplateRecord = {
+export type TemplateRecord = {
   template_id: string;
   kind: string;
   node_id: string | null;
@@ -57,7 +57,7 @@ type TemplateRecord = {
   metadata: JsonValue;
 };
 
-type GuideRecord = {
+export type GuideRecord = {
   guide_id: string;
   orientation: string;
   position: number;
@@ -65,7 +65,7 @@ type GuideRecord = {
   node_id: string | null;
 };
 
-type RulerRecord = {
+export type RulerRecord = {
   ruler_id: string;
   orientation: string;
   origin: number;
@@ -74,14 +74,14 @@ type RulerRecord = {
   node_id: string | null;
 };
 
-type TextStyleRecord = {
+export type TextStyleRecord = {
   style_id: string;
   role: string;
   properties: Record<string, JsonValue>;
   node_id: string | null;
 };
 
-type SVGraphDocument = {
+export type SVGraphDocument = {
   kind: "svgraph";
   version: string;
   root: SVGraphNode;
@@ -91,7 +91,7 @@ type SVGraphDocument = {
   presentation: SVGraphPresentationProjection;
 };
 
-type SVGraphSidecar = {
+export type SVGraphSidecar = {
   kind: "svgraph-sidecar";
   version: string;
   source_svg: string;
@@ -127,7 +127,7 @@ type AssistantPatchDiff = {
   status: "pending" | "unchanged" | "unsupported";
 };
 
-type SvgCoverage = {
+export type SvgCoverage = {
   total_elements: number;
   convertible_elements: number;
   ignored_elements: number;
@@ -754,13 +754,13 @@ const state: {
   storageStatus: "Storage idle",
 };
 
-const source = mustElement<HTMLTextAreaElement>("source");
-const preview = mustElement<HTMLElement>("preview");
-const panel = mustElement<HTMLElement>("panel");
-const fileInput = mustElement<HTMLInputElement>("fileInput");
-const undoButton = mustElement<HTMLButtonElement>("undoBtn");
-const redoButton = mustElement<HTMLButtonElement>("redoBtn");
-const clearSavedButton = mustElement<HTMLButtonElement>("clearSavedBtn");
+let source: HTMLTextAreaElement;
+let preview: HTMLElement;
+let panel: HTMLElement;
+let fileInput: HTMLInputElement;
+let undoButton: HTMLButtonElement;
+let redoButton: HTMLButtonElement;
+let clearSavedButton: HTMLButtonElement;
 const documentDbName = "svgraph-documents";
 const documentStoreName = "documents";
 const activeDocumentKey = "active-svg";
@@ -1165,7 +1165,7 @@ function textStyles(nodes: SVGraphNode[], metadataStyles: JsonValue): TextStyleR
   return [...fromMeta, ...fromNodes];
 }
 
-function buildSVGraph(svgText: string): SVGraphDocument {
+export function buildSVGraph(svgText: string): SVGraphDocument {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
   const error = doc.querySelector("parsererror");
@@ -1185,7 +1185,7 @@ function buildSVGraph(svgText: string): SVGraphDocument {
   };
 }
 
-function buildSVGraphSidecar(svgraph: SVGraphDocument, svgText = source.value): SVGraphSidecar {
+export function buildSVGraphSidecar(svgraph: SVGraphDocument, svgText = ""): SVGraphSidecar {
   return {
     kind: "svgraph-sidecar",
     version: svgraph.version,
@@ -1373,7 +1373,7 @@ function setMetadataValue(element: Element, name: string, value: JsonValue): voi
   meta.textContent = JSON.stringify(payload);
 }
 
-function svgToPptx(svgText: string): Uint8Array {
+export function svgToPptx(svgText: string): Uint8Array {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
   const error = doc.querySelector("parsererror");
@@ -1386,7 +1386,7 @@ function svgToPptx(svgText: string): Uint8Array {
   return writePptx(slideXmls, svgraph.presentation, svgText);
 }
 
-function svgToDrawingMl(svgText: string): string {
+export function svgToDrawingMl(svgText: string): string {
   const parser = new DOMParser();
   const doc = parser.parseFromString(svgText, "image/svg+xml");
   const error = doc.querySelector("parsererror");
@@ -5053,58 +5053,6 @@ function sourceFromOpenedFile(text: string): string {
   throw new Error("Opened JSON does not contain svgraph-sidecar source_svg");
 }
 
-document.querySelectorAll<HTMLButtonElement>(".tab").forEach((tab) => {
-  tab.addEventListener("click", () => {
-    state.tab = tab.dataset.tab || "summary";
-    document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === tab));
-    renderPanel();
-  });
-});
-
-mustElement<HTMLButtonElement>("openBtn").addEventListener("click", () => fileInput.click());
-mustElement<HTMLButtonElement>("sampleBtn").addEventListener("click", () => {
-  setSourceValue(sampleSvg);
-});
-undoButton.addEventListener("click", undoSourceEdit);
-redoButton.addEventListener("click", redoSourceEdit);
-clearSavedButton.addEventListener("click", () => {
-  void clearSavedSourceDocumentWithStatus();
-});
-mustElement<HTMLButtonElement>("downloadSvgBtn").addEventListener("click", () => {
-  downloadBlob("svgraph-source.svg", new Blob([source.value], { type: "image/svg+xml;charset=utf-8" }));
-});
-mustElement<HTMLButtonElement>("downloadSVGraphBtn").addEventListener("click", () => {
-  if (state.svgraph) downloadText("svgraph.json", JSON.stringify(state.svgraph, null, 2));
-});
-mustElement<HTMLButtonElement>("downloadSidecarBtn").addEventListener("click", () => {
-  if (state.svgraph) downloadText("svgraph-sidecar.json", JSON.stringify(buildSVGraphSidecar(state.svgraph), null, 2));
-});
-mustElement<HTMLButtonElement>("downloadDrawingMlBtn").addEventListener("click", () => {
-  downloadBlob("svgraph-drawingml.xml", new Blob([svgToDrawingMl(source.value)], { type: "application/xml;charset=utf-8" }));
-});
-mustElement<HTMLButtonElement>("downloadPresentationBtn").addEventListener("click", () => {
-  if (state.presentation) downloadText("svgraph-presentation.json", JSON.stringify(state.presentation, null, 2));
-});
-mustElement<HTMLButtonElement>("downloadPptxBtn").addEventListener("click", () => {
-  const bytes = svgToPptx(source.value);
-  const data = new Uint8Array(bytes.byteLength);
-  data.set(bytes);
-  downloadBlob("svgraph-web.pptx", new Blob([data], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" }));
-});
-fileInput.addEventListener("change", async () => {
-  const file = fileInput.files?.[0];
-  if (!file) return;
-  try {
-    setSourceValue(sourceFromOpenedFile(await file.text()));
-    setStorageStatus(`Opened ${file.name}`);
-  } catch (error) {
-    setStorageStatus(`Open failed: ${error instanceof Error ? error.message : String(error)}`);
-  } finally {
-    fileInput.value = "";
-  }
-});
-source.addEventListener("input", recordManualSourceEdit);
-
 async function checkWebGpu(): Promise<void> {
   const nav = navigator as Navigator & { gpu?: { requestAdapter: () => Promise<unknown> } };
   if (!nav.gpu) {
@@ -5120,16 +5068,80 @@ async function checkWebGpu(): Promise<void> {
   renderPanel();
 }
 
-setSourceValue(sampleSvg, { record: false, persist: false });
-void loadSourceDocument().then((saved) => {
-  if (saved) {
-    setSourceValue(saved, { record: false, persist: false });
-    setStorageStatus("Restored active SVG source from IndexedDB");
-  }
-}).catch((error) => {
-  setStorageStatus(`Storage restore failed: ${error instanceof Error ? error.message : String(error)}`);
-});
-void checkWebGpu();
+export function initSVGraphEditor(): void {
+  source = mustElement<HTMLTextAreaElement>("source");
+  preview = mustElement<HTMLElement>("preview");
+  panel = mustElement<HTMLElement>("panel");
+  fileInput = mustElement<HTMLInputElement>("fileInput");
+  undoButton = mustElement<HTMLButtonElement>("undoBtn");
+  redoButton = mustElement<HTMLButtonElement>("redoBtn");
+  clearSavedButton = mustElement<HTMLButtonElement>("clearSavedBtn");
+
+  document.querySelectorAll<HTMLButtonElement>(".tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      state.tab = tab.dataset.tab || "summary";
+      document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("active", item === tab));
+      renderPanel();
+    });
+  });
+
+  mustElement<HTMLButtonElement>("openBtn").addEventListener("click", () => fileInput.click());
+  mustElement<HTMLButtonElement>("sampleBtn").addEventListener("click", () => {
+    setSourceValue(sampleSvg);
+  });
+  undoButton.addEventListener("click", undoSourceEdit);
+  redoButton.addEventListener("click", redoSourceEdit);
+  clearSavedButton.addEventListener("click", () => {
+    void clearSavedSourceDocumentWithStatus();
+  });
+  mustElement<HTMLButtonElement>("downloadSvgBtn").addEventListener("click", () => {
+    downloadBlob("svgraph-source.svg", new Blob([source.value], { type: "image/svg+xml;charset=utf-8" }));
+  });
+  mustElement<HTMLButtonElement>("downloadSVGraphBtn").addEventListener("click", () => {
+    if (state.svgraph) downloadText("svgraph.json", JSON.stringify(state.svgraph, null, 2));
+  });
+  mustElement<HTMLButtonElement>("downloadSidecarBtn").addEventListener("click", () => {
+    if (state.svgraph) downloadText("svgraph-sidecar.json", JSON.stringify(buildSVGraphSidecar(state.svgraph, source.value), null, 2));
+  });
+  mustElement<HTMLButtonElement>("downloadDrawingMlBtn").addEventListener("click", () => {
+    downloadBlob("svgraph-drawingml.xml", new Blob([svgToDrawingMl(source.value)], { type: "application/xml;charset=utf-8" }));
+  });
+  mustElement<HTMLButtonElement>("downloadPresentationBtn").addEventListener("click", () => {
+    if (state.presentation) downloadText("svgraph-presentation.json", JSON.stringify(state.presentation, null, 2));
+  });
+  mustElement<HTMLButtonElement>("downloadPptxBtn").addEventListener("click", () => {
+    const bytes = svgToPptx(source.value);
+    const data = new Uint8Array(bytes.byteLength);
+    data.set(bytes);
+    downloadBlob("svgraph-web.pptx", new Blob([data], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" }));
+  });
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files?.[0];
+    if (!file) return;
+    try {
+      setSourceValue(sourceFromOpenedFile(await file.text()));
+      setStorageStatus(`Opened ${file.name}`);
+    } catch (error) {
+      setStorageStatus(`Open failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      fileInput.value = "";
+    }
+  });
+  source.addEventListener("input", recordManualSourceEdit);
+
+  setSourceValue(sampleSvg, { record: false, persist: false });
+  void loadSourceDocument().then((saved) => {
+    if (saved) {
+      setSourceValue(saved, { record: false, persist: false });
+      setStorageStatus("Restored active SVG source from IndexedDB");
+    }
+  }).catch((error) => {
+    setStorageStatus(`Storage restore failed: ${error instanceof Error ? error.message : String(error)}`);
+  });
+  void checkWebGpu();
+}
+
+if (typeof document !== "undefined" && document.getElementById("source")) initSVGraphEditor();
 
 function asObject(value: JsonValue | undefined): Record<string, JsonValue> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};

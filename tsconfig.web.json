@@ -8,6 +8,7 @@
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true,
     "lib": ["DOM", "ES2022"],
+    "declaration": true,
     "outDir": "docs",
     "rootDir": "web"
   },

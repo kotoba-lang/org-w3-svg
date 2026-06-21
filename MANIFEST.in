@@ -9,6 +9,7 @@ include package-lock.json
 include tsconfig.web.json
 include docs/.nojekyll
 include docs/adr/0001-svgraph.md
+include docs/app.d.ts
 include docs/app.js
 include docs/index.html
 include docs/svgraph-web-editor.md

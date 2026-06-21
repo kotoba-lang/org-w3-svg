@@ -22,7 +22,9 @@ jobs:
         run: |
           npm run check:web
           npm run build:web
+          npm run check:package
           git diff --exit-code docs/app.js
+          git diff --exit-code docs/app.d.ts
 
   test:
     runs-on: ubuntu-latest
@@ -275,6 +277,7 @@ jobs:
           assert f"{root}/tsconfig.web.json" in sdist_names
           assert f"{root}/docs/.nojekyll" in sdist_names
           assert f"{root}/docs/adr/0001-svgraph.md" in sdist_names
+          assert f"{root}/docs/app.d.ts" in sdist_names
           assert f"{root}/docs/app.js" in sdist_names
           assert f"{root}/docs/index.html" in sdist_names
           assert f"{root}/docs/svgraph-web-editor.md" in sdist_names

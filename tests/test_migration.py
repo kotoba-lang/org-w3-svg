@@ -412,6 +412,7 @@ def test_manifest_and_ci_package_svgraph_migration_docs() -> None:
         "tsconfig.web.json",
         "docs/.nojekyll",
         "docs/adr/0001-svgraph.md",
+        "docs/app.d.ts",
         "docs/app.js",
         "docs/index.html",
         "docs/svgraph-web-editor.md",
@@ -780,7 +781,9 @@ def test_release_checklist_rebuilds_and_packages_svgraph_web_editor() -> None:
         "npm ci",
         "npm run check:web",
         "npm run build:web",
+        "npm run check:package",
         "git diff --exit-code docs/app.js",
+        "git diff --exit-code docs/app.d.ts",
         'sdist_path = glob.glob("tmp/dist/svgraph-*.tar.gz")[0]',
         '"README.md"',
         '"LICENSE"',
@@ -888,6 +891,7 @@ def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> No
         assert "npm ci" in source
         assert "npm run check:web" in source
         assert "npm run build:web" in source
+        assert "npm run check:package" in source
         assert "PYTHONPATH=src python -m svgraph analyze examples/coverage.svg" in source
         assert "PYTHONPATH=src python -m svgraph svgraph examples/svgraph.svg > tmp/svgraph.json" in source
         assert (
@@ -897,6 +901,7 @@ def test_contributor_checks_use_canonical_svgraph_commands_and_artifacts() -> No
         assert "tmp/svgraph-coverage.pptx" in source
         assert "python -m zipfile --test tmp/svgraph-coverage.pptx" in source
         assert "git diff --exit-code docs/app.js" in source
+        assert "git diff --exit-code docs/app.d.ts" in source
         assert "python -m svgraph.cli" not in source
         assert "python -m drawingml_svg" not in source
         assert "tmp/drawingml-svg-coverage.pptx" not in source
@@ -1014,6 +1019,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     html = (root / "docs" / "index.html").read_text(encoding="utf-8")
     source = (root / "web" / "app.ts").read_text(encoding="utf-8")
     app_js = (root / "docs" / "app.js").read_text(encoding="utf-8")
+    app_dts = (root / "docs" / "app.d.ts").read_text(encoding="utf-8")
 
     assert '"name": "@com-junkawasaki/svgraph"' in package_json
     assert '"name": "@com-junkawasaki/svgraph"' in package_lock
@@ -1028,6 +1034,15 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         "url": "git+https://github.com/com-junkawasaki/svgraph.git",
     }
     assert package_metadata["bugs"] == {"url": "https://github.com/com-junkawasaki/svgraph/issues"}
+    assert package_metadata["main"] == "./docs/app.js"
+    assert package_metadata["types"] == "./docs/app.d.ts"
+    assert package_metadata["exports"] == {
+        ".": {
+            "types": "./docs/app.d.ts",
+            "default": "./docs/app.js",
+        },
+        "./web/app.ts": "./web/app.ts",
+    }
     assert package_metadata["private"] is False
     assert package_metadata["publishConfig"] == {
         "registry": "https://npm.pkg.github.com",
@@ -1050,6 +1065,24 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert 'mustElement<HTMLButtonElement>("undoBtn")' in source
     assert 'mustElement<HTMLButtonElement>("redoBtn")' in source
     assert 'mustElement<HTMLButtonElement>("clearSavedBtn")' in source
+    assert "export function buildSVGraph" in source
+    assert "export function buildSVGraphSidecar" in source
+    assert "export function svgToDrawingMl" in source
+    assert "export function svgToPptx" in source
+    assert "export function initSVGraphEditor" in source
+    assert 'document.getElementById("source")' in source
+    for expected in [
+        "export type SVGraphDocument",
+        "export type SVGraphPresentationProjection",
+        "export type SVGraphSidecar",
+        "export type SvgCoverage",
+        "export declare function buildSVGraph",
+        "export declare function buildSVGraphSidecar",
+        "export declare function svgToDrawingMl",
+        "export declare function svgToPptx",
+        "export declare function initSVGraphEditor",
+    ]:
+        assert expected in app_dts
     for generated in [source, app_js]:
         assert 'downloadBlob("svgraph-source.svg"' in generated
         assert "function setSourceValue" in generated
@@ -1405,6 +1438,7 @@ def test_pages_typescript_build_targets_committed_svgraph_artifact() -> None:
     assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
     assert tsconfig["compilerOptions"]["rootDir"] == "web"
     assert tsconfig["compilerOptions"]["outDir"] == "docs"
+    assert tsconfig["compilerOptions"]["declaration"] is True
     assert tsconfig["include"] == ["web/**/*.ts"]
     assert '<script type="module" src="./app.js"></script>' in html
     assert 'version: "0.3-svgraph-web-ts"' in app_js
@@ -1426,13 +1460,18 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "npm ci" in readme
     assert "npm run check:web" in readme
     assert "npm run build:web" in readme
+    assert "npm run check:package" in readme
+    assert 'import { buildSVGraph, svgToDrawingMl, svgToPptx } from "@com-junkawasaki/svgraph";' in readme
     assert package_metadata["scripts"]["build:web"] == "tsc -p tsconfig.web.json"
     assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
+    assert "check:package" in package_metadata["scripts"]
     assert "node-version: \"24\"" in workflow
     assert "run: npm ci" in workflow
     assert "npm run check:web" in workflow
     assert "npm run build:web" in workflow
+    assert "npm run check:package" in workflow
     assert "git diff --exit-code docs/app.js" in workflow
+    assert "git diff --exit-code docs/app.d.ts" in workflow
 
 
 def test_dependabot_tracks_all_svgraph_dependency_surfaces() -> None:
@@ -1876,7 +1915,9 @@ def test_migration_guide_verification_matches_svgraph_web_and_python_guards() ->
         "npm ci",
         "npm run check:web",
         "npm run build:web",
+        "npm run check:package",
         "git diff --exit-code docs/app.js",
+        "git diff --exit-code docs/app.d.ts",
         "PYTHONPATH=src python -m pytest -q tests/test_migration.py tests/test_svgraph.py",
     ]:
         assert command in verification

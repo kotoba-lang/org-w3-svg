@@ -84,7 +84,9 @@ PY
 npm ci
 npm run check:web
 npm run build:web
+npm run check:package
 git diff --exit-code docs/app.js
+git diff --exit-code docs/app.d.ts
 ```
 
 - Regenerate and inspect the PPTX smoke fixture:
@@ -198,6 +200,7 @@ for expected in [
     "tsconfig.web.json",
     "docs/.nojekyll",
     "docs/adr/0001-svgraph.md",
+    "docs/app.d.ts",
     "docs/index.html",
     "docs/app.js",
     "docs/svgraph-web-editor.md",
@@ -340,6 +343,7 @@ Publish the browser package to GitHub Packages from the `Publish npm package` wo
 npm ci
 npm run check:web
 npm run build:web
+npm run check:package
 npm publish --registry https://npm.pkg.github.com
 ```
 

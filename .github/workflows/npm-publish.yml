@@ -30,7 +30,9 @@ jobs:
         run: |
           npm run check:web
           npm run build:web
+          npm run check:package
           git diff --exit-code docs/app.js
+          git diff --exit-code docs/app.d.ts
           npm pack --dry-run
 
       - name: Publish to GitHub Packages

@@ -19,7 +19,9 @@ ruff check .
 npm ci
 npm run check:web
 npm run build:web
+npm run check:package
 git diff --exit-code docs/app.js
+git diff --exit-code docs/app.d.ts
 PYTHONPATH=src python -m pytest -q
 PYTHONPATH=src python -m svgraph analyze examples/coverage.svg
 PYTHONPATH=src python -m svgraph svgraph examples/svgraph.svg > tmp/svgraph.json
