@@ -1757,7 +1757,7 @@ function dmlShapeToSvg(element: Element): DmlSvgItem | null {
       svg: `<g${idAttr}${textAttrs}${transform}><polygon points="${pointsAttr}"${style}/>${body}</g>`,
     };
   }
-  if (preset === "ellipse" || preset === "oval") {
+  if (preset === "ellipse" || preset === "oval" || preset === "flowChartConnector") {
     return {
       bounds,
       svg: `<g${idAttr}${textAttrs}${transform}><ellipse cx="${formatNumber(box.x + box.width / 2)}" cy="${formatNumber(box.y + box.height / 2)}" rx="${formatNumber(box.width / 2)}" ry="${formatNumber(box.height / 2)}"${style}/>${body}</g>`,
@@ -1768,7 +1768,7 @@ function dmlShapeToSvg(element: Element): DmlSvgItem | null {
     const [y1, y2] = dmlFlip(spPr, "flipV") ? [box.y + box.height, box.y] : [box.y, box.y + box.height];
     return { bounds: dmlXfrmTransformBounds(spPr, box, { skipFlip: true }), svg: `<line${idAttr} x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${style}${dmlXfrmTransformAttr(spPr, box, { skipFlip: true })}/>` };
   }
-  const rx = preset === "roundRect" ? Math.min(box.width, box.height) * 0.12 : 0;
+  const rx = preset === "roundRect" || preset === "flowChartTerminator" || preset === "flowChartAlternateProcess" ? Math.min(box.width, box.height) / 6 : 0;
   return {
     bounds,
     svg: `<g${idAttr}${textAttrs}${transform}><rect x="${formatNumber(box.x)}" y="${formatNumber(box.y)}" width="${formatNumber(box.width)}" height="${formatNumber(box.height)}"${rx ? ` rx="${formatNumber(rx)}" ry="${formatNumber(rx)}"` : ""}${style}/>${body}</g>`,

@@ -1143,6 +1143,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function svgToDrawingMl" in generated
         assert "function drawingMlToSvg" in generated
         assert "function dmlShapeToSvg" in generated
+        assert 'preset === "flowChartConnector"' in generated
+        assert 'preset === "flowChartTerminator"' in generated
+        assert "Math.min(box.width, box.height) / 6" in generated
         assert "function dmlPresetPoints" in generated
         assert "function regularPolygonPoints" in generated
         assert "function regularStarPoints" in generated
@@ -1555,6 +1558,8 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'points=\\\"450,20 470,25 460,25 460,28 470,28 470,32 460,32 460,40 440,40 440,32 430,32 430,28 440,28 440,25 430,25\\\"' in package_metadata["scripts"]["check:package"]
     assert 'points=\\\"490,30 490,20 491.3053,20.0856' in package_metadata["scripts"]["check:package"]
     assert 'points=\\\"550,20 551.2,27.2 555.8,22 553.6,28.6' in package_metadata["scripts"]["check:package"]
+    assert '<rect x=\\\"570\\\" y=\\\"20\\\" width=\\\"40\\\" height=\\\"20\\\" rx=\\\"3.3333\\\" ry=\\\"3.3333\\\" fill=\\\"#fde2e2\\\"' in package_metadata["scripts"]["check:package"]
+    assert '<ellipse cx=\\\"630\\\" cy=\\\"30\\\" rx=\\\"10\\\" ry=\\\"10\\\" fill=\\\"#cffafe\\\"' in package_metadata["scripts"]["check:package"]
     assert "package-freeform.svg" in package_metadata["scripts"]["check:package"]
     assert "package-picture.svg" in package_metadata["scripts"]["check:package"]
     assert "package-preset.svg" in package_metadata["scripts"]["check:package"]
@@ -1709,6 +1714,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` preset import support for DrawingML bracket, brace, math symbol",
         "browser TypeScript `drawingMlToSvg` preset import support for DrawingML action buttons, funnel, wedge callouts",
         "browser TypeScript `drawingMlToSvg` preset import support for DrawingML pie, chord, block arc",
+        "browser TypeScript `drawingMlToSvg` primitive preset import mapping for DrawingML flowchart connector",
         "XML Open flow conversion back into canonical SVG source",
         "native DrawingML table fragments as semantic SVG table and cell nodes",
         "npm package CLI backed by the TypeScript/browser converter",

@@ -113,4 +113,28 @@
       <a:solidFill><a:srgbClr val="fef08a"/></a:solidFill>
     </p:spPr>
   </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="16" name="preset terminator"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="5429250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="flowChartTerminator"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="fde2e2"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="17" name="preset connector"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="5905500" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="flowChartConnector"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="cffafe"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="18" name="preset alternate process"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="6191250" y="190500"/><a:ext cx="381000" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="flowChartAlternateProcess"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="dbeafe"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
 </p:spTree>
