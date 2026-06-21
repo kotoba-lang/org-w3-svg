@@ -2460,8 +2460,8 @@ function dmlDasharray(ln: Element, strokeWidth: number | null): string | null {
   const custom = childByLocal(ln, "custDash");
   if (custom && strokeWidth) {
     const values = directChildrenByLocal(custom, "ds").flatMap((item) => [
-      formatNumber((optionalInt(item.getAttribute("d")) / 100000) * strokeWidth),
-      formatNumber((optionalInt(item.getAttribute("sp")) / 100000) * strokeWidth),
+      formatNumber((dmlInt(item.getAttribute("d"), 0) / 100000) * strokeWidth),
+      formatNumber((dmlInt(item.getAttribute("sp"), 0) / 100000) * strokeWidth),
     ]);
     return values.length ? values.join(" ") : null;
   }

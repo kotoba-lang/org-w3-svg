@@ -1058,6 +1058,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "examples/group.dml" in package_metadata["files"]
     assert "examples/line-arrow.dml" in package_metadata["files"]
     assert "examples/line-flip-bool.dml" in package_metadata["files"]
+    assert "examples/line-invalid-dash.dml" in package_metadata["files"]
     assert "examples/line-style.dml" in package_metadata["files"]
     assert "examples/picture.dml" in package_metadata["files"]
     assert "examples/picture-invalid-alpha.dml" in package_metadata["files"]
@@ -1637,6 +1638,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/fill-effects.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/line-arrow.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/line-flip-bool.dml" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg examples/line-invalid-dash.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/line-style.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/style-ref.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-caps.dml" in package_metadata["scripts"]["check:package"]
@@ -1677,6 +1679,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "package-fill-effects.svg" in package_metadata["scripts"]["check:package"]
     assert "package-line-arrow.svg" in package_metadata["scripts"]["check:package"]
     assert "package-line-flip-bool.svg" in package_metadata["scripts"]["check:package"]
+    assert "package-line-invalid-dash.svg" in package_metadata["scripts"]["check:package"]
     assert "package-line-style.svg" in package_metadata["scripts"]["check:package"]
     assert "package-style-ref.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-caps.svg" in package_metadata["scripts"]["check:package"]
@@ -1866,6 +1869,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` Python-compatible invalid DrawingML text numeric parsing",
         "browser TypeScript `drawingMlToSvg` Python-compatible invalid DrawingML picture alpha and line miter parsing",
         "browser TypeScript `drawingMlToSvg` Python-compatible invalid DrawingML picture source crop parsing",
+        "browser TypeScript `drawingMlToSvg` Python-compatible invalid DrawingML custom dash parsing",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph default and end-paragraph text run fallback styles",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML paragraph bullets, auto-numbering, tabs, and explicit line breaks",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML text body insets, vertical anchors, paragraph/list alignment, and RTL direction",
