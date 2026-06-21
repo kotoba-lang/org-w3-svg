@@ -1386,7 +1386,7 @@ function dmlShapeToSvg(element) {
     const idAttr = name ? ` id="${xml(dmlSvgId(name))}"` : "";
     const transform = dmlXfrmTransformAttr(spPr, box);
     const bounds = dmlXfrmTransformBounds(spPr, box);
-    const body = text ? `<text x="${formatNumber(box.x + box.width / 2)}" y="${formatNumber(box.y + box.height / 2)}" text-anchor="middle" dominant-baseline="middle">${xml(text)}</text>` : "";
+    const body = dmlTextSvg(element, box);
     const custom = childByLocal(spPr, "custGeom");
     if (custom) {
         const customShape = dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body, transform, bounds);
@@ -2161,6 +2161,125 @@ function dmlAlpha(parent) {
 }
 function dmlText(element) {
     return descendantsByLocal(element, "t").map((node) => node.textContent || "").join("\n").trim();
+}
+function dmlTextSvg(element, box) {
+    const runs = dmlTextRuns(element).filter((run) => run.text);
+    if (!runs.length)
+        return "";
+    const attrs = [
+        `x="${formatNumber(box.x + box.width / 2)}"`,
+        `y="${formatNumber(box.y + box.height / 2)}"`,
+        'text-anchor="middle"',
+        'dominant-baseline="middle"',
+    ];
+    if (runs.length === 1) {
+        const run = runs[0];
+        if (!run)
+            return "";
+        return `<text ${attrs.concat(run.attrs).join(" ")}>${xml(run.text)}</text>`;
+    }
+    return `<text ${attrs.join(" ")}>${runs.map((run) => `<tspan${run.attrs.length ? ` ${run.attrs.join(" ")}` : ""}>${xml(run.text)}</tspan>`).join("")}</text>`;
+}
+function dmlTextRuns(element) {
+    const txBody = childByLocal(element, "txBody");
+    const paragraphs = directChildrenByLocal(txBody, "p");
+    const runs = [];
+    for (const paragraph of paragraphs) {
+        const paragraphRuns = [];
+        for (const child of Array.from(paragraph.children)) {
+            const name = localName(child);
+            if (name === "r" || name === "fld") {
+                paragraphRuns.push({
+                    text: childByLocal(child, "t")?.textContent || "",
+                    attrs: dmlTextRunAttrs(childByLocal(child, "rPr")),
+                });
+            }
+            else if (name === "br") {
+                paragraphRuns.push({ text: "\n", attrs: dmlTextRunAttrs(childByLocal(child, "rPr")) });
+            }
+        }
+        if (!paragraphRuns.length) {
+            const end = childByLocal(childByLocal(paragraph, "endParaRPr"), "t")?.textContent || "";
+            if (end)
+                paragraphRuns.push({ text: end, attrs: dmlTextRunAttrs(childByLocal(paragraph, "endParaRPr")) });
+        }
+        if (runs.length && paragraphRuns.length)
+            runs.push({ text: "\n", attrs: [] });
+        runs.push(...paragraphRuns);
+    }
+    if (!runs.length) {
+        const text = dmlText(element);
+        if (text)
+            runs.push({ text, attrs: [] });
+    }
+    return runs;
+}
+function dmlTextRunAttrs(rPr) {
+    if (!rPr)
+        return [];
+    const attrs = [];
+    const fontSize = optionalInt(rPr.getAttribute("sz"));
+    if (fontSize > 0)
+        attrs.push(`font-size="${formatNumber(fontSize / 100)}"`);
+    if (dmlBool(rPr.getAttribute("b")))
+        attrs.push('font-weight="bold"');
+    if (dmlBool(rPr.getAttribute("i")))
+        attrs.push('font-style="italic"');
+    if (["small", "all"].includes(rPr.getAttribute("cap") || ""))
+        attrs.push('font-variant="small-caps"');
+    const typeface = childByLocal(rPr, "latin")?.getAttribute("typeface");
+    if (typeface)
+        attrs.push(`font-family="${xml(typeface)}"`);
+    attrs.push(...dmlTextFillAttrs(rPr));
+    attrs.push(...dmlTextOutlineAttrs(childByLocal(rPr, "ln")));
+    const decoration = dmlTextDecoration(rPr);
+    if (decoration)
+        attrs.push(`text-decoration="${decoration}"`);
+    const baseline = optionalInt(rPr.getAttribute("baseline"));
+    if (baseline > 0)
+        attrs.push('baseline-shift="super"');
+    if (baseline < 0)
+        attrs.push('baseline-shift="sub"');
+    const spacing = optionalInt(rPr.getAttribute("spc"));
+    if (spacing)
+        attrs.push(`letter-spacing="${formatNumber(spacing / 75)}"`);
+    return attrs;
+}
+function dmlTextFillAttrs(rPr) {
+    if (childByLocal(rPr, "noFill"))
+        return ['fill="none"'];
+    const paint = dmlFillPaint(rPr);
+    if (!paint)
+        return [];
+    return [
+        paint.color ? `fill="${paint.color}"` : "",
+        paint.alpha != null && paint.alpha < 1 ? `fill-opacity="${formatNumber(paint.alpha)}"` : "",
+    ].filter(Boolean);
+}
+function dmlTextOutlineAttrs(ln) {
+    if (!ln || childByLocal(ln, "noFill"))
+        return [];
+    const paint = dmlFillPaint(ln);
+    const strokeWidth = emuToPx(ln.getAttribute("w"));
+    return [
+        paint?.color ? `stroke="${paint.color}"` : "",
+        paint?.alpha != null && paint.alpha < 1 ? `stroke-opacity="${formatNumber(paint.alpha)}"` : "",
+        strokeWidth ? `stroke-width="${formatNumber(strokeWidth)}"` : "",
+        dmlLineCap(ln.getAttribute("cap")) ? `stroke-linecap="${dmlLineCap(ln.getAttribute("cap"))}"` : "",
+        dmlLineJoin(ln) ? `stroke-linejoin="${dmlLineJoin(ln)}"` : "",
+        dmlDasharray(ln, strokeWidth) ? `stroke-dasharray="${dmlDasharray(ln, strokeWidth)}"` : "",
+        dmlMiterlimit(ln) != null ? `stroke-miterlimit="${formatNumber(dmlMiterlimit(ln) ?? 0)}"` : "",
+    ].filter(Boolean);
+}
+function dmlTextDecoration(rPr) {
+    const values = [];
+    const underline = rPr.getAttribute("u");
+    const strike = rPr.getAttribute("strike");
+    if (underline && underline !== "none")
+        values.push("underline");
+    if (strike && strike !== "noStrike")
+        values.push("line-through");
+    return values.length ? values.join(" ") : null;
 }
 function dmlFlip(spPr, name) {
     return childByLocal(spPr, "xfrm")?.getAttribute(name) === "1";

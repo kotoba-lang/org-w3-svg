@@ -28,6 +28,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser coverage diagnostics for visible rendering checks with the Python analyzer, so empty container elements do not make filter, mask, clip, blend, or isolation effects appear meaningful.
 - Aligned browser coverage diagnostics for `transform-origin` with the Python analyzer, including no-op handling when transforms or visible rendering are absent.
 - Aligned browser coverage diagnostics for `vector-effect` with the Python analyzer, so unsupported values are ignored when no visible stroke can be affected.
+- Added browser TypeScript `drawingMlToSvg` import support for DrawingML rich text run fill, font, outline, decoration, baseline, and spacing details.
 - Aligned browser `foreignObject` HTML table column width export with Python, including `col span` expansion and first-row `td`/`th` width fallbacks.
 - Aligned browser `foreignObject` HTML table grid validation with Python, so malformed spans and ragged rows remain unsupported instead of being clamped into native tables.
 - Aligned browser `foreignObject` HTML table row height export with Python, including proportional scaling and missing-row fallback distribution.

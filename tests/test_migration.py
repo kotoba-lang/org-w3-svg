@@ -1057,6 +1057,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "examples/picture.dml" in package_metadata["files"]
     assert "examples/preset.dml" in package_metadata["files"]
     assert "examples/sample.svg" in package_metadata["files"]
+    assert "examples/text-style.dml" in package_metadata["files"]
     assert "@xmldom/xmldom" in package_metadata["dependencies"]
     assert package_metadata["private"] is False
     assert package_metadata["publishConfig"] == {
@@ -1169,6 +1170,9 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert "function dmlLineCap" in generated
         assert "function dmlLineJoin" in generated
         assert "function dmlDasharray" in generated
+        assert "function dmlTextSvg" in generated
+        assert "function dmlTextRuns" in generated
+        assert "function dmlTextRunAttrs" in generated
         assert "function dmlTableFrameToSvg" in generated
         assert "function dmlTableColumns" in generated
         assert "function dmlSvgItemsWalk" in generated
@@ -1549,6 +1553,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "drawingMlToSvg" in readme
     assert "buildSVGraphAssistantPrompt" in readme
     assert "validateAssistantPatch" in readme
+    assert "Text bodies keep DrawingML rich text run fill, font, outline, decoration, baseline, and spacing details" in readme
     assert "Browser Assistant can run a local Transformers.js worker" in readme
     assert package_metadata["scripts"]["build:web"] == "tsc -p tsconfig.web.json"
     assert package_metadata["scripts"]["check:web"] == "tsc -p tsconfig.web.json --noEmit"
@@ -1565,6 +1570,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/color.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/fill-effects.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/line-style.dml" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg examples/text-style.dml" in package_metadata["scripts"]["check:package"]
     assert 'transform=\\\"matrix(2 0 0 2 10 20)\\\"' in package_metadata["scripts"]["check:package"]
     assert 'transform=\\\"rotate(30 20 25) translate(20 25) scale(-1 1) translate(-20 -25)\\\"' in package_metadata["scripts"]["check:package"]
     assert 'points=\\\"30,20 50,40 10,40\\\"' in package_metadata["scripts"]["check:package"]
@@ -1585,6 +1591,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "package-color.svg" in package_metadata["scripts"]["check:package"]
     assert "package-fill-effects.svg" in package_metadata["scripts"]["check:package"]
     assert "package-line-style.svg" in package_metadata["scripts"]["check:package"]
+    assert "package-text-style.svg" in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.5\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-opacity=\\\"0.25\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#99b2cc\\\"' in package_metadata["scripts"]["check:package"]
@@ -1593,6 +1600,8 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'stroke=\\\"#004000\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-linecap=\\\"round\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-dasharray=\\\"4 3 1 3\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'font-weight=\\\"bold\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'baseline-shift=\\\"super\\\"' in package_metadata["scripts"]["check:package"]
     assert "buildSVGraphAssistantPrompt" in package_metadata["scripts"]["check:package"]
     assert "applyAssistantPatch" in package_metadata["scripts"]["check:package"]
     assert "npm exec --registry=https://npm.pkg.github.com @com-junkawasaki/svgraph -- svg2dml" in readme
@@ -1710,6 +1719,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser coverage analyzer attribute-specific no-op handling for SVG font, glyph, bidi, writing-mode, and text-decoration controls",
         "browser coverage analyzer ignored-element handling for non-rendering geometry and no visible paint",
         "browser coverage analyzer `use` reference support checks against referenced SVG subtrees",
+        "browser TypeScript `drawingMlToSvg` import support for DrawingML rich text run fill, font, outline, decoration, baseline, and spacing details",
         "browser pattern paint-server fallback colors to ignore hidden and fully transparent content",
         "browser gradient paint-server fallback colors to ignore fully transparent stops",
         "browser gradient paint-server fallback colors with inherited stop color, opacity, and currentColor context",

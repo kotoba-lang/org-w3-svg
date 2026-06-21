@@ -104,7 +104,7 @@ def test_cli_alias_version_writes_canonical_package_identity(monkeypatch, capsys
     captured = capsys.readouterr()
 
     assert excinfo.value.code == 0
-    assert captured.out == "svgraph 0.1.19\n"
+    assert captured.out == "svgraph 0.1.20\n"
 
 
 @pytest.mark.parametrize(
