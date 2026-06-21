@@ -55,6 +55,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Expanded browser TypeScript `drawingMlToSvg` preset import support for DrawingML pie, chord, block arc, moon, and star10 geometries.
 - Aligned browser TypeScript `drawingMlToSvg` primitive preset import mapping for DrawingML flowchart connector, terminator, and alternate-process shapes, including Python-compatible round-rect radius.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML solid fill and stroke alpha on shapes, freeforms, connectors, and presets.
+- Added browser TypeScript `drawingMlToSvg` import support for DrawingML color luminance modifiers and srgb/scrgb/hsl/scheme/system/preset color sources.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.
 - Aligned release checklist source distribution checks with packaged SVGraph docs, governance files, examples, and browser editor sources.

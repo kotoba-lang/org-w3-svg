@@ -468,20 +468,153 @@ type PreparedSlide = {
 const rootFontSize = 16;
 
 const namedColors: Record<string, string | null> = {
+  aliceblue: "#f0f8ff",
+  antiquewhite: "#faebd7",
+  aqua: "#00ffff",
+  aquamarine: "#7fffd4",
+  azure: "#f0ffff",
+  beige: "#f5f5dc",
+  bisque: "#ffe4c4",
   black: "#000000",
+  blanchedalmond: "#ffebcd",
   blue: "#0000ff",
+  blueviolet: "#8a2be2",
+  brown: "#a52a2a",
+  burlywood: "#deb887",
+  cadetblue: "#5f9ea0",
+  chartreuse: "#7fff00",
+  chocolate: "#d2691e",
+  coral: "#ff7f50",
+  cornflowerblue: "#6495ed",
+  cornsilk: "#fff8dc",
+  crimson: "#dc143c",
   cyan: "#00ffff",
+  darkblue: "#00008b",
+  darkcyan: "#008b8b",
+  darkgoldenrod: "#b8860b",
+  darkgray: "#a9a9a9",
+  darkgreen: "#006400",
+  darkgrey: "#a9a9a9",
+  darkkhaki: "#bdb76b",
+  darkmagenta: "#8b008b",
+  darkolivegreen: "#556b2f",
+  darkorange: "#ff8c00",
+  darkorchid: "#9932cc",
+  darkred: "#8b0000",
+  darksalmon: "#e9967a",
+  darkseagreen: "#8fbc8f",
+  darkslateblue: "#483d8b",
+  darkslategray: "#2f4f4f",
+  darkslategrey: "#2f4f4f",
+  darkturquoise: "#00ced1",
+  darkviolet: "#9400d3",
+  deeppink: "#ff1493",
+  deepskyblue: "#00bfff",
+  dimgray: "#696969",
+  dimgrey: "#696969",
+  dodgerblue: "#1e90ff",
+  firebrick: "#b22222",
+  floralwhite: "#fffaf0",
+  forestgreen: "#228b22",
+  fuchsia: "#ff00ff",
+  gainsboro: "#dcdcdc",
+  ghostwhite: "#f8f8ff",
+  gold: "#ffd700",
+  goldenrod: "#daa520",
   gray: "#808080",
   green: "#008000",
+  greenyellow: "#adff2f",
   grey: "#808080",
+  honeydew: "#f0fff0",
+  hotpink: "#ff69b4",
+  indianred: "#cd5c5c",
+  indigo: "#4b0082",
+  ivory: "#fffff0",
+  khaki: "#f0e68c",
+  lavender: "#e6e6fa",
+  lavenderblush: "#fff0f5",
+  lawngreen: "#7cfc00",
+  lemonchiffon: "#fffacd",
+  lightblue: "#add8e6",
+  lightcoral: "#f08080",
+  lightcyan: "#e0ffff",
+  lightgoldenrodyellow: "#fafad2",
+  lightgray: "#d3d3d3",
+  lightgreen: "#90ee90",
+  lightgrey: "#d3d3d3",
+  lightpink: "#ffb6c1",
+  lightsalmon: "#ffa07a",
+  lightseagreen: "#20b2aa",
+  lightskyblue: "#87cefa",
+  lightslategray: "#778899",
+  lightslategrey: "#778899",
+  lightsteelblue: "#b0c4de",
+  lightyellow: "#ffffe0",
   lime: "#00ff00",
+  limegreen: "#32cd32",
+  linen: "#faf0e6",
   magenta: "#ff00ff",
+  mediumaquamarine: "#66cdaa",
+  mediumblue: "#0000cd",
+  mediumorchid: "#ba55d3",
+  mediumpurple: "#9370db",
+  mediumseagreen: "#3cb371",
+  mediumslateblue: "#7b68ee",
+  mediumspringgreen: "#00fa9a",
+  mediumturquoise: "#48d1cc",
+  mediumvioletred: "#c71585",
+  midnightblue: "#191970",
+  mintcream: "#f5fffa",
+  mistyrose: "#ffe4e1",
+  moccasin: "#ffe4b5",
+  navajowhite: "#ffdead",
+  navy: "#000080",
+  oldlace: "#fdf5e6",
+  olive: "#808000",
+  olivedrab: "#6b8e23",
   orange: "#ffa500",
+  orangered: "#ff4500",
+  orchid: "#da70d6",
+  palegoldenrod: "#eee8aa",
+  palegreen: "#98fb98",
+  paleturquoise: "#afeeee",
+  palevioletred: "#db7093",
+  papayawhip: "#ffefd5",
+  peachpuff: "#ffdab9",
+  peru: "#cd853f",
+  pink: "#ffc0cb",
+  plum: "#dda0dd",
+  powderblue: "#b0e0e6",
   purple: "#800080",
   red: "#ff0000",
+  rosybrown: "#bc8f8f",
+  royalblue: "#4169e1",
+  saddlebrown: "#8b4513",
+  salmon: "#fa8072",
+  sandybrown: "#f4a460",
+  seagreen: "#2e8b57",
+  seashell: "#fff5ee",
+  sienna: "#a0522d",
+  silver: "#c0c0c0",
+  skyblue: "#87ceeb",
+  slateblue: "#6a5acd",
+  slategray: "#708090",
+  slategrey: "#708090",
+  snow: "#fffafa",
+  springgreen: "#00ff7f",
+  steelblue: "#4682b4",
+  tan: "#d2b48c",
+  teal: "#008080",
+  thistle: "#d8bfd8",
+  tomato: "#ff6347",
   transparent: null,
+  turquoise: "#40e0d0",
+  violet: "#ee82ee",
+  wheat: "#f5deb3",
   white: "#ffffff",
+  whitesmoke: "#f5f5f5",
   yellow: "#ffff00",
+  yellowgreen: "#9acd32",
 };
 
 const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720">
@@ -2175,14 +2308,39 @@ function dmlSvgStyle(paint: { fill: string | null; fillAlpha?: number | null; st
 
 function dmlColor(parent: Element | null | undefined): string | null {
   if (!parent) return null;
-  const srgb = childByLocal(parent, "srgbClr")?.getAttribute("val");
-  if (srgb) return `#${srgb}`;
-  const scheme = childByLocal(parent, "schemeClr")?.getAttribute("val");
-  if (scheme) return dmlSchemeColor(scheme);
+  const srgb = childByLocal(parent, "srgbClr");
+  if (srgb?.getAttribute("val")) return dmlApplyLuminanceModifiers(dmlHexColor(srgb.getAttribute("val")), srgb);
+  const scrgb = childByLocal(parent, "scrgbClr");
+  if (scrgb) return dmlScrgbColor(scrgb);
+  const hsl = childByLocal(parent, "hslClr");
+  if (hsl) return dmlHslColor(hsl);
+  const scheme = childByLocal(parent, "schemeClr");
+  if (scheme?.getAttribute("val")) return dmlSchemeColor(scheme);
+  const system = childByLocal(parent, "sysClr");
+  if (system?.getAttribute("lastClr")) return dmlApplyLuminanceModifiers(dmlHexColor(system.getAttribute("lastClr")), system);
+  const preset = childByLocal(parent, "prstClr");
+  if (preset?.getAttribute("val")) return dmlPresetColor(preset);
   return null;
 }
 
-function dmlSchemeColor(value: string): string {
+function dmlScrgbColor(element: Element): string | null {
+  if (element.getAttribute("r") == null || element.getAttribute("g") == null || element.getAttribute("b") == null) return null;
+  const color = rgbToHex([
+    dmlRound(dmlPercentage(element.getAttribute("r"), 0) * 255),
+    dmlRound(dmlPercentage(element.getAttribute("g"), 0) * 255),
+    dmlRound(dmlPercentage(element.getAttribute("b"), 0) * 255),
+  ]);
+  return dmlApplyLuminanceModifiers(color, element);
+}
+
+function dmlHslColor(element: Element): string | null {
+  if (element.getAttribute("hue") == null || element.getAttribute("sat") == null || element.getAttribute("lum") == null) return null;
+  const hue = (optionalInt(element.getAttribute("hue")) / 60000) % 360;
+  const color = rgbToHex(hslToRgb(String(hue), dmlPercentage(element.getAttribute("sat"), 0), dmlPercentage(element.getAttribute("lum"), 0)));
+  return dmlApplyLuminanceModifiers(color, element);
+}
+
+function dmlSchemeColor(element: Element): string | null {
   const colors: Record<string, string> = {
     accent1: "#4472c4",
     accent2: "#ed7d31",
@@ -2191,11 +2349,114 @@ function dmlSchemeColor(value: string): string {
     accent5: "#5b9bd5",
     accent6: "#70ad47",
     bg1: "#ffffff",
-    bg2: "#000000",
+    bg2: "#e7e6e6",
+    dk1: "#000000",
+    dk2: "#44546a",
+    folHlink: "#954f72",
+    hlink: "#0563c1",
+    lt1: "#ffffff",
+    lt2: "#e7e6e6",
     tx1: "#000000",
-    tx2: "#ffffff",
+    tx2: "#44546a",
   };
-  return colors[value] ?? "#000000";
+  const color = colors[element.getAttribute("val") || ""];
+  return color ? dmlApplyLuminanceModifiers(color, element) : null;
+}
+
+function dmlPresetColor(element: Element): string | null {
+  const colors: Record<string, string> = {
+    dkBlue: "#00008b",
+    dkCyan: "#008b8b",
+    dkGoldenrod: "#b8860b",
+    dkGray: "#a9a9a9",
+    dkGreen: "#006400",
+    dkGrey: "#a9a9a9",
+    dkKhaki: "#bdb76b",
+    dkMagenta: "#8b008b",
+    dkOliveGreen: "#556b2f",
+    dkOrange: "#ff8c00",
+    dkOrchid: "#9932cc",
+    dkRed: "#8b0000",
+    dkSalmon: "#e9967a",
+    dkSeaGreen: "#8fbc8f",
+    dkSlateBlue: "#483d8b",
+    dkSlateGray: "#2f4f4f",
+    dkSlateGrey: "#2f4f4f",
+    dkTurquoise: "#00ced1",
+    dkViolet: "#9400d3",
+    dkYellow: "#808000",
+    ltBlue: "#add8e6",
+    ltCoral: "#f08080",
+    ltCyan: "#e0ffff",
+    ltGoldenrodYellow: "#fafad2",
+    ltGray: "#d3d3d3",
+    ltGreen: "#90ee90",
+    ltGrey: "#d3d3d3",
+    ltPink: "#ffb6c1",
+    ltSalmon: "#ffa07a",
+    ltSeaGreen: "#20b2aa",
+    ltSkyBlue: "#87cefa",
+    ltSlateGray: "#778899",
+    ltSlateGrey: "#778899",
+    ltSteelBlue: "#b0c4de",
+    ltYellow: "#ffffe0",
+    medAquamarine: "#66cdaa",
+    medBlue: "#0000cd",
+    medOrchid: "#ba55d3",
+    medPurple: "#9370db",
+    medSeaGreen: "#3cb371",
+    medSlateBlue: "#7b68ee",
+    medSpringGreen: "#00fa9a",
+    medTurquoise: "#48d1cc",
+    medVioletRed: "#c71585",
+    whiteSmoke: "#f5f5f5",
+  };
+  const value = element.getAttribute("val") || "";
+  const color = colors[value] ?? parseCssColor(value.replace(/[A-Z]/g, (char) => char.toLowerCase()), {});
+  return color ? dmlApplyLuminanceModifiers(color, element) : null;
+}
+
+function dmlHexColor(value: string | null): string | null {
+  return value && /^[0-9a-f]{6}$/i.test(value) ? `#${value.toLowerCase()}` : null;
+}
+
+function dmlApplyLuminanceModifiers(color: string | null, element: Element): string | null {
+  const parsed = hexToRgb(color || "");
+  if (!parsed) return null;
+  let rgb: [number, number, number] = parsed;
+  const shade = childByLocal(element, "shade");
+  if (shade?.getAttribute("val") != null) {
+    const factor = dmlPercentage(shade.getAttribute("val"), 100000);
+    rgb = rgb.map((channel) => dmlRound(channel * factor)) as [number, number, number];
+  }
+  const tint = childByLocal(element, "tint");
+  if (tint?.getAttribute("val") != null) {
+    const factor = dmlPercentage(tint.getAttribute("val"), 100000);
+    rgb = rgb.map((channel) => dmlRound(channel + (255 - channel) * factor)) as [number, number, number];
+  }
+  const lumMod = childByLocal(element, "lumMod");
+  if (lumMod?.getAttribute("val") != null) {
+    const factor = dmlPercentage(lumMod.getAttribute("val"), 100000);
+    rgb = rgb.map((channel) => dmlRound(channel * factor)) as [number, number, number];
+  }
+  const lumOff = childByLocal(element, "lumOff");
+  if (lumOff?.getAttribute("val") != null) {
+    const offset = dmlPercentage(lumOff.getAttribute("val"), 0);
+    rgb = rgb.map((channel) => dmlRound(channel + (255 - channel) * offset)) as [number, number, number];
+  }
+  return rgbToHex(rgb);
+}
+
+function dmlRound(value: number): number {
+  const floor = Math.floor(value);
+  const fraction = value - floor;
+  if (Math.abs(fraction - 0.5) < 1e-9) return floor % 2 === 0 ? floor : floor + 1;
+  return Math.round(value);
+}
+
+function dmlPercentage(value: string | null, defaultValue: number): number {
+  const parsed = Number.parseInt(value ?? String(defaultValue), 10);
+  return Number.isFinite(parsed) ? parsed / 100000 : defaultValue / 100000;
 }
 
 function dmlAlpha(parent: Element | null | undefined): number | null {
