@@ -684,6 +684,7 @@ line</text>
     <text class="css-positioned-text" style="font-size:18;font-family:Arial;fill:#1d4ed8">CSS text position</text>
     <text id="tspan-position" style="font-size:18;font-family:Arial;fill:#334155"><tspan x="900" y="455" dx="10" dy="5">From tspan</tspan><tspan x="900" dy="28">Next line</tspan></text>
     <text id="first-tspan-baseline" style="font-size:18;font-family:Arial;fill:#0f766e"><tspan x="900" y="500" dominant-baseline="middle">Tspan base</tspan></text>
+    <text id="unsupported-tspan-anchor" x="900" y="535" style="font-size:18;font-family:Arial;fill:#991b1b">Lead<tspan x="950" y="535" text-anchor="middle">Chunk</tspan></text>
     <g class="relative-font" fill="#111827" font-family="Arial">
       <text class="em-text" x="560" y="135">Em</text>
       <text class="calc-text" x="640" y="135">Calc</text>
@@ -1645,6 +1646,7 @@ function inspectCoverageAttributes(element: Element, style: SvgStyle, tag: strin
     if (coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, refs, css, viewport)) continue;
     addCoverageCount(stats.unsupported_attributes, name);
   }
+  inspectCoverageTspanRunAttributes(element, style, tag, stats, refs, css, viewport);
   inspectCoverageHref(element, tag, stats, refs);
   inspectCoveragePaintServers(element, style, tag, stats, refs, css);
   if (tag === "use") inspectCoverageUseReference(element, style, stats, refs, css, viewport, refStack);
@@ -1812,18 +1814,71 @@ function coverageAttributeHasNoEffect(element: Element, name: string, value: str
   return false;
 }
 
-function firstPositionedTspanBaselineIsSupported(element: Element, name: string, value: string): boolean {
-  if (localName(element) !== "tspan" || (name !== "dominant-baseline" && name !== "alignment-baseline")) return false;
-  if (normalizeTextBaseline(value) == null) return false;
+function inspectCoverageTspanRunAttributes(element: Element, style: SvgStyle, tag: string, stats: SvgCoverage, refs: Map<string, Element>, css: CssRule[], viewport: Viewport): void {
+  if (tag !== "tspan") return;
+  if (!tspanPositionIsSupportedOrNoop(element, style, refs, css, viewport)) {
+    for (const attr of ["x", "y", "dx", "dy"]) {
+      const value = element.getAttribute(attr);
+      if (value != null && !tspanPositionAttrHasNoEffect(attr, value, viewport)) addCoverageCount(stats.unsupported_attributes, attr);
+    }
+  }
+  const declarations = resolvedCascadedDeclarations(element, css, style);
+  const textAnchor = declarations["text-anchor"] ?? element.getAttribute("text-anchor");
+  if (textAnchor != null && !firstPositionedTspanTextAnchorIsSupported(element, textAnchor) && !tspanTextAnchorHasNoEffect(element, textAnchor)) {
+    addCoverageCount(stats.unsupported_attributes, "text-anchor");
+  }
+}
+
+function tspanPositionIsSupportedOrNoop(element: Element, style: SvgStyle, refs: Map<string, Element>, css: CssRule[], viewport: Viewport): boolean {
+  if (!["x", "y", "dx", "dy"].some((attr) => element.hasAttribute(attr))) return true;
+  if (!subtreeHasVisibleText(element, style, css, refs, viewport)) return true;
+  if (["x", "y", "dx", "dy"].every((attr) => !element.hasAttribute(attr) || tspanPositionAttrHasNoEffect(attr, element.getAttribute(attr) || "", viewport))) return true;
+  return firstPositionedTspanPositionIsSupported(element) || lineBreakTspanPositionIsSupported(element);
+}
+
+function firstPositionedTspanPositionIsSupported(element: Element): boolean {
   const parent = element.parentElement;
   if (!parent || localName(parent) !== "text") return false;
   if (parent.hasAttribute("x") || parent.hasAttribute("y")) return false;
   if (parent.childNodes[0]?.nodeType === Node.TEXT_NODE && (parent.childNodes[0].textContent || "").trim()) return false;
   if (!element.hasAttribute("x") || !element.hasAttribute("y")) return false;
-  for (let sibling = element.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
-    if (localName(sibling) === "tspan" && (sibling.textContent || "").trim()) return false;
-  }
+  return !previousTextTspanHasContent(element);
+}
+
+function lineBreakTspanPositionIsSupported(element: Element): boolean {
+  return element.hasAttribute("x") && element.hasAttribute("dy") && !element.hasAttribute("y") && !element.hasAttribute("dx");
+}
+
+function tspanPositionAttrHasNoEffect(attr: string, value: string, viewport: Viewport): boolean {
+  if (attr === "x" || attr === "y") return false;
+  const basis = percentageBasis(attr === "dx" ? "x" : "y", viewport);
+  const tokens = value.trim().split(/[\s,]+/).filter(Boolean);
+  return tokens.length === 0 || tokens.every((token) => parseCssLength(token, basis, Number.NaN) === 0);
+}
+
+function firstPositionedTspanTextAnchorIsSupported(element: Element, value: string): boolean {
+  if (localName(element) !== "tspan" || normalizeTextAnchor(value) == null) return false;
+  return firstPositionedTspanPositionIsSupported(element);
+}
+
+function tspanTextAnchorHasNoEffect(element: Element, value: string): boolean {
+  if (localName(element) !== "tspan") return false;
+  const normalized = value.trim().toLowerCase();
+  return ["", "start", "middle", "end"].includes(normalized) && !element.hasAttribute("x") && !element.hasAttribute("y");
+}
+
+function firstPositionedTspanBaselineIsSupported(element: Element, name: string, value: string): boolean {
+  if (localName(element) !== "tspan" || (name !== "dominant-baseline" && name !== "alignment-baseline")) return false;
+  if (normalizeTextBaseline(value) == null) return false;
+  if (!firstPositionedTspanPositionIsSupported(element)) return false;
   return true;
+}
+
+function previousTextTspanHasContent(element: Element): boolean {
+  for (let sibling = element.previousElementSibling; sibling; sibling = sibling.previousElementSibling) {
+    if (localName(sibling) === "tspan" && (sibling.textContent || "").trim()) return true;
+  }
+  return false;
 }
 
 function renderingQualityHintHasNoEffect(value: string): boolean {
