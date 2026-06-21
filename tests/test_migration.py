@@ -1062,6 +1062,7 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     assert "examples/preset.dml" in package_metadata["files"]
     assert "examples/sample.svg" in package_metadata["files"]
     assert "examples/style-ref.dml" in package_metadata["files"]
+    assert "examples/table-border-effects.dml" in package_metadata["files"]
     assert "examples/table-fill-effects.dml" in package_metadata["files"]
     assert "examples/table-merge-bool.dml" in package_metadata["files"]
     assert "examples/table-rich.dml" in package_metadata["files"]
@@ -1636,6 +1637,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "node ./bin/svgraph.mjs dml2svg examples/text-bullets.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-layout.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/text-shape-paint.dml" in package_metadata["scripts"]["check:package"]
+    assert "node ./bin/svgraph.mjs dml2svg examples/table-border-effects.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/table-fill-effects.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/table-rich.dml" in package_metadata["scripts"]["check:package"]
     assert "node ./bin/svgraph.mjs dml2svg examples/table-merge-bool.dml" in package_metadata["scripts"]["check:package"]
@@ -1672,6 +1674,7 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert "package-text-bullets.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-layout.svg" in package_metadata["scripts"]["check:package"]
     assert "package-text-shape-paint.svg" in package_metadata["scripts"]["check:package"]
+    assert "package-table-border-effects.svg" in package_metadata["scripts"]["check:package"]
     assert "package-table-fill-effects.svg" in package_metadata["scripts"]["check:package"]
     assert "package-table-rich.svg" in package_metadata["scripts"]["check:package"]
     assert "package-table-merge-bool.svg" in package_metadata["scripts"]["check:package"]
@@ -1703,9 +1706,12 @@ def test_browser_only_svgraph_build_is_documented_and_ci_guarded() -> None:
     assert 'stroke-dasharray=\\\"4 3 1 3\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#16a34a\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.75\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'id=\\\"border-effect-table\\\"' in package_metadata["scripts"]["check:package"]
     assert 'id=\\\"fill-effect-table\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#800080\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill=\\\"#008000\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'stroke=\\\"#800080\\\"' in package_metadata["scripts"]["check:package"]
+    assert 'stroke=\\\"#008000\\\"' in package_metadata["scripts"]["check:package"]
     assert 'fill-opacity=\\\"0.7\\\"' in package_metadata["scripts"]["check:package"]
     assert 'stroke-opacity=\\\"0.4\\\"' in package_metadata["scripts"]["check:package"]
     assert 'font-weight=\\\"bold\\\"' in package_metadata["scripts"]["check:package"]
@@ -1853,6 +1859,7 @@ def test_changelog_documents_svgraph_migration_guard_surfaces() -> None:
         "browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell text layout/rich runs and individual border line style details",
         "browser TypeScript `drawingMlToSvg` native table text insets to scale with DrawingML graphic frame extents",
         "browser TypeScript `drawingMlToSvg` native table cell gradient and pattern fill fallbacks",
+        "browser TypeScript `drawingMlToSvg` native table border gradient and pattern fill fallbacks",
         "browser TypeScript `drawingMlToSvg` import support for DrawingML `bodyPr` no-wrap text bodies",
         "browser pattern paint-server fallback colors to ignore hidden and fully transparent content",
         "browser gradient paint-server fallback colors to ignore fully transparent stops",

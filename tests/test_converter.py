@@ -361,7 +361,7 @@ def test_cli_version_writes_installed_package_version(capsys) -> None:
     captured = capsys.readouterr()
 
     assert excinfo.value.code == 0
-    assert captured.out == "svgraph 0.1.39\n"
+    assert captured.out == "svgraph 0.1.40\n"
 
 
 def test_svgraph_module_cli_uses_canonical_program_name() -> None:
@@ -372,7 +372,7 @@ def test_svgraph_module_cli_uses_canonical_program_name() -> None:
         text=True,
     )
 
-    assert result.stdout == "svgraph 0.1.39\n"
+    assert result.stdout == "svgraph 0.1.40\n"
 
 
 def test_svgraph_cli_module_keeps_canonical_program_name() -> None:
@@ -383,7 +383,7 @@ def test_svgraph_cli_module_keeps_canonical_program_name() -> None:
         text=True,
     )
 
-    assert result.stdout == "svgraph 0.1.39\n"
+    assert result.stdout == "svgraph 0.1.40\n"
 
 
 def test_svgraph_module_cli_emits_canonical_svgraph_json_reports() -> None:
@@ -439,7 +439,7 @@ def test_svgraph_executable_keeps_svgraph_program_name(monkeypatch, capsys) -> N
     captured = capsys.readouterr()
 
     assert excinfo.value.code == 0
-    assert captured.out == "svgraph 0.1.39\n"
+    assert captured.out == "svgraph 0.1.40\n"
 
 
 def test_cli_converts_between_files_and_creates_output_parent(tmp_path) -> None:
@@ -9561,6 +9561,14 @@ def test_drawingml_native_table_cell_fill_effects_fallback_to_svg_cell_fills() -
     assert '<rect fill="#008000" stroke="none" fill-opacity="0.75" x="40" y="0" width="40" height="40"/>' in svg
     assert "Gradient" in svg
     assert "Pattern" in svg
+
+
+def test_drawingml_native_table_border_fill_effects_fallback_to_svg_strokes() -> None:
+    svg = drawingml_to_svg(Path("examples/table-border-effects.dml").read_text(encoding="utf-8"))
+
+    assert '<line fill="none" stroke="#800080" stroke-width="2" stroke-opacity="0.75" x1="0" y1="0" x2="40" y2="0"/>' in svg
+    assert '<line fill="none" stroke="#008000" stroke-width="2" stroke-opacity="0.75" x1="0" y1="40" x2="40" y2="40"/>' in svg
+    assert "Border effects" in svg
 
 
 def test_drawingml_native_table_truthy_merge_attrs_are_continuations() -> None:

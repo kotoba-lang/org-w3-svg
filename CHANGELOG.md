@@ -44,6 +44,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell text layout/rich runs and individual border line style details.
 - Added browser TypeScript `drawingMlToSvg` import support for DrawingML native table cell fill alpha and non-duplicated default/run text paint attributes.
 - Added browser TypeScript `drawingMlToSvg` native table cell gradient and pattern fill fallbacks.
+- Added browser TypeScript `drawingMlToSvg` native table border gradient and pattern fill fallbacks.
 - Aligned browser TypeScript `drawingMlToSvg` native table grid and row scaling with graphic frame extents.
 - Aligned browser TypeScript `drawingMlToSvg` native table text insets to scale with DrawingML graphic frame extents.
 - Aligned browser TypeScript `drawingMlToSvg` native table merge continuation boolean parsing with Python.
