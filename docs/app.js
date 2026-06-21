@@ -174,6 +174,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <rect id="negative-radius-fallback" x="900" y="340" width="90" height="44" rx="-3" ry="8" style="fill:#fef9c3;stroke:#854d0e"/>
     <line id="marked-line" x1="980" y1="185" x2="1130" y2="260" style="stroke:#7c3aed;stroke-width:8;marker-end:url(#arrow)"/>
     <line id="non-arrow-marker-line" x1="980" y1="280" x2="1130" y2="300" style="stroke:#475569;stroke-width:5;marker-end:url(#dot-marker)"/>
+    <g id="ignored-marker-mid" marker-mid="url(#arrow)"><line x1="980" y1="315" x2="1130" y2="315" stroke="#64748b" stroke-width="3"/></g>
     <image id="pixel" class="css-image-frame" preserveAspectRatio="xMidYMid slice" opacity="35%" image-rendering="pixelated" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/luzQnAAAAABJRU5ErkJggg=="/>
     <circle class="css-circle" cx="1130" cy="388" r="48"/>
     <rect id="clipped-bar" x="930" y="500" width="250" height="70" style="fill:#fecaca;stroke:#991b1b;clip-path:url(#bar-clip)"/>
@@ -1199,7 +1200,6 @@ function inspectCoverageAttributes(element, style, tag, stats, refs, css, viewpo
     inspectCoveragePaintServers(element, style, tag, stats, refs, css);
     if (tag === "use")
         inspectCoverageUseReference(element, style, stats, refs, css, viewport, refStack);
-    inspectCoverageMarkerMid(element, style, tag, stats);
     if (tag === "path") {
         for (const command of unsupportedPathCommands(element.getAttribute("d") || ""))
             addCoverageCount(stats.unsupported_path_commands, command);
@@ -1339,9 +1339,9 @@ function coverageAttributeIsSupportedOrNoop(element, tag, name, value, style, re
     if (name === "lengthAdjust")
         return normalizeLengthAdjust(value) != null;
     if (name === "marker" || name === "marker-start" || name === "marker-end")
-        return markerRefIsArrowLike(value, refs);
+        return markerAttributeIsSupportedOrNoop(element, name, value, style, refs, css, viewport);
     if (name === "marker-mid")
-        return true;
+        return subtreeMarkerMidHasNoEffect(element, style, refs, css, viewport);
     if (name === "overflow")
         return overflowIsSupportedOrNoop(element, tag, value, style, refs, css, viewport);
     if (name === "opacity")
@@ -1740,18 +1740,84 @@ function markerRefIsArrowLike(value, refs) {
     const marker = refs.get(ref);
     if (!marker || localName(marker) !== "marker")
         return false;
-    const child = Array.from(marker.children).find((item) => ["path", "polygon", "polyline"].includes(localName(item)));
-    if (!child)
+    return Array.from(marker.children).some((child) => {
+        const tag = localName(child);
+        if (tag === "path") {
+            const parsed = parseBasicPath(child.getAttribute("d") || "", [1, 0, 0, 1, 0, 0]);
+            return !!parsed && parsed.closed && parsed.points.length === 4 && pointsEqual(parsed.points[0], parsed.points[3]);
+        }
+        if (tag === "polygon" || tag === "polyline")
+            return parsePoints(child.getAttribute("points") || "").length === 3;
         return false;
-    const tag = localName(child);
-    if (tag === "path")
-        return unsupportedPathCommands(child.getAttribute("d") || "").length === 0 && parseBasicPath(child.getAttribute("d") || "", [1, 0, 0, 1, 0, 0]) != null;
-    return parsePoints(child.getAttribute("points") || "").length >= 2;
+    });
+}
+function pointsEqual(a, b) {
+    return numbersClose(a[0], b[0]) && numbersClose(a[1], b[1]);
 }
 function normalizeMarkerReference(value, refs) {
     if (value.trim().toLowerCase() === "none")
         return false;
     return markerRefIsArrowLike(value, refs);
+}
+function markerAttributeIsSupportedOrNoop(element, attr, value, style, refs, css, viewport) {
+    if (!markerRefIsArrowLike(value, refs))
+        return false;
+    return subtreeMarkerAttributeIsSupported(element, attr, style, refs, css, viewport);
+}
+function subtreeMarkerAttributeIsSupported(element, attr, style, refs, css, viewport, refStack = new Set()) {
+    if (style.display === "none")
+        return true;
+    const tag = localName(element);
+    if (tag === "use") {
+        const href = hrefValue(element);
+        const refId = href.startsWith("#") ? href.slice(1) : "";
+        const ref = refId ? refs.get(refId) : null;
+        if (!ref || refStack.has(refId))
+            return false;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
+        return subtreeMarkerAttributeIsSupported(ref, attr, style, refs, css, refViewport, new Set([...refStack, refId]));
+    }
+    if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageStrokeLineEnumApplies(element, tag, style, css, viewport))
+        return markerTargetIsSupported(element, tag, attr);
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
+    if (tag === "switch") {
+        const selected = switchSelectedChild(element);
+        return selected ? subtreeMarkerAttributeIsSupported(selected, attr, computedStyle(selected, style, css, refs, childViewport), refs, css, childViewport, refStack) : true;
+    }
+    return Array.from(element.children).every((child) => subtreeMarkerAttributeIsSupported(child, attr, computedStyle(child, style, css, refs, childViewport), refs, css, childViewport, refStack));
+}
+function markerTargetIsSupported(element, tag, attr) {
+    if (tag === "line")
+        return true;
+    if (tag === "polyline")
+        return attr !== "marker" || parsePoints(element.getAttribute("points") || "").length <= 2;
+    if (tag === "path") {
+        const parsed = parseBasicPath(element.getAttribute("d") || "", [1, 0, 0, 1, 0, 0]);
+        return !!parsed && !parsed.closed && (attr !== "marker" || parsed.points.length <= 2);
+    }
+    return false;
+}
+function subtreeMarkerMidHasNoEffect(element, style, refs, css, viewport, refStack = new Set()) {
+    if (style.display === "none")
+        return true;
+    const tag = localName(element);
+    if (tag === "use") {
+        const href = hrefValue(element);
+        const refId = href.startsWith("#") ? href.slice(1) : "";
+        const ref = refId ? refs.get(refId) : null;
+        if (!ref || refStack.has(refId))
+            return false;
+        const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
+        return subtreeMarkerMidHasNoEffect(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
+    }
+    if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageStrokeLineEnumApplies(element, tag, style, css, viewport))
+        return !coverageMarkerMidIsUnsupported(element, tag);
+    const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
+    if (tag === "switch") {
+        const selected = switchSelectedChild(element);
+        return selected ? subtreeMarkerMidHasNoEffect(selected, computedStyle(selected, style, css, refs, childViewport), refs, css, childViewport, refStack) : true;
+    }
+    return Array.from(element.children).every((child) => subtreeMarkerMidHasNoEffect(child, computedStyle(child, style, css, refs, childViewport), refs, css, childViewport, refStack));
 }
 function clipPathHasRect(value, refs) {
     const ref = urlRef(value);

@@ -1141,6 +1141,10 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert 'rx="-3" ry="8"' in generated
         assert "function normalizeMarkerReference" in generated
         assert "markerRefIsArrowLike(value, refs)" in generated
+        assert "function markerAttributeIsSupportedOrNoop" in generated
+        assert "function subtreeMarkerAttributeIsSupported" in generated
+        assert "function subtreeMarkerMidHasNoEffect" in generated
+        assert 'id="ignored-marker-mid"' in generated
         assert 'id="dot-marker"' in generated
         assert 'id="non-arrow-marker-line"' in generated
         assert "css-use-frame" in generated
