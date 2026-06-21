@@ -67,7 +67,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
             <td style="background-color:#f8fafc;color:#111827;border:1px solid #94a3b8;border-right:3px dotted #dc2626;border-top:4px double #2563eb;border-bottom-style:dashed;border-bottom-width:2px;border-bottom-color:#16a34a">Browser</td>
           </tr>
           <tr>
-            <td style="background-color:#ffffff;color:#111827;border:none;padding:1px">PPTX</td>
+            <td style="background:padding-box #ffffff;color:#111827;border:none;padding:1px">PPTX</td>
             <td id="cascade-cell" style="border:1px solid #94a3b8;border-left:2px solid #dc2626">Cascade</td>
           </tr>
         </table>
@@ -3337,8 +3337,8 @@ function htmlAncestorsBetween(root, element) {
 function htmlElementBackgroundFill(element, css) {
     const declarations = resolvedCascadedDeclarations(element, css, {}, htmlAttributeAliases(element));
     const background = declarations["background-color"] ?? declarations["background"] ?? element.getAttribute("bgcolor");
-    const color = parseCssColor(background, {});
-    return color == null ? null : { color, alpha: cssColorAlpha(background) };
+    const fill = htmlFirstColorFill(background, {});
+    return fill?.color == null ? null : fill;
 }
 function htmlTableRowHeights(rows, height) {
     const explicit = rows.map((row) => htmlCssLength(htmlStyleValue(row, "height") ?? row.getAttribute("height"), height));
@@ -3382,8 +3382,9 @@ function htmlElementStyle(element, inheritedStyle, css) {
         next.colorAlpha = cssColorAlpha(color);
     }
     if (background != null) {
-        next.fill = parseCssColor(background, next);
-        next.fillAlpha = cssColorAlpha(background);
+        const fill = htmlFirstColorFill(background, next);
+        next.fill = fill?.color ?? null;
+        next.fillAlpha = fill?.alpha ?? null;
     }
     const parsedBorder = parseHtmlBorder(border, next);
     if (border != null) {
@@ -3521,7 +3522,7 @@ function htmlSideBorder(declarations, side, fallback, style) {
 function parseHtmlBorder(value, style) {
     if (!value || value.trim().toLowerCase() === "none")
         return { stroke: null, strokeAlpha: null, strokeWidth: 0, strokeLineCap: null, strokeLineJoin: null, strokeMiterlimit: null, strokeDasharray: null, compound: null };
-    const parts = value.trim().split(/\s+/);
+    const parts = cssValueTokens(value);
     const width = parts.map((part) => htmlCssLength(part, style.fontSize ?? rootFontSize)).find((item) => item != null) ?? null;
     const colorPart = parts.find((part) => parseCssColor(part, style));
     const stylePart = parts.find((part) => ["dashed", "dotted", "double"].includes(part.toLowerCase()))?.toLowerCase() || null;
@@ -3585,8 +3586,22 @@ function htmlCssLength(value, basis) {
     const trimmed = value.trim().toLowerCase();
     if (!trimmed || trimmed === "auto")
         return null;
+    if (trimmed === "thin")
+        return 1;
+    if (trimmed === "medium")
+        return 3;
+    if (trimmed === "thick")
+        return 5;
     const parsed = parseCssLength(trimmed, basis, Number.NaN);
     return Number.isFinite(parsed) ? parsed : null;
+}
+function htmlFirstColorFill(value, style) {
+    const token = cssValueTokens(value || "").find((item) => parseCssColor(item.replace(/,$/, ""), style) != null);
+    if (!token)
+        return null;
+    const normalized = token.replace(/,$/, "");
+    const color = parseCssColor(normalized, style);
+    return color == null ? null : { color, alpha: cssColorAlpha(normalized) };
 }
 function htmlPaddingSides(value) {
     if (!value)
