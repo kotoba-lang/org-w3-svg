@@ -1251,6 +1251,8 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         assert 'id="hidden-filtered-use-target"' in generated
         assert 'id="ignored-filtered-use"' in generated
         assert "function coverageHasUnresolvedPaintServer" in generated
+        assert "const coverageRenderingElements" in generated
+        assert 'id="ignored-empty-filter"' in generated
         unsupported_attributes = generated.split("const coverageUnsupportedAttributes", 1)[1].split(
             "const coverageSupportedPathCommands",
             1,

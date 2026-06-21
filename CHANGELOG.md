@@ -25,6 +25,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Aligned browser coverage diagnostics for referenced gradient `href` dependencies with the Python analyzer, including unresolved links even when local stop fallback colors are available.
 - Aligned browser coverage diagnostics for rectangular `clipPath` targets with the Python analyzer, including unsupported polygon and multi-point path targets.
 - Aligned browser coverage diagnostics for attributes inside `use` referenced subtrees with the Python analyzer, skipping non-rendering or no-paint referenced content unless unresolved paint servers remain diagnosable.
+- Aligned browser coverage diagnostics for visible rendering checks with the Python analyzer, so empty container elements do not make filter, mask, clip, blend, or isolation effects appear meaningful.
 - Aligned browser coverage diagnostics for `transform-origin` with the Python analyzer, including no-op handling when transforms or visible rendering are absent.
 - Aligned browser coverage diagnostics for `vector-effect` with the Python analyzer, so unsupported values are ignored when no visible stroke can be affected.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.

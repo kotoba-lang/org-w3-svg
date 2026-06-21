@@ -187,6 +187,7 @@ const sampleSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 720
     <g id="visibility-hidden" visibility="hidden"><rect id="visibility-visible" x="910" y="615" width="34" height="50" visibility="visible" style="fill:#ffffff;stroke:#0f766e;stroke-width:3"/></g>
     <g id="blend-isolation-dedupe" isolation="isolate"><rect x="955" y="615" width="34" height="50" mix-blend-mode="multiply" style="fill:#f8fafc;stroke:#64748b"/></g>
     <g id="hidden-blend-effect" mix-blend-mode="multiply"><rect x="995" y="615" width="34" height="50" opacity="0" style="fill:#111827"/></g>
+    <g id="ignored-empty-filter" filter="url(#blur)"/>
     <g id="ignored-group-opacity" opacity=".5"><rect x="1075" y="615" width="10" height="10" opacity="0"/><rect x="1090" y="615" width="10" height="10" fill="none" stroke="none"/></g>
     <path id="ignored-clip-rule" d="M 1000 615 H 1029 V 665 H 1000 Z" clip-rule="evenodd" fill="#f8fafc" stroke="#94a3b8"/>
     <g id="ignored-fill-rule" fill-rule="evenodd"><path d="M 1035 615 H 1069 V 665 H 1035 Z" fill="none" stroke="#475569"/></g>
@@ -931,6 +932,7 @@ const coverageSupportedElements = new Set([
     "use",
 ]);
 const coverageIgnoredElements = new Set(["defs", "desc", "linearGradient", "metadata", "pattern", "radialGradient", "stop", "title"]);
+const coverageRenderingElements = new Set(["circle", "ellipse", "image", "line", "path", "polygon", "polyline", "rect", "text", "tspan"]);
 const coverageUnsupportedAttributes = new Set([
     "alignment-baseline",
     "baseline-shift",
@@ -1176,7 +1178,7 @@ function coverageSubtreeHasVisibleRendering(element, inheritedStyle, refs, css, 
         const refViewport = ["svg", "symbol"].includes(localName(ref)) ? useViewport(ref, element, viewport, css, style) : viewport;
         return coverageSubtreeHasVisibleRendering(ref, style, refs, css, refViewport, new Set([...refStack, refId]));
     }
-    if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageSupportedElements.has(tag) && !coverageHasNonRenderingGeometry(element, tag, style, css, viewport) && !coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack))
+    if (style.visibility !== "hidden" && style.visibility !== "collapse" && coverageRenderingElements.has(tag) && !coverageHasNonRenderingGeometry(element, tag, style, css, viewport) && !coverageHasNoVisiblePaint(element, tag, style, refs, css, viewport, refStack))
         return true;
     const childViewport = tag === "svg" ? renderedSvgViewport(element, viewport, css, style) : viewport;
     if (tag === "switch") {
