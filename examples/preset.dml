@@ -89,4 +89,28 @@
       <a:solidFill><a:srgbClr val="bbf7d0"/></a:solidFill>
     </p:spPr>
   </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="13" name="preset pie"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="4572000" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="pie"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="fecaca"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="14" name="preset moon"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="4857750" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="moon"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="e9d5ff"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
+  <p:sp>
+    <p:nvSpPr><p:cNvPr id="15" name="preset star10"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
+    <p:spPr>
+      <a:xfrm><a:off x="5143500" y="190500"/><a:ext cx="190500" cy="190500"/></a:xfrm>
+      <a:prstGeom prst="star10"><a:avLst/></a:prstGeom>
+      <a:solidFill><a:srgbClr val="fef08a"/></a:solidFill>
+    </p:spPr>
+  </p:sp>
 </p:spTree>

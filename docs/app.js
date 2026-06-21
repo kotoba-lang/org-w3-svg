@@ -1342,6 +1342,12 @@ function dmlPresetPoints(kind, box) {
         return regularPolygonPoints(7, box);
     if (kind === "octagon")
         return [[quarterX, top], [threeQuarterX, top], [right, quarterY], [right, threeQuarterY], [threeQuarterX, bottom], [quarterX, bottom], [left, threeQuarterY], [left, quarterY]];
+    if (kind === "pie")
+        return [[centerX, centerY], ...ellipseArcPoints(centerX, centerY, box.width / 2, box.height / 2, -90, 0)];
+    if (kind === "chord")
+        return ellipseArcPoints(centerX, centerY, box.width / 2, box.height / 2, -90, 90);
+    if (kind === "blockArc")
+        return [...ellipseArcPoints(centerX, centerY, box.width / 2, box.height / 2, -90, 0), ...ellipseArcPoints(centerX, centerY, box.width * 0.28, box.height * 0.28, 0, -90)];
     if (kind === "decagon")
         return regularPolygonPoints(10, box);
     if (kind === "dodecagon" || kind === "flowChartOr" || kind === "flowChartSummingJunction")
@@ -1402,6 +1408,8 @@ function dmlPresetPoints(kind, box) {
         return [[box.x + box.width * 0.58, top], [box.x + box.width * 0.18, box.y + box.height * 0.55], [box.x + box.width * 0.46, box.y + box.height * 0.55], [box.x + box.width * 0.36, bottom], [box.x + box.width * 0.82, box.y + box.height * 0.4], [box.x + box.width * 0.54, box.y + box.height * 0.4]];
     if (kind === "teardrop")
         return [[centerX, top], [box.x + box.width * 0.82, box.y + box.height * 0.08], [right, box.y + box.height * 0.38], [box.x + box.width * 0.88, box.y + box.height * 0.72], [centerX, bottom], [box.x + box.width * 0.18, box.y + box.height * 0.72], [left, box.y + box.height * 0.38], [box.x + box.width * 0.18, box.y + box.height * 0.12]];
+    if (kind === "moon")
+        return [...ellipseArcPoints(centerX, centerY, box.width / 2, box.height / 2, -90, 270, 16), ...ellipseArcPoints(box.x + box.width * 0.62, centerY, box.width * 0.34, box.height * 0.42, 270, -90, 16)];
     if (kind === "cloud")
         return [[box.x + box.width * 0.15, box.y + box.height * 0.62], [box.x + box.width * 0.08, box.y + box.height * 0.48], [box.x + box.width * 0.2, box.y + box.height * 0.36], [box.x + box.width * 0.34, box.y + box.height * 0.38], [box.x + box.width * 0.42, box.y + box.height * 0.22], [box.x + box.width * 0.62, box.y + box.height * 0.2], [box.x + box.width * 0.72, box.y + box.height * 0.35], [box.x + box.width * 0.86, box.y + box.height * 0.36], [box.x + box.width * 0.96, box.y + box.height * 0.52], [box.x + box.width * 0.88, box.y + box.height * 0.7], [box.x + box.width * 0.62, box.y + box.height * 0.76], [box.x + box.width * 0.38, box.y + box.height * 0.74], [box.x + box.width * 0.22, box.y + box.height * 0.74]];
     if (kind === "star4")
@@ -1412,6 +1420,8 @@ function dmlPresetPoints(kind, box) {
         return [[centerX, top], [box.x + box.width * 0.6, box.y + box.height * 0.33], [box.x + box.width * 0.93, quarterY], [box.x + box.width * 0.7, centerY], [box.x + box.width * 0.93, threeQuarterY], [box.x + box.width * 0.6, box.y + box.height * 0.67], [centerX, bottom], [box.x + box.width * 0.4, box.y + box.height * 0.67], [box.x + box.width * 0.07, threeQuarterY], [box.x + box.width * 0.3, centerY], [box.x + box.width * 0.07, quarterY], [box.x + box.width * 0.4, box.y + box.height * 0.33]];
     if (kind === "star8")
         return [[centerX, top], [box.x + box.width * 0.58, box.y + box.height * 0.32], [box.x + box.width * 0.85, box.y + box.height * 0.15], [box.x + box.width * 0.68, box.y + box.height * 0.42], [right, centerY], [box.x + box.width * 0.68, box.y + box.height * 0.58], [box.x + box.width * 0.85, box.y + box.height * 0.85], [box.x + box.width * 0.58, box.y + box.height * 0.68], [centerX, bottom], [box.x + box.width * 0.42, box.y + box.height * 0.68], [box.x + box.width * 0.15, box.y + box.height * 0.85], [box.x + box.width * 0.32, box.y + box.height * 0.58], [left, centerY], [box.x + box.width * 0.32, box.y + box.height * 0.42], [box.x + box.width * 0.15, box.y + box.height * 0.15], [box.x + box.width * 0.42, box.y + box.height * 0.32]];
+    if (kind === "star10")
+        return [[centerX, top], [box.x + box.width * 0.56, box.y + box.height * 0.36], [box.x + box.width * 0.79, box.y + box.height * 0.1], [box.x + box.width * 0.68, box.y + box.height * 0.43], [right, box.y + box.height * 0.35], [box.x + box.width * 0.7, box.y + box.height * 0.55], [box.x + box.width * 0.98, box.y + box.height * 0.65], [box.x + box.width * 0.64, box.y + box.height * 0.63], [box.x + box.width * 0.65, box.y + box.height * 0.95], [centerX, box.y + box.height * 0.7], [box.x + box.width * 0.35, box.y + box.height * 0.95], [box.x + box.width * 0.36, box.y + box.height * 0.63], [box.x + box.width * 0.02, box.y + box.height * 0.65], [box.x + box.width * 0.3, box.y + box.height * 0.55], [left, box.y + box.height * 0.35], [box.x + box.width * 0.32, box.y + box.height * 0.43], [box.x + box.width * 0.21, box.y + box.height * 0.1], [box.x + box.width * 0.44, box.y + box.height * 0.36]];
     if (kind === "star12")
         return regularStarPoints(12, box);
     if (kind === "star16")
@@ -1460,7 +1470,7 @@ function regularPolygonPoints(sides, box) {
         return [centerX + radiusX * Math.cos(angle), centerY + radiusY * Math.sin(angle)];
     });
 }
-function regularStarPoints(points, box, innerScale = 0.5) {
+function regularStarPoints(points, box, innerScale = 0.55) {
     const centerX = box.x + box.width / 2;
     const centerY = box.y + box.height / 2;
     const outerX = box.width / 2;
@@ -1472,6 +1482,13 @@ function regularStarPoints(points, box, innerScale = 0.5) {
         const radiusY = index % 2 === 0 ? outerY : innerY;
         const angle = -Math.PI / 2 + (Math.PI * index) / points;
         return [centerX + radiusX * Math.cos(angle), centerY + radiusY * Math.sin(angle)];
+    });
+}
+function ellipseArcPoints(centerX, centerY, radiusX, radiusY, startDegrees, endDegrees, segments = 12) {
+    return Array.from({ length: segments + 1 }, (_, index) => {
+        const degrees = startDegrees + ((endDegrees - startDegrees) * index) / segments;
+        const radians = (degrees / 180) * Math.PI;
+        return [centerX + Math.cos(radians) * radiusX, centerY + Math.sin(radians) * radiusY];
     });
 }
 function dmlCustomGeometryToSvg(custom, box, idAttr, textAttrs, style, body, transform = "", transformedBounds = null) {

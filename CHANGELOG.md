@@ -52,6 +52,7 @@ This project follows a simple, human-readable changelog. Until the project reach
 - Expanded browser TypeScript `drawingMlToSvg` preset import support for DrawingML document/data/display flowchart, bevel, snip, chevron, home plate, folded-corner, frame, stripe, and plaque geometries.
 - Expanded browser TypeScript `drawingMlToSvg` preset import support for DrawingML bracket, brace, math symbol, heart, lightning, teardrop, cloud, star, seal, sun, and common arrow geometries.
 - Expanded browser TypeScript `drawingMlToSvg` preset import support for DrawingML action buttons, funnel, wedge callouts, ribbons, and compound arrow geometries.
+- Expanded browser TypeScript `drawingMlToSvg` preset import support for DrawingML pie, chord, block arc, moon, and star10 geometries.
 - Added `svgraph` as the canonical typed Python import package and console-script entry point target, including `svgraph.model`, `svgraph.converter`, `svgraph.coverage`, and `svgraph.pptx` wrapper modules, while preserving `drawingml_svg` and `drawingml-svg` compatibility surfaces.
 - Packaged the browser editor source, committed Pages artifact, and examples in the `svgraph` source distribution so OSS consumers can rebuild docs/app.js, inspect examples, and reproduce release smoke checks from the published sdist.
 - Aligned release checklist source distribution checks with packaged SVGraph docs, governance files, examples, and browser editor sources.
