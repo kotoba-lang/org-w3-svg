@@ -1,5 +1,5 @@
 {
-  "name": "svgraph-web",
+  "name": "@com-junkawasaki/svgraph",
   "version": "0.1.0",
   "description": "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter.",
   "keywords": [
@@ -9,7 +9,7 @@
     "pptx",
     "web"
   ],
-  "private": true,
+  "private": false,
   "type": "module",
   "homepage": "https://com-junkawasaki.github.io/svgraph/",
   "repository": {
@@ -20,6 +20,17 @@
     "url": "https://github.com/com-junkawasaki/svgraph/issues"
   },
   "license": "MIT",
+  "files": [
+    "docs",
+    "web",
+    "README.md",
+    "LICENSE",
+    "MIGRATION.md"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public"
+  },
   "scripts": {
     "build:web": "tsc -p tsconfig.web.json",
     "check:web": "tsc -p tsconfig.web.json --noEmit"

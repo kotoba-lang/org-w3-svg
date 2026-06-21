@@ -255,7 +255,7 @@ def test_project_urls_are_canonical_svgraph_locations() -> None:
     assert {"svg", "svgraph", "drawingml", "presentationml", "pptx", "web"} <= set(
         pyproject["project"]["keywords"]
     )
-    assert package_metadata["name"] == "svgraph-web"
+    assert package_metadata["name"] == "@com-junkawasaki/svgraph"
     project_links = readme.split("## Project links", maxsplit=1)[1].split("## Install", maxsplit=1)[0]
     assert "- Repository: <https://github.com/com-junkawasaki/svgraph>" in project_links
     assert "- Issue tracker: <https://github.com/com-junkawasaki/svgraph/issues>" in project_links
@@ -715,13 +715,15 @@ def test_release_and_ci_distribution_smoke_use_svgraph_artifact_names() -> None:
         assert 'pyproject["project"]["description"] == "Small, dependency-free SVG presentation graph toolkit' in source
         assert '"presentationml", "pptx", "web"' in source
         assert 'pyproject["project"]["urls"] == {' in source
-        assert 'web_package["name"] == "svgraph-web"' in source
+        assert 'web_package["name"] == "@com-junkawasaki/svgraph"' in source
         assert 'web_package["version"] == pyproject["project"]["version"]' in source
         assert (
             'web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."'
         ) in source
         assert 'web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"' in source
-        assert 'web_package["private"] is True' in source
+        assert 'web_package["private"] is False' in source
+        assert '"registry": "https://npm.pkg.github.com"' in source
+        assert '"access": "public"' in source
         assert 'web_package["license"] == "MIT"' in source
         assert 'web_lock["name"] == web_package["name"]' in source
         assert 'web_lock["packages"][""]["name"] == web_package["name"]' in source
@@ -987,6 +989,21 @@ def test_pages_workflow_deploys_svgraph_docs_site() -> None:
     assert "https://com-junkawasaki.github.io/drawingml-svg" not in workflow + html
 
 
+def test_npm_publish_workflow_targets_github_packages() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "npm-publish.yml").read_text(encoding="utf-8")
+
+    assert "name: Publish npm package" in workflow
+    assert "packages: write" in workflow
+    assert 'registry-url: "https://npm.pkg.github.com"' in workflow
+    assert 'scope: "@com-junkawasaki"' in workflow
+    assert "npm run check:web" in workflow
+    assert "npm run build:web" in workflow
+    assert "npm pack --dry-run" in workflow
+    assert "npm publish" in workflow
+    assert "NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}" in workflow
+
+
 def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     root = Path(__file__).resolve().parents[1]
     pyproject = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
@@ -998,8 +1015,8 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
     source = (root / "web" / "app.ts").read_text(encoding="utf-8")
     app_js = (root / "docs" / "app.js").read_text(encoding="utf-8")
 
-    assert '"name": "svgraph-web"' in package_json
-    assert '"name": "svgraph-web"' in package_lock
+    assert '"name": "@com-junkawasaki/svgraph"' in package_json
+    assert '"name": "@com-junkawasaki/svgraph"' in package_lock
     assert package_metadata["version"] == pyproject["project"]["version"]
     assert lock_metadata["version"] == package_metadata["version"]
     assert lock_metadata["packages"][""]["version"] == package_metadata["version"]
@@ -1011,7 +1028,11 @@ def test_web_source_and_package_metadata_use_svgraph_naming() -> None:
         "url": "git+https://github.com/com-junkawasaki/svgraph.git",
     }
     assert package_metadata["bugs"] == {"url": "https://github.com/com-junkawasaki/svgraph/issues"}
-    assert package_metadata["private"] is True
+    assert package_metadata["private"] is False
+    assert package_metadata["publishConfig"] == {
+        "registry": "https://npm.pkg.github.com",
+        "access": "public",
+    }
     assert package_metadata["license"] == "MIT"
     assert lock_metadata["packages"][""]["license"] == package_metadata["license"]
     assert "<title>SVGraph Editor</title>" in html

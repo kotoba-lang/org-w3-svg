@@ -168,12 +168,16 @@ assert pyproject["project"]["urls"] == {
 for name, target in pyproject["project"]["scripts"].items():
     assert f"{name} = {target}" in entry_points
 assert {"svgraph", "drawingml_svg"} <= top_level
-assert web_package["name"] == "svgraph-web"
+assert web_package["name"] == "@com-junkawasaki/svgraph"
 assert web_package["version"] == pyproject["project"]["version"]
 assert web_package["description"] == "Browser-only SVGraph editor and SVG to PresentationML/PPTX converter."
 assert {"svg", "svgraph", "presentationml", "pptx", "web"} <= set(web_package["keywords"])
 assert web_package["homepage"] == "https://com-junkawasaki.github.io/svgraph/"
-assert web_package["private"] is True
+assert web_package["private"] is False
+assert web_package["publishConfig"] == {
+    "registry": "https://npm.pkg.github.com",
+    "access": "public",
+}
 assert web_package["license"] == "MIT"
 assert web_lock["name"] == web_package["name"]
 assert web_lock["version"] == web_package["version"]
@@ -329,6 +333,15 @@ PY
 ```
 
 ## Tag and publish
+
+Publish the browser package to GitHub Packages from the `Publish npm package` workflow, or from an authenticated local npm session:
+
+```bash
+npm ci
+npm run check:web
+npm run build:web
+npm publish --registry https://npm.pkg.github.com
+```
 
 - Create an annotated tag named `vX.Y.Z`.
 - Push the tag after CI passes on `main`.

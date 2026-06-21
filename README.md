@@ -62,6 +62,12 @@ npm run build:web
 pip install -e .
 ```
 
+The browser package is publishable to GitHub Packages as `@com-junkawasaki/svgraph`:
+
+```bash
+npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com
+```
+
 ## CLI
 
 ```bash

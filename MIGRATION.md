@@ -76,6 +76,12 @@ The browser editor is published at:
 https://com-junkawasaki.github.io/svgraph/
 ```
 
+The browser npm package is published through GitHub Packages as:
+
+```bash
+npm install @com-junkawasaki/svgraph --registry=https://npm.pkg.github.com
+```
+
 ## Verification
 
 Run the migration guard tests before publishing:
