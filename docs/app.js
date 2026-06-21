@@ -1821,7 +1821,6 @@ function dmlTableFrameToSvg(element) {
             if (!isMerge && cellWidth > 0 && cellHeight > 0) {
                 const text = dmlText(cell);
                 const fill = dmlColor(childByLocal(childByLocal(cell, "tcPr"), "solidFill")) ?? "#ffffff";
-                const border = dmlTableCellBorder(childByLocal(cell, "tcPr"));
                 const cellAttrs = [
                     `data-kind="cell"`,
                     `data-row="${rowIndex}"`,
@@ -1830,9 +1829,10 @@ function dmlTableFrameToSvg(element) {
                     rowSpan > 1 ? `data-rowspan="${rowSpan}"` : "",
                     text ? `data-text="${xml(text)}"` : "",
                 ].filter(Boolean).join(" ");
-                children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}" fill="${fill}"${border}/>`);
+                children.push(`<rect ${cellAttrs} x="${formatNumber(colX)}" y="${formatNumber(rowY)}" width="${formatNumber(cellWidth)}" height="${formatNumber(cellHeight)}" fill="${fill}"/>`);
+                children.push(...dmlTableCellBorderLines(childByLocal(cell, "tcPr"), colX, rowY, cellWidth, cellHeight));
                 if (text) {
-                    children.push(`<text x="${formatNumber(colX + cellWidth / 2)}" y="${formatNumber(rowY + cellHeight / 2)}" text-anchor="middle" dominant-baseline="middle">${xml(text)}</text>`);
+                    children.push(dmlTextSvg(cell, { x: colX, y: rowY, width: cellWidth, height: cellHeight }, { defaultBaseline: "middle", defaultFill: "#000000", defaultStroke: "none" }));
                 }
             }
             colX += cellWidth;
@@ -1849,13 +1849,36 @@ function dmlTableColumns(tbl) {
     const grid = childByLocal(tbl, "tblGrid");
     return grid ? directChildrenByLocal(grid, "gridCol").map((col) => emuToPx(col.getAttribute("w"))) : [];
 }
-function dmlTableCellBorder(tcPr) {
-    const line = childByLocal(tcPr, "lnL") ?? childByLocal(tcPr, "lnR") ?? childByLocal(tcPr, "lnT") ?? childByLocal(tcPr, "lnB");
-    if (!line)
-        return "";
-    const stroke = dmlColor(childByLocal(line, "solidFill"));
-    const strokeWidth = emuToPx(line.getAttribute("w"));
-    return stroke ? ` stroke="${stroke}"${strokeWidth ? ` stroke-width="${formatNumber(strokeWidth)}"` : ""}` : "";
+function dmlTableCellBorderLines(tcPr, x, y, width, height) {
+    const specs = [
+        ["lnL", x, y, x, y + height],
+        ["lnR", x + width, y, x + width, y + height],
+        ["lnT", x, y, x + width, y],
+        ["lnB", x, y + height, x + width, y + height],
+    ];
+    return specs.flatMap(([name, x1, y1, x2, y2]) => {
+        const style = dmlTableCellBorderStyle(tcPr, name);
+        if (!style)
+            return [];
+        return [`<line x1="${formatNumber(x1)}" y1="${formatNumber(y1)}" x2="${formatNumber(x2)}" y2="${formatNumber(y2)}"${style}/>`];
+    });
+}
+function dmlTableCellBorderStyle(tcPr, name) {
+    const line = childByLocal(tcPr, name);
+    if (line && childByLocal(line, "noFill"))
+        return null;
+    const strokeWidth = line ? emuToPx(line.getAttribute("w")) || 1 : 1;
+    const paint = line ? dmlFillPaint(line) : null;
+    return dmlSvgStyle({
+        fill: null,
+        stroke: paint?.color ?? "#000000",
+        strokeAlpha: paint?.alpha ?? null,
+        strokeWidth,
+        strokeLineCap: dmlLineCap(line?.getAttribute("cap") ?? null),
+        strokeLineJoin: line ? dmlLineJoin(line) : null,
+        strokeDasharray: line ? dmlDasharray(line, strokeWidth) : null,
+        strokeMiterlimit: line ? dmlMiterlimit(line) : null,
+    });
 }
 function attrByLocal(element, name) {
     for (let index = 0; index < element.attributes.length; index += 1) {
@@ -2162,14 +2185,16 @@ function dmlAlpha(parent) {
 function dmlText(element) {
     return descendantsByLocal(element, "t").map((node) => node.textContent || "").join("\n").trim();
 }
-function dmlTextSvg(element, box) {
+function dmlTextSvg(element, box, options = {}) {
     const runs = dmlTextRuns(element).filter((run) => run.text);
     if (!runs.length)
         return "";
-    const layout = dmlTextLayout(element, box, runs);
+    const layout = dmlTextLayout(element, box, runs, options);
     const attrs = [
         `x="${formatNumber(layout.x)}"`,
         `y="${formatNumber(layout.y)}"`,
+        options.defaultFill ? `fill="${options.defaultFill}"` : "",
+        options.defaultStroke ? `stroke="${options.defaultStroke}"` : "",
         layout.anchor ? `text-anchor="${layout.anchor}"` : "",
         layout.baseline ? `dominant-baseline="${layout.baseline}"` : "",
         layout.direction ? `direction="${layout.direction}"` : "",
@@ -2186,7 +2211,7 @@ function dmlTextSvg(element, box) {
         return `<tspan${runAttrs.length ? ` ${runAttrs.join(" ")}` : ""}>${xml(run.text)}</tspan>`;
     }).join("")}</text>`;
 }
-function dmlTextLayout(element, box, runs) {
+function dmlTextLayout(element, box, runs, options = {}) {
     const [left, top, right, bottom] = dmlTextInsets(element);
     const inner = {
         x: box.x + left,
@@ -2195,7 +2220,7 @@ function dmlTextLayout(element, box, runs) {
         height: Math.max(0, box.height - top - bottom),
     };
     const anchor = dmlTextAnchor(element);
-    const baseline = dmlTextBaseline(element);
+    const baseline = dmlTextBaseline(element) ?? options.defaultBaseline ?? null;
     const fontSize = dmlTextLayoutFontSize(runs) ?? inner.height / 1.4;
     return {
         x: anchor === "middle" ? inner.x + inner.width / 2 : anchor === "end" ? inner.x + inner.width : inner.x,
