@@ -1,9 +1,4 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.ruff_cache/
-*.egg-info/
-build/
-dist/
+.cpcache/
+.nrepl-port
+target/
 tmp/
-node_modules/
