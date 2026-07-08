@@ -35,6 +35,28 @@ Out of scope: DrawingML, PPTX, browser editor, SVGraph presentation IR, and
 Office causal sidecars. Those live in `com-junkawasaki/svgraph` and
 `com-junkawasaki/office-causal`.
 
+## Reading SVG (`svg.reader`)
+
+`svg.core` is the EDN-first *writer*. `svg.reader` is the read side —
+parses raw SVG/XML text into shape elements, extracted from
+`kotoba-lang/kasane` (`kasane.svg`, ADR-2606272100) as part of the
+kotoba-lang reverse-domain media/graphics standards-substrate split. It's
+a separate namespace (not merged into `svg.core`) because `svg.core/attrs`
+takes an EDN element (write-side) while `svg.reader/attrs` takes a raw
+attribute string (read-side) — same name, different input shape.
+
+```clojure
+(require '[svg.reader :as reader])
+
+(reader/elements svg-xml-string)     ; => [{:tag :rect :attrs {:x "10" ...}} ...]
+(reader/root-attrs svg-xml-string)   ; => {:width "200" :height "100" ...}
+(reader/parse-len "12px")            ; => 12
+```
+
+R0 extracts top-level shape elements (rect/circle/ellipse/line/path/text/
+polygon/polyline/image) via regex — not a full XML parser, good enough for
+well-formed SVG produced by design tools.
+
 ## Test
 
 ```bash
