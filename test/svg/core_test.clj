@@ -16,6 +16,22 @@
   (is (= "<text data-title=\"Tom &amp; &quot;Jerry&quot;\">2 &lt; 3 &amp; 4 &gt; 1</text>"
          (svg/render [:text {:dataTitle "Tom & \"Jerry\""} "2 < 3 & 4 > 1"]))))
 
+(deftest rejects-attribute-names-that-would-break-out-of-markup
+  ;; esc covers attribute VALUES, but an attrs-map KEY (e.g. built via
+  ;; (keyword dynamic-attr-name) for data-* style pass-through) went
+  ;; straight into `<tag NAME="value">` markup with zero escaping or
+  ;; validation. Verified against Python's xml.etree.ElementTree: the
+  ;; unfixed renderer produced well-formed XML with a genuine injected
+  ;; onmouseover attribute, not just a cosmetic issue.
+  (testing "an attribute name containing quote/space/= (would inject a new
+            attribute) throws instead of silently splicing it into markup"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (svg/render [:rect {(keyword "data-x=\"1\" onmouseover=\"alert(1)\" data-y") "z"
+                                      :width 10}]))))
+  (testing "ordinary attribute names, including namespaced-style ones with a
+            colon, are unaffected"
+    (is (= "<a xlink:href=\"x\"></a>" (svg/render [:a {(keyword "xlink:href") "x"}])))))
+
 (deftest supports-hiccup-style-tag-sugar-and-raw
   (is (= "<g class=\"layer selected\" id=\"main\"><path d=\"M0 0Z\"/><style>.x{fill:red}</style></g>"
          (svg/render [:g.layer#main {:class ["selected"]}

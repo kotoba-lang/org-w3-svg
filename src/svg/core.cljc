@@ -103,10 +103,23 @@
     :tableValues :targetX :targetY :textLength :viewBox :xChannelSelector
     :yChannelSelector})
 
+(defn- valid-attr-name?
+  "True when `s` is safe to splice directly into `<tag NAME=\"value\">` markup.
+  Letters/digits/`_`/`-`/`.`/`:` cover every real SVG/HTML attribute name
+  (including namespaced ones like `xlink:href`) while excluding whitespace,
+  `\"` `'` `=` `<` `>` `/` -- the characters that would let an attribute
+  NAME (as opposed to its value, which `esc` already covers) break out of
+  the attribute/tag syntax and inject arbitrary additional markup."
+  [s]
+  (boolean (re-matches #"[A-Za-z0-9_:.-]+" s)))
+
 (defn- attr-name [k]
-  (if (contains? case-sensitive-attrs k)
-    (name k)
-    (kebab-name k)))
+  (let [n (if (contains? case-sensitive-attrs k) (name k) (kebab-name k))]
+    (when-not (valid-attr-name? n)
+      (throw (ex-info "svg: attribute name contains characters unsafe to
+                        splice into markup (only letters/digits/_-.: allowed)"
+                       {:name n})))
+    n))
 
 (defn style
   "Render an EDN style map to CSS declaration text."
