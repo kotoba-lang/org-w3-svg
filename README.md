@@ -60,7 +60,7 @@ well-formed SVG produced by design tools.
 ## Test
 
 ```bash
-clojure -M:test
+kbb -M:test
 ```
 
 ## License
