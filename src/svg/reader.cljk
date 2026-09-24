@@ -14,7 +14,7 @@
   the kotoba-lang reverse-domain media/graphics standards-substrate split
   (com-junkawasaki/root)."
   (:require [kotoba.lang.text :as str]
-            [clojure.edn :as edn]))
+            [kotoba.lang.edn :as edn]))
 
 (defn attrs
   "Parse name=\"value\" attribute pairs from an element's raw attribute
