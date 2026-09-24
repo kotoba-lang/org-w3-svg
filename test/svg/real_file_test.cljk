@@ -5,7 +5,7 @@
    output (multi-line root <svg ...> attributes, pt units instead of px,
    shapes nested inside <g> wrapper groups, XML comments) this reader has
    ever seen."
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [svg.reader :as reader]))
 
 (def real-svg (slurp (clojure.java.io/resource "svg/fixtures/graphviz_digraph.svg")))
