@@ -1,5 +1,5 @@
 (ns svg.core-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [svg.core :as svg]
             [svg.css :as css]
             [svg.shapes :as shapes]))
