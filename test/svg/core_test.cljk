@@ -1,5 +1,5 @@
 (ns svg.core-test
-  (:require [kotoba.test :refer [deftest is testing]]
+  (:require [kotoba.lang.error :as kerror] [kotoba.test :refer [deftest is testing]]
             [svg.core :as svg]
             [svg.css :as css]
             [svg.shapes :as shapes]))
@@ -25,7 +25,7 @@
   ;; onmouseover attribute, not just a cosmetic issue.
   (testing "an attribute name containing quote/space/= (would inject a new
             attribute) throws instead of silently splicing it into markup"
-    (is (thrown? clojure.lang.ExceptionInfo
+    (is (thrown? kerror/ExceptionInfo
                  (svg/render [:rect {(keyword "data-x=\"1\" onmouseover=\"alert(1)\" data-y") "z"
                                       :width 10}]))))
   (testing "ordinary attribute names, including namespaced-style ones with a
